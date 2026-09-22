@@ -1727,3 +1727,59 @@ button.scritta{background:none;border:0;color:var(--accent);font:inherit;
   .preferenze .pannello{position:fixed;left:14px;right:14px;top:auto;
     bottom:calc(14px + var(--safe-b));min-width:0}
 }
+
+
+/* La vista «solo il lettore».
+ *
+ * NON e' lo schermo intero del browser: quello ce l'ha gia' il lettore, e ne
+ * serviva un altro. Questa resta dentro la pagina e toglie tutto il resto -
+ * testata, titolo, azioni, piede - lasciando il video e, se e' una diretta,
+ * la chat di fianco. Su una diretta e' la forma giusta per stare un'ora:
+ * niente da leggere intorno, e la chat dove serve.
+ *
+ * `position: fixed` e non un vero schermo intero anche per una ragione
+ * pratica: dal fullscreen del browser si esce solo con Escape o con il suo
+ * bottone, mentre qui la pagina resta sotto e si torna indietro come da
+ * qualunque altra cosa. */
+
+.scena.solo{position:fixed;inset:0;z-index:60;margin:0;padding:0;gap:0;
+  background:#000;grid-template-areas:"palco";
+  grid-template-columns:minmax(0,1fr)}
+.scena.solo.conchat{grid-template-areas:"palco accanto";
+  grid-template-columns:minmax(0,1fr) minmax(0,clamp(240px,23vw,380px))}
+.scena.solo > .principale{display:none}
+.scena.solo > .accanto{display:none}
+.scena.solo > .palco{height:100%;max-height:none;aspect-ratio:auto;margin:0;
+  border:0;border-radius:0}
+
+/* La chat c'e' solo se c'e' una diretta: su una registrazione quella colonna
+   sarebbe vuota, e mezzo schermo di nero di fianco al video non e' una vista,
+   e' un errore. */
+.scena.solo.conchat > .accanto{display:flex;flex-direction:column;min-width:0;
+  background:var(--bg);border-left:1px solid var(--line-2);
+  padding:10px 12px calc(10px + var(--safe-b))}
+.scena.solo.conchat > .accanto > h2{margin:0 0 8px}
+.scena.solo.conchat .chat{flex:1;height:auto;border-radius:8px}
+/* su uno schermo stretto la chat toglie piu' di quanto dia */
+@media (max-width:640px){
+  .scena.solo.conchat{grid-template-areas:"palco";
+    grid-template-columns:minmax(0,1fr)}
+  .scena.solo.conchat > .accanto{display:none}
+}
+
+/* La via d'uscita: sempre li', discreta finche' non ci si passa sopra. Una
+   modalita' che si prende lo schermo senza dire come uscirne e' una trappola,
+   e non tutti sanno che Escape funziona. */
+#esci-solo{display:none}
+.scena.solo > #esci-solo{display:flex;align-items:center;justify-content:center;
+  position:absolute;top:calc(12px + var(--safe-t));right:14px;z-index:62;
+  width:38px;height:38px;border-radius:50%;cursor:pointer;
+  border:1px solid var(--sul-video-bordo);background:var(--sul-video-fondo);
+  color:var(--sul-video);font-size:20px;line-height:1;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  opacity:.45;transition:opacity .15s,background .15s}
+.scena.solo > #esci-solo:hover,
+.scena.solo > #esci-solo:focus-visible{opacity:1;color:var(--sul-video-forte)}
+[dir=rtl] .scena.solo > #esci-solo{right:auto;left:14px}
+
+body.vista-solo{overflow:hidden}

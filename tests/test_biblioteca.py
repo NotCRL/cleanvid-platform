@@ -558,14 +558,16 @@ async def test_le_tre_viste_ci_sono(
     monkeypatch.setattr(routes_watch, "risolvi", finge)
     pagina = (await visitatore.get("/it/guarda", params={
         "u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
-    for vista in ("normale", "cinema"):
+    for vista in ("normale", "cinema", "solo"):
         assert f'data-vista={vista}' in pagina
     assert "(T)" in pagina
-    # niente bottone ne' scorciatoia per lo schermo intero: ce l'ha gia' il
-    # lettore del browser, ed e' li' che la gente lo cerca
+    # la terza non e' lo schermo intero del browser: quello ce l'ha gia' il
+    # lettore, ed e' li' che la gente lo cerca
     assert "data-vista=pieno" not in pagina
     assert "(F)" not in pagina
     assert "/static/viste.js" in pagina
+    # e da «solo il lettore» si deve poter uscire senza sapere di Escape
+    assert 'id=esci-solo' in pagina
 
 
 async def test_i_segmenti_da_saltare_arrivano_al_lettore(
@@ -764,3 +766,32 @@ async def test_senza_chat_niente_pannello(visitatore: AsyncClient) -> None:
     pagina = (await visitatore.get(
         "/it/guarda", params={"u": "https://vimeo.com/76979871"})).text
     assert "class=preferenze" not in pagina
+
+
+def test_solo_il_lettore_resta_dentro_la_pagina() -> None:
+    """Non e' lo schermo intero del browser, ed e' voluto: da quello si esce
+    solo con Escape o col suo bottone, da qui si torna indietro come da
+    qualunque altra cosa."""
+    foglio = pathlib.Path("src/cleanvid/web/static/stile.css").read_text()
+    assert ".scena.solo{position:fixed" in foglio
+    codice = pathlib.Path("src/cleanvid/web/static/viste.js").read_text()
+    assert "requestFullscreen" not in codice
+
+
+def test_in_solo_la_chat_si_accende_solo_con_la_diretta() -> None:
+    """Su una registrazione quella colonna sarebbe vuota, e mezzo schermo di
+    nero di fianco al video non e' una vista, e' un errore."""
+    foglio = pathlib.Path("src/cleanvid/web/static/stile.css").read_text()
+    assert ".scena.solo > .accanto{display:none}" in foglio
+    assert ".scena.solo.conchat > .accanto{display:flex" in foglio
+
+
+async def test_una_registrazione_non_ha_la_colonna_della_chat(
+        visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    async def registrazione(url: str, qualita: str = "") -> Estratto:
+        return Estratto(token="tv", titolo="Prova", diretta=False)
+
+    monkeypatch.setattr(routes_watch, "risolvi", registrazione)
+    pagina = (await visitatore.get(
+        "/it/guarda", params={"u": "https://www.twitch.tv/unaltro"})).text
+    assert "conchat" not in pagina

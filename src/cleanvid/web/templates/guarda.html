@@ -145,9 +145,13 @@
         <button type=button data-vista=cinema class=on
                 title="{{ t('vista.cinema') }} (T)" aria-label="{{ t('vista.cinema') }}"
                 >&#9644;</button>
-        {# Niente bottone per lo schermo intero: ce l'ha gia' il lettore,
-           dove la gente lo cerca. Due bottoni per la stessa cosa, uno dentro
-           il video e uno fuori, sono uno di troppo. #}
+        {# La terza vista non e' lo schermo intero del browser - quello ce
+           l'ha gia' il lettore, dove la gente lo cerca. E' il lettore da
+           solo dentro la pagina: sparisce tutto il resto, resta il video e,
+           se e' una diretta, la chat di fianco. #}
+        <button type=button data-vista=solo
+                title="{{ t('vista.solo') }}" aria-label="{{ t('vista.solo') }}"
+                >&#9635;</button>
       </span>
     </div>
 
@@ -156,6 +160,12 @@
       <a href="{{ url }}" target=_blank rel="noopener noreferrer nofollow">{{ url }}</a>
     </details>
   </div>
+
+  {# La via d'uscita dalla vista «solo il lettore». Sempre visibile li'
+     dentro: una modalita' che si prende lo schermo senza dire come uscirne e'
+     una trappola, e non tutti sanno che Escape funziona. #}
+  <button id=esci-solo type=button title="{{ t('vista.esci') }} (Esc)"
+          aria-label="{{ t('vista.esci') }}">&times;</button>
 
   <aside class=accanto>
     {% if chat %}

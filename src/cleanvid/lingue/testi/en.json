@@ -142,6 +142,7 @@
   "stato.titolo": "Who you are",
   "stato.voci": "entries in history",
   "vista.cinema": "Theater",
+  "vista.esci": "Exit",
   "vista.normale": "Default",
-  "vista.pieno": "Full screen"
+  "vista.solo": "Player only"
 }

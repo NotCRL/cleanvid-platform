@@ -142,6 +142,7 @@
   "stato.titolo": "Quién eres",
   "stato.voci": "entradas en el historial",
   "vista.cinema": "Cine",
+  "vista.esci": "Salir",
   "vista.normale": "Normal",
-  "vista.pieno": "Pantalla completa"
+  "vista.solo": "Solo el reproductor"
 }

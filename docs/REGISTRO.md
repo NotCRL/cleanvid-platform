@@ -900,3 +900,42 @@ non può fare.
 
 **Verificato.** 112 test, fra cui uno che fallisce se `requestFullscreen`
 torna nel nostro javascript.
+
+---
+
+## 2026-09-22 — La terza vista: solo il lettore
+
+Le viste sono tre: **normale**, **cinema** (il predefinito) e **solo il
+lettore**. Quella che c'era prima — lo schermo intero del browser — non è
+sparita: l'ha il lettore, con il suo bottone, dove la gente la cerca. Un
+secondo bottone fuori dal video per la stessa cosa era uno di troppo.
+
+**Cosa fa «solo il lettore».** Sparisce tutto: testata, titolo, azioni, piede.
+Resta il video a riempire la finestra e, **se è una diretta, la chat di
+fianco**. Su una diretta è la forma giusta per starci un'ora: niente da
+leggere intorno, e la chat dove serve.
+
+**Su una registrazione la chat non c'è**, e quella colonna non compare
+affatto. Mezzo schermo di nero di fianco al video non è una vista, è un
+errore.
+
+**Perché non è lo schermo intero vero.** `position: fixed` invece del
+fullscreen del browser, e non per pigrizia: dal fullscreen si esce solo con
+Escape o con il suo bottone, mentre qui la pagina resta sotto e si torna
+indietro come da qualunque altra cosa. In più il fullscreen si può chiedere
+solo dentro un gesto, quindi una vista ricordata non si potrebbe riaprire da
+sola — e questa sì.
+
+**La via d'uscita è sempre lì**, in alto a destra: un tondo discreto che si
+accende passandoci sopra, più Escape. Una modalità che si prende lo schermo
+senza dire come uscirne è una trappola, e non tutti sanno che Escape funziona.
+
+**Si torna dove si era.** Uscendo si ritrova la vista di prima — normale o
+cinema — non una scelta a caso: entrando si segna da dove si veniva.
+
+**`T` non fa niente dentro «solo il lettore»**, perché lì non vuol dire
+niente: non c'è una colonna da allargare.
+
+**Verificato.** 115 test, fra cui: le tre viste ci sono, la via d'uscita c'è,
+`requestFullscreen` non è tornato nel nostro javascript, e la colonna della
+chat si accende solo con una diretta.

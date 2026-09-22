@@ -28,9 +28,11 @@
   }
 
   function metti(quale, ricorda) {
-    const cinema = quale === "cinema";
-    teatro.classList.toggle("cinema", cinema);
-    teatro.classList.toggle("normale", !cinema);
+    teatro.classList.toggle("normale", quale === "normale");
+    teatro.classList.toggle("cinema", quale === "cinema");
+    teatro.classList.toggle("solo", quale === "solo");
+    // la pagina sotto non deve scorrere mentre il lettore se la prende tutta
+    document.body.classList.toggle("vista-solo", quale === "solo");
     segna(quale);
     if (ricorda) {
       try { localStorage.setItem(CHIAVE, quale); } catch (e) {}
@@ -38,8 +40,22 @@
     window.dispatchEvent(new Event("resize"));
   }
 
+  function precedente() {
+    // da «solo il lettore» si torna dove si era, non in un posto a caso
+    try { return localStorage.getItem(CHIAVE + ".prima") || "cinema"; }
+    catch (e) { return "cinema"; }
+  }
+
   bottoni.forEach((b) => {
-    b.addEventListener("click", () => metti(b.dataset.vista, true));
+    b.addEventListener("click", () => {
+      if (b.dataset.vista === "solo" && !teatro.classList.contains("solo")) {
+        try {
+          localStorage.setItem(CHIAVE + ".prima",
+            teatro.classList.contains("normale") ? "normale" : "cinema");
+        } catch (e) {}
+      }
+      metti(b.dataset.vista, true);
+    });
   });
 
   document.addEventListener("keydown", (e) => {
@@ -52,7 +68,11 @@
 
     switch (e.key.toLowerCase()) {
       case "t":
+        if (teatro.classList.contains("solo")) break;   // li' non vuol dire niente
         metti(teatro.classList.contains("cinema") ? "normale" : "cinema", true);
+        break;
+      case "escape":
+        if (teatro.classList.contains("solo")) metti(precedente(), true);
         break;
       /* Niente scorciatoia per lo schermo intero, ed e' una scelta: il
          lettore del browser ce l'ha gia' il suo bottone, e una `f` che
@@ -124,6 +144,9 @@
     });
   });
 
+  const esci = document.getElementById("esci-solo");
+  if (esci) esci.addEventListener("click", () => metti(precedente(), true));
+
   try { chatDove(localStorage.getItem(CHIAVE_CHAT) || "fianco", false); }
   catch (e) { chatDove("fianco", false); }
 
@@ -132,5 +155,6 @@
      il contrario lo sceglie una volta e se lo ritrova. */
   let scelta = "cinema";
   try { scelta = localStorage.getItem(CHIAVE) || "cinema"; } catch (e) {}
-  metti(scelta === "normale" ? "normale" : "cinema", false);
+  if (!["normale", "cinema", "solo"].includes(scelta)) scelta = "cinema";
+  metti(scelta, false);
 })();
