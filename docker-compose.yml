@@ -1,0 +1,24 @@
+# Sviluppo: le due cose che non ha senso installare a mano.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: cleanvid
+      POSTGRES_PASSWORD: cleanvid
+      POSTGRES_DB: cleanvid
+    ports: ["5432:5432"]
+    volumes: ["dati_db:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cleanvid"]
+      interval: 5s
+
+  redis:
+    image: redis:7-alpine
+    # appendonly: le stanze aperte sopravvivono a un riavvio del contenitore
+    command: redis-server --appendonly yes
+    ports: ["6379:6379"]
+    volumes: ["dati_redis:/data"]
+
+volumes:
+  dati_db:
+  dati_redis:
