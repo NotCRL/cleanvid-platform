@@ -62,11 +62,19 @@ def crea_app() -> FastAPI:
     # lingua inesistente e risponderebbe 404. Le rotte senza lingua vanno
     # registrate prima. E' il tipo di errore che nessuno nota finche' non si
     # guarda perche' il sito non compare su Google.
-    from .api import routes_flusso, routes_seo, routes_watch
+    from .api import (
+        routes_biblioteca,
+        routes_copertina,
+        routes_flusso,
+        routes_seo,
+        routes_watch,
+    )
     app.mount("/static", StaticFiles(directory="src/cleanvid/web/static"),
               name="static")
     app.include_router(routes_flusso.router)
+    app.include_router(routes_copertina.router)
     app.include_router(routes_seo.router)
+    app.include_router(routes_biblioteca.router)
     app.include_router(routes_watch.router)
     # in arrivo: stanze e websocket delle stanze
     return app

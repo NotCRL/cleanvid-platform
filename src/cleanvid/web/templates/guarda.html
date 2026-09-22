@@ -30,6 +30,9 @@
            data-flusso="/flusso/{{ estratto.token }}"
            data-hls="{{ 1 if estratto.hls else 0 }}"
            data-niente-flusso="{{ t('guarda.niente_flusso') }}"
+           data-riprendi="{{ riprendi or 0 }}"
+           data-pagina="{{ url }}"
+           data-posizione="/{{ c.lingua.codice }}/posizione"
            {% if estratto.token_audio %}data-audio="/flusso/{{ estratto.token_audio }}"{% endif %}
            ></video>
     {% if estratto.token_audio %}
@@ -51,6 +54,12 @@
     {% if estratto.diretta %}
       <button id=torna-in-diretta class=secondario>{{ t("guarda.torna_in_diretta") }}</button>
     {% endif %}
+    {% if riprendi %}
+      <span id=ripresa class=ripresa>
+        {{ t("guarda.riprendi", tempo=riprendi | mm_ss) }}
+        <button id=ricomincia class=scritta>{{ t("guarda.ricomincia") }}</button>
+      </span>
+    {% endif %}
     <form method=get action="/{{ c.lingua.codice }}/guarda" class=qualita>
       <input type=hidden name=u value="{{ url }}">
       <select name=q onchange="this.form.submit()" aria-label="{{ t('guarda.qualita') }}">
@@ -71,6 +80,15 @@
   </div>
 {% endif %}
 
+<form method=post action="/{{ c.lingua.codice }}/preferito" class=cuore>
+  <input type=hidden name=url value="{{ url }}">
+  <input type=hidden name=titolo value="{{ titolo }}">
+  <input type=hidden name=piattaforma value="{{ piattaforma }}">
+  <button class=secondario aria-pressed="{{ 'true' if e_preferito else 'false' }}">
+    {{ "★ " ~ t("azione.togli_preferito") if e_preferito else "☆ " ~ t("azione.preferito") }}
+  </button>
+</form>
+
 <section class=sezione>
   <h2>{{ t("guarda.indirizzo") }}</h2>
   <ul class=elenco>
@@ -85,9 +103,9 @@
 {% endblock %}
 
 {% block coda %}
-{% if estratto %}
-  {% if estratto.hls %}<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>{% endif %}
-  <script src="/static/lettore.js"></script>
+{% if estratto or lettore %}
+  {% if estratto and estratto.hls %}<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>{% endif %}
+  {% if estratto %}<script src="/static/lettore.js"></script>{% endif %}
 {% endif %}
 {% endblock %}
 

@@ -23,7 +23,6 @@ import urllib.parse
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import Response
 
@@ -34,12 +33,12 @@ from ..media.embed import lettore_ufficiale, piattaforma_di
 from ..media.estrazione import Estratto, NonEstraibile, risolvi
 from ..media.qualita import QUALITA
 from ..models import Genere, Utente
+from ..web.pagine import modelli
 from . import biblioteca
 from .contesto import COOKIE_LINGUA, DURATA_COOKIE, Contesto, contesto
 from .identita import utente_corrente
 
 router = APIRouter(prefix="/{lingua_url}")
-pagine = Jinja2Templates(directory="src/cleanvid/web/templates")
 
 
 def _normalizza(grezzo: str) -> str:
@@ -53,7 +52,7 @@ def _normalizza(grezzo: str) -> str:
 
 def _pagina(request: Request, modello: str, c: Contesto,
             **extra: object) -> Response:
-    return pagine.TemplateResponse(request, modello, {
+    return modelli.TemplateResponse(request, modello, {
         "c": c, "t": c.t, "utente": c.utente, **extra})
 
 
@@ -64,8 +63,21 @@ async def home(
     db: AsyncSession = Depends(sessione),
 ) -> Response:
     recenti = await biblioteca.elenco(db, c.utente.id, Genere.CRONOLOGIA)
+    riprendi = await biblioteca.da_riprendere(db, c.utente.id)
+    preferiti_voci = await biblioteca.elenco(db, c.utente.id, Genere.PREFERITO)
+    fonti = await biblioteca.elenco(db, c.utente.id, Genere.FONTE, quante=12)
+    gruppi = await biblioteca.elenco(db, c.utente.id, Genere.GRUPPO, quante=12)
+
+    # una query sola per sapere quali stelle sono accese, invece di una per
+    # riga: con cinque scaffali in pagina la differenza si vede
+    preferiti = await biblioteca.quali_preferiti(
+        db, c.utente.id,
+        [v.url for v in (*recenti, *riprendi, *preferiti_voci, *fonti)])
+
     return _pagina(request, "home.html", c,
-                   recenti=recenti,
+                   recenti=recenti, riprendi=riprendi,
+                   preferiti_voci=preferiti_voci, fonti=fonti, gruppi=gruppi,
+                   preferiti=preferiti,
                    dati_strutturati=seo.dati_strutturati_home(
                        c.lingua.codice, c.t))
 
@@ -118,7 +130,7 @@ async def guarda(
 
     # la visita si annota comunque: anche un tentativo andato male e' un
     # tentativo, e ritrovarlo nella cronologia serve a riprovarci
-    await biblioteca.annota_visita(
+    voce = await biblioteca.annota_visita(
         db, c.utente.id, url,
         titolo=estratto.titolo if estratto else "",
         piattaforma=piattaforma)
@@ -127,7 +139,11 @@ async def guarda(
                    url=url, q=q, qualita_possibili=QUALITA,
                    piattaforma=piattaforma,
                    titolo=estratto.titolo if estratto else "",
-                   lettore=lettore, estratto=estratto, perche=perche)
+                   lettore=lettore, estratto=estratto, perche=perche,
+                   riprendi=biblioteca.riprendi_da(
+                       voce, diretta=bool(estratto and estratto.diretta)),
+                   e_preferito=bool(await biblioteca.quali_preferiti(
+                       db, c.utente.id, [url])))
 
 
 @router.get("/impostazioni", response_class=HTMLResponse)

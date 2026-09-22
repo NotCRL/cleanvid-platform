@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_pezzi.html" as pezzi %}
 
 {% block contenuto %}
 <h1>{{ t("home.titolo") }}<br><span class=spento>{{ t("home.titolo.spento") }}</span></h1>
@@ -11,21 +12,17 @@
   <button class=principale>{{ t("home.apri") }}</button>
 </form>
 
-<section class=sezione>
-  <h2>{{ t("home.recenti") }}</h2>
-  {% if recenti %}
-    <ul class=elenco>
-      {% for voce in recenti %}
-        <li>
-          <a href="/{{ c.lingua.codice }}/guarda?u={{ voce.url | urlencode }}">{{ voce.titolo or voce.url }}</a>
-          <span class=nota>{{ voce.piattaforma }}</span>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p class=vuoto>{{ t("home.vuoto") }}</p>
-  {% endif %}
-</section>
+{# Gli scaffali, nell'ordine in cui servono davvero: prima quello che hai
+   lasciato a meta', poi quello che hai scelto di tenere, poi quello che hai
+   soltanto aperto. La cronologia e' l'ultima perche' e' la meno interessante:
+   c'e' dentro tutto, anche quello che non volevi. #}
+{{ pezzi.scaffale(t("home.riprendi"), riprendi, c, t, preferiti) }}
+{{ pezzi.scaffale(t("home.preferiti"), preferiti_voci, c, t, preferiti,
+                  vuoto=t("home.vuoto.preferiti")) }}
+{{ pezzi.scaffale(t("home.fonti"), fonti, c, t, preferiti) }}
+{{ pezzi.scaffale(t("home.gruppi"), gruppi, c, t, none, azioni=false) }}
+{{ pezzi.scaffale(t("home.recenti"), recenti, c, t, preferiti,
+                  vuoto=t("home.vuoto")) }}
 
 {# Le due sezioni qui sotto sono il contenuto vero della pagina: quello che
    un motore di ricerca puo' leggere e capire. Senza, la home sarebbe un

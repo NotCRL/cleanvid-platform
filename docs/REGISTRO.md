@@ -305,3 +305,65 @@ perché.
 visto in nessun altro modo: il sito funzionava, le pagine si aprivano, e
 l'effetto sarebbe comparso mesi dopo nelle statistiche di ricerca. È il motivo
 per cui i test su questa parte sono più pedanti degli altri.
+
+---
+
+## 2026-09-22 — Passo 3: la biblioteca completa, con le copertine
+
+**Cosa cambia.** La home non è più un elenco di link: sono scaffali di
+copertine. *Continua a guardare*, *Preferiti*, *Fonti salvate*, *Gruppi*,
+*Aperti di recente*. Ogni scheda ha la stella e il cestino; sotto quelle
+lasciate a metà c'è la barretta di avanzamento e il tempo. La pagina del video
+riprende da dove si era rimasti, con un «ricomincia» accanto.
+
+**Come è fatto.**
+
+| Dove | Cosa |
+|---|---|
+| `media/copertine.py` | trova e scarica l'immagine, dal modo più economico in giù |
+| `api/routes_copertina.py` | `/copertina?u=…&s=…`, firmata |
+| `api/biblioteca.py` | preferiti, fonti, gruppi, potatura, continua a guardare |
+| `api/routes_biblioteca.py` | i bottoni: stella, cestino, rinomina, posizione |
+| `web/pagine.py` | un solo ambiente Jinja, con i filtri `copertina` e `mm_ss` |
+| `web/templates/_pezzi.html` | la scheda e lo scaffale, scritti una volta sola |
+
+**Le decisioni che contano.**
+
+*Le immagini le scarica il server.* Se in pagina ci fosse l'indirizzo di
+`i.ytimg.com`, ogni copertina sarebbe una richiesta dal browser di chi guarda
+verso YouTube, con il suo IP e i suoi cookie: la home di cleanvid direbbe a
+mezzo mondo cosa guarda. Passando da qui, la piattaforma vede solo noi.
+
+*Si cerca dal modo più economico in giù,* e ci si ferma al primo che risponde:
+un indirizzo che si costruisce da soli (YouTube, Twitch) costa zero, una
+oEmbed una richiesta, l'`og:image` una richiesta più grande, yt-dlp dei
+secondi. Chiamare yt-dlp per ogni copertina di una pagina con venti voci
+vorrebbe dire venti processi per disegnare una griglia.
+
+*I buchi si ricordano.* Una pagina senza copertina si riprova dopo un quarto
+d'ora, non alla richiesta dopo. Senza, ogni apertura della home farebbe
+ripartire la ricerca per tutte le voci che non ne hanno.
+
+*Tutto `POST`, niente `GET` che cancella.* Un `GET` distruttivo viene eseguito
+dal precaricamento del browser, dall'anteprima di una chat e dal crawler di un
+motore: la cronologia sparirebbe da sola e nessuno capirebbe perché.
+
+*Il `Referer` non si crede sulla parola.* Dopo un bottone si torna da dove si
+era, ma solo se l'indirizzo è nostro: un Referer arriva dal browser, e un
+browser può dire qualunque cosa, compreso un sito dove mandare la gente.
+
+*Uno scaffale vuoto e senza niente da dire non si mostra.* Un'intestazione
+sopra il nulla fa sembrare rotto un sito che funziona.
+
+**Cosa è rimasto a metà, e lo dico invece di nasconderlo.** Il genere `FONTE`
+esiste, è testato e non ha ancora niente che lo riempia: nel cleanvid a file
+unico le fonti arrivavano dalla modalità ascolto, che qui non passa. Non ho
+inventato un bottone «salva la fonte» sul flusso estratto perché gli indirizzi
+di googlevideo scadono in poche ore, e una fonte che non si riapre è peggio di
+nessuna fonte: fa credere di averla. Lo scaffale resta nascosto finché non c'è
+qualcosa da metterci.
+
+**Verificato.** 69 test, fra cui il più importante: un estraneo che conosce
+l'id di una voce non riesce a cancellarla, mentre il proprietario sì. Poi a
+mano sul server: due video aperti, una stella accesa, `1:35 / 10:00` sotto
+quello lasciato a metà, e la copertina servita come `image/webp` da 25 KB.

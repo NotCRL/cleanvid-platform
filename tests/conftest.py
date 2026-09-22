@@ -29,9 +29,10 @@ os.environ["CLEANVID_REDIS_URL"] = os.environ.get(
     "CLEANVID_REDIS_URL_TEST", "redis://localhost:6379/15")
 
 from httpx import ASGITransport, AsyncClient  # noqa: E402
+from sqlalchemy.ext.asyncio import AsyncSession  # noqa: E402
 from starlette.requests import Request  # noqa: E402
 
-from cleanvid.db import motore  # noqa: E402
+from cleanvid.db import fabbrica, motore  # noqa: E402
 from cleanvid.main import app  # noqa: E402
 from cleanvid.media import deposito, proxy  # noqa: E402
 from cleanvid.models import Base  # noqa: E402
@@ -128,3 +129,13 @@ async def sito_finto(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[None]:
     async with AsyncClient(transport=ASGITransport(app=finto)) as c:
         monkeypatch.setattr(proxy, "_cliente", c)
         yield
+
+
+@pytest.fixture
+async def db() -> AsyncIterator[AsyncSession]:
+    """Una sessione, per i test che parlano con la biblioteca senza passare
+    da una pagina. Si annulla tutto alla fine: un test non deve lasciare in
+    giro le righe del test prima."""
+    async with fabbrica()() as s:
+        yield s
+        await s.rollback()

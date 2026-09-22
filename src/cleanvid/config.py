@@ -31,6 +31,10 @@ class Impostazioni(BaseSettings):
     estrazioni_insieme: int = 4         # yt-dlp contemporanei: oltre, la CPU muore
     timeout_estrazione_s: int = 45
 
+    # Dove finiscono le copertine scaricate. Su disco e non nel database:
+    # sono file, e un database non e' un filesystem con piu' passaggi.
+    cartella_copertine: str = "var/copertine"
+
     # --- limiti, perche' e' aperto al mondo ---
     aperture_al_minuto: int = 20
     stanze_per_utente: int = 5

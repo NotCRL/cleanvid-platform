@@ -1,0 +1,67 @@
+{# I pezzi che si ripetono. Stanno qui e non copiati in tre pagine perche' la
+   copia numero tre e' quella che nessuno si ricorda di aggiornare. #}
+
+{% macro scaffale(titolo, voci, c, t, preferiti=None, vuoto="", azioni=True) %}
+{# Uno scaffale vuoto e senza niente da dire non si mostra: un'intestazione
+   sopra il nulla fa sembrare rotto un sito che funziona. Quelli che hanno un
+   messaggio (i preferiti, la cronologia) si mostrano lo stesso, perche' li'
+   il vuoto va spiegato. #}
+{% if voci or vuoto %}
+<section class=sezione>
+  <h2>{{ titolo }}</h2>
+  {% if voci %}
+    <ul class=copertine>
+      {% for voce in voci %}
+        {{ scheda(voce, c, t, preferiti, azioni) }}
+      {% endfor %}
+    </ul>
+  {% elif vuoto %}
+    <p class=vuoto>{{ vuoto }}</p>
+  {% endif %}
+</section>
+{% endif %}
+{% endmacro %}
+
+
+{% macro scheda(voce, c, t, preferiti=None, azioni=True) %}
+{% set nome = voce.titolo or voce.url %}
+{% set e_preferito = preferiti is not none and voce.url in preferiti %}
+<li class=copertina>
+  <a class=apri href="/{{ c.lingua.codice }}/guarda?u={{ voce.url | urlencode }}"
+     title="{{ nome }}">
+    {# `loading=lazy`: con trenta copertine in pagina, caricarle tutte subito
+       significa trenta richieste prima che si veda qualcosa. E `onerror` che
+       toglie l'immagine, perche' l'icona di immagine rotta e' peggio di un
+       riquadro vuoto disegnato apposta. #}
+    <img src="{{ voce.url | copertina }}" alt="" loading=lazy decoding=async
+         onerror="this.remove()">
+    <span class=nome>{{ nome }}</span>
+    <span class=sotto>
+      {{ voce.piattaforma }}
+      {% if voce.posizione and voce.durata %}
+        · {{ voce.posizione | mm_ss }} / {{ voce.durata | mm_ss }}
+      {% endif %}
+    </span>
+    {% if voce.posizione and voce.durata %}
+      <span class=avanzamento><i style="width:{{ (voce.posizione / voce.durata * 100) | round | int }}%"></i></span>
+    {% endif %}
+  </a>
+
+  {% if azioni %}
+    <div class=azioni>
+      <form method=post action="/{{ c.lingua.codice }}/preferito">
+        <input type=hidden name=url value="{{ voce.url }}">
+        <input type=hidden name=titolo value="{{ voce.titolo }}">
+        <input type=hidden name=piattaforma value="{{ voce.piattaforma }}">
+        <button title="{{ t('azione.togli_preferito') if e_preferito else t('azione.preferito') }}"
+                aria-pressed="{{ 'true' if e_preferito else 'false' }}"
+                >{{ "★" if e_preferito else "☆" }}</button>
+      </form>
+      <form method=post action="/{{ c.lingua.codice }}/voce/{{ voce.id }}/elimina"
+            onsubmit="return confirm('{{ t('azione.conferma') }}')">
+        <button title="{{ t('azione.elimina') }}">×</button>
+      </form>
+    </div>
+  {% endif %}
+</li>
+{% endmacro %}

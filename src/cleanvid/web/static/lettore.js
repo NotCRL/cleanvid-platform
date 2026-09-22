@@ -114,3 +114,72 @@
     }
   });
 })();
+
+/* Riprendere da dove si era rimasti, e ricordarsi dove si e' arrivati.
+ *
+ * La posizione va sul server e non nel browser di chi guarda: il punto deve
+ * valere su tutti gli schermi. Si lascia a meta' sul computer e si riprende
+ * dal tablet, che di cleanvid e' il telecomando.
+ */
+(function () {
+  "use strict";
+
+  const OGNI = 15000;   // secondi fra un salvataggio e l'altro
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const video = document.getElementById("video");
+    if (!video || !video.dataset.posizione) return;
+    const dati = video.dataset;
+
+    const da = parseFloat(dati.riprendi || "0");
+    if (da > 0) {
+      // si aspetta che il video sappia quanto e' lungo: prima di allora
+      // impostare currentTime non fa niente, in silenzio
+      const vai = () => {
+        video.currentTime = da;
+        video.removeEventListener("loadedmetadata", vai);
+      };
+      if (video.readyState >= 1) vai();
+      else video.addEventListener("loadedmetadata", vai);
+
+      const ricomincia = document.getElementById("ricomincia");
+      if (ricomincia) {
+        ricomincia.addEventListener("click", () => {
+          video.currentTime = 0;
+          video.play().catch(() => {});
+          const riga = document.getElementById("ripresa");
+          if (riga) riga.remove();
+        });
+      }
+    }
+
+    let ultimo = 0;
+    const salva = (chiudendo) => {
+      if (!video.duration || !isFinite(video.duration)) return;  // diretta
+      const corpo = new FormData();
+      corpo.append("url", dati.pagina);
+      corpo.append("secondi", video.currentTime.toFixed(1));
+      corpo.append("durata", video.duration.toFixed(1));
+      // sendBeacon e non fetch: parte anche mentre la pagina si chiude, che
+      // e' esattamente il momento in cui serve di piu'. Con fetch il browser
+      // annulla la richiesta a meta' e l'ultimo minuto guardato si perde.
+      if (chiudendo && navigator.sendBeacon) {
+        navigator.sendBeacon(dati.posizione, corpo);
+      } else {
+        fetch(dati.posizione, { method: "POST", body: corpo, keepalive: true })
+          .catch(() => {});
+      }
+    };
+
+    video.addEventListener("timeupdate", () => {
+      const adesso = Date.now();
+      if (adesso - ultimo < OGNI) return;
+      ultimo = adesso;
+      salva(false);
+    });
+    video.addEventListener("pause", () => salva(false));
+    // `pagehide` e non `unload`: su iOS `unload` non scatta quasi mai, e su
+    // tutti gli altri e' quello che il browser promette di far partire
+    window.addEventListener("pagehide", () => salva(true));
+  });
+})();
