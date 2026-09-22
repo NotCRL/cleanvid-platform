@@ -5,14 +5,14 @@ riconosce da quale sito viene un link e, se quella piattaforma offre un
 lettore incorporabile, costruisce l'indirizzo giusto. Nessuna rete, nessun
 processo esterno: solo espressioni regolari.
 
-Cosa NON c'e' ancora, e arrivera' col trasloco vero (passo 2): estrazione con
-yt-dlp, manifest HLS, proxy dei byte, diagnosi degli errori. Qui serve
-soltanto a dimostrare che il giro completo - link, utente, biblioteca, pagina
-- sta in piedi.
+E' la prima cosa che si prova, prima dell'estrazione: costa zero, non scade,
+e regge qualunque cosa la piattaforma cambi domani. L'estrazione costa CPU e
+produce indirizzi che scadono, quindi si paga quel prezzo solo quando qui non
+si trova niente.
 
-Il lettore ufficiale ha un pregio e un difetto, e vanno detti: il link resta
-valido nel tempo e si puo' condividere, ma la pubblicita' della piattaforma
-rimane.
+Il difetto va detto: dentro il lettore ufficiale la pubblicita' della
+piattaforma resta. E' il compromesso di questa strada, ed e' il motivo per
+cui `estrazione.py` esiste comunque.
 """
 
 from __future__ import annotations

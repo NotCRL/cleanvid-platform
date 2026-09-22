@@ -58,6 +58,15 @@ button.principale:hover{background:#243256;color:#fff}
 .avviso{background:#241416;border:1px solid #4d2329;border-radius:var(--raggio);
   padding:16px 18px;color:#ffc2c2;font-size:14px;line-height:1.55}
 .avviso b{display:block;margin-bottom:6px;color:#ffd9d9}
+.palco{position:relative}
+.palco video{width:100%;height:100%;display:block;background:#000}
+.barra{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:-4px 0 18px}
+.etichetta{color:var(--spento);font-size:12.5px}
+.etichetta .diretta{color:#ff6b6b;font-weight:600}
+button.secondario,select{padding:7px 12px;border-radius:9px;border:1px solid #2e2e38;
+  background:#17171d;color:#d6d6dc;font:inherit;font-size:13px;cursor:pointer}
+button.secondario:hover,select:hover{background:#1f1f27;color:#fff}
+.qualita{margin-left:auto}
 .piede{margin-top:44px;padding-top:18px;border-top:1px solid var(--linea);
   color:var(--tenue);font-size:12px}
 @media (max-width:640px){ .pagina{padding:0 16px 40px} }
@@ -71,3 +80,4 @@ button.principale:hover{background:#243256;color:#fff}
   {% block contenuto %}{% endblock %}
   <footer class=piede>{% block piede %}{% endblock %}</footer>
 </div>
+{% block coda %}{% endblock %}

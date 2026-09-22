@@ -97,7 +97,10 @@ aperture mette in ginocchio la macchina.
    la biblioteca per-utente regge. **Fatto il 22/09/2026**; com'è andata, e i
    due bug che ci sono voluti, in [`REGISTRO.md`](REGISTRO.md).
 2. **Trasloco di `media/`** — la logica video si sposta dal file unico. Qui
-   servono i test: è il pezzo che non deve peggiorare.
+   servono i test: è il pezzo che non deve peggiorare. **Fatto il
+   22/09/2026**: estrazione, manifest HLS, proxy dei byte, rimozione della
+   pubblicità cucita nel flusso. Il muxing in diretta non è passato, e il
+   perché sta in [`REGISTRO.md`](REGISTRO.md).
 3. **Biblioteca** — cronologia, preferiti, fonti, gruppi, continua a guardare,
    per persona. A questo punto il servizio è pubblicabile.
 4. **Registrazione** — email e password attaccate alla riga che c'è già.

@@ -1,0 +1,151 @@
+"""Il pezzo con piu' casi strani del progetto, provato senza toccare la rete.
+
+`riscrivi_playlist` decide, riga per riga, cosa arriva al player. Se sbaglia
+si vede subito ma non si capisce perche': il video va a scatti, salta un pezzo
+o si ferma su uno spot. Entra testo, esce testo, quindi si puo' provare tutto.
+
+Le playlist qui sotto sono ridotte all'osso ma hanno la forma di quelle vere,
+comprese le parti che ci sono costate tempo: la SSAI di Twitch, il preroll, e
+i marker senza durata dichiarata.
+"""
+
+from __future__ import annotations
+
+from cleanvid.media.manifesto import (
+    Master,
+    corpo_master,
+    durata_interruzione,
+    riscrivi_playlist,
+)
+
+SEMPLICE = """#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-TARGETDURATION:4
+#EXTINF:4.000,
+segmento0.ts
+#EXTINF:4.000,
+sotto/segmento1.ts
+"""
+
+
+def test_i_segmenti_passano_dal_nostro_proxy() -> None:
+    esito = riscrivi_playlist("tok", "https://cdn.tale/live/index.m3u8", SEMPLICE)
+    righe = esito.testo.splitlines()
+    assert all(not r.startswith("segmento") for r in righe)
+    assert sum(r.startswith("/segmento?") for r in righe) == 2
+    assert esito.tolti == 0
+
+
+def test_gli_indirizzi_relativi_diventano_interi() -> None:
+    """Un `sotto/segmento1.ts` senza base e' un indirizzo che non esiste."""
+    esito = riscrivi_playlist("tok", "https://cdn.tale/live/index.m3u8", SEMPLICE)
+    assert "cdn.tale%2Flive%2Fsotto%2Fsegmento1.ts" in esito.testo
+
+
+def test_la_firma_c_e_su_ogni_segmento() -> None:
+    esito = riscrivi_playlist("tok", "https://cdn.tale/x.m3u8", SEMPLICE)
+    for riga in esito.testo.splitlines():
+        if riga.startswith("/segmento?"):
+            assert "&s=" in riga
+
+
+CON_SPOT = """#EXTM3U
+#EXT-X-TARGETDURATION:4
+#EXTINF:4.000,
+vero0.ts
+#EXT-X-CUE-OUT:8.000
+#EXTINF:4.000,
+spot0.ts
+#EXTINF:4.000,
+spot1.ts
+#EXT-X-CUE-IN
+#EXTINF:4.000,
+vero1.ts
+"""
+
+
+def test_gli_spot_spariscono_e_il_resto_no() -> None:
+    esito = riscrivi_playlist("tok", "https://cdn.tale/x.m3u8", CON_SPOT)
+    assert esito.tolti == 2
+    assert "spot0.ts" not in esito.testo and "spot1.ts" not in esito.testo
+    assert esito.testo.count("/segmento?") == 2      # vero0 e vero1
+    assert not esito.solo_annunci
+
+
+def test_l_extinf_di_uno_spot_se_ne_va_col_suo_segmento() -> None:
+    """Se resta orfano, il player conta male la durata e il video singhiozza.
+
+    E' il motivo per cui questa funzione lavora a stati invece che con una
+    espressione regolare sull'intero testo.
+    """
+    esito = riscrivi_playlist("tok", "https://cdn.tale/x.m3u8", CON_SPOT)
+    assert esito.testo.count("#EXTINF") == esito.testo.count("/segmento?")
+
+
+def test_dopo_uno_spot_si_dichiara_la_discontinuita() -> None:
+    """Senza, il decoder inciampa sul salto e mostra un fotogramma rotto."""
+    esito = riscrivi_playlist("tok", "https://cdn.tale/x.m3u8", CON_SPOT)
+    assert "#EXT-X-DISCONTINUITY" in esito.testo
+
+
+TWITCH = """#EXTM3U
+#EXT-X-DATERANGE:ID="stitched-ad-1",CLASS="twitch-stitched-ad",DURATION=30.0
+#EXTINF:2.000,
+ad0.ts
+#EXTINF:2.000,
+ad1.ts
+"""
+
+
+def test_la_pubblicita_cucita_di_twitch() -> None:
+    """Quella che nessun blocco lato browser puo' vedere: sono gli stessi byte."""
+    esito = riscrivi_playlist("tok", "https://usher.tale/x.m3u8", TWITCH)
+    assert esito.tolti == 2
+    assert "/segmento?" not in esito.testo
+
+
+def test_il_preroll_si_riconosce() -> None:
+    """Tolti gli spot non resta niente: chi guarda deve vedere "aspetta".
+
+    Se questo non si distinguesse da un errore, il preroll di ogni diretta di
+    Twitch sembrerebbe un guasto nostro.
+    """
+    esito = riscrivi_playlist("tok", "https://usher.tale/x.m3u8", TWITCH)
+    assert esito.solo_annunci
+
+
+def test_un_marker_senza_durata_non_mangia_il_flusso() -> None:
+    """Senza CUE-IN e senza durata si taglia per un tetto, non per sempre."""
+    assert durata_interruzione("#EXT-X-CUE-OUT") == 0.0
+    assert durata_interruzione("#EXT-X-CUE-OUT:15.5") == 15.5
+    assert durata_interruzione('#EXT-X-DATERANGE:ID="x",SCTE35-OUT=0xFC') == 0.0
+    assert durata_interruzione("#EXTINF:4.0,") is None
+    assert durata_interruzione("#EXT-X-VERSION:3") is None
+
+
+def test_le_righe_uri_vengono_riscritte() -> None:
+    """Le chiavi di cifratura e le mappe di inizializzazione stanno li'."""
+    testo = '#EXTM3U\n#EXT-X-KEY:METHOD=AES-128,URI="chiave.bin"\n'
+    esito = riscrivi_playlist("tok", "https://cdn.tale/live/x.m3u8", testo)
+    assert 'URI="/segmento?' in esito.testo
+    assert "chiave.bin" not in esito.testo.replace("%2Fchiave.bin", "")
+
+
+def test_il_master_costruito_ha_audio_e_tutte_le_qualita() -> None:
+    master = Master(
+        video=[
+            {"url": "https://t/480.m3u8", "vcodec": "avc1.4d401f", "tbr": 800,
+             "width": 854, "height": 480},
+            {"url": "https://t/1080.m3u8", "vcodec": "avc1.640028", "tbr": 4500,
+             "width": 1920, "height": 1080},
+        ],
+        audio={"url": "https://t/audio.m3u8", "acodec": "none", "abr": 128},
+    )
+    corpo = corpo_master("tok", master)
+    assert corpo.startswith("#EXTM3U")
+    assert corpo.count("#EXT-X-STREAM-INF") == 2
+    assert "RESOLUTION=1920x1080" in corpo
+    # YouTube non dichiara l'acodec sui suoi HLS audio-only: si mette AAC-LC,
+    # perche' un CODECS senza audio fa rifiutare il master a Safari
+    assert "mp4a.40.2" in corpo
+    assert 'GROUP-ID="aud"' in corpo

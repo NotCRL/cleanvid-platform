@@ -12,10 +12,13 @@ utente nuovo. Nessun test lo avrebbe fermato, perche' non c'era.
 
 from __future__ import annotations
 
+import pytest
 from httpx import ASGITransport, AsyncClient
 
+from cleanvid.api import routes_watch
 from cleanvid.api.identita import COOKIE
 from cleanvid.main import app
+from cleanvid.media.estrazione import Estratto, NonEstraibile
 
 
 async def test_chi_arriva_e_subito_un_utente(visitatore: AsyncClient) -> None:
@@ -71,11 +74,39 @@ async def test_il_lettore_ufficiale_viene_montato(visitatore: AsyncClient) -> No
     assert "youtube.com/embed/kJQP7kiw5Fk" in pagina
 
 
-async def test_un_sito_sconosciuto_lo_dice(visitatore: AsyncClient) -> None:
-    """Niente pagina bianca: si spiega cosa manca e perche'."""
+async def test_un_sito_da_cui_non_esce_niente_lo_dice(
+        visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Niente pagina bianca: si riporta il motivo, quello vero.
+
+    L'estrazione si finge invece di farla davvero: chiamare yt-dlp qui
+    vorrebbe dire test che dipendono dalla rete, dalla versione di yt-dlp e
+    dall'umore del sito. Quello che si vuole provare e' che il motivo arriva
+    fino alla pagina, e per quello basta un errore finto.
+    """
+    async def non_va(url: str, qualita: str = "") -> object:
+        raise NonEstraibile("video privato")
+
+    monkeypatch.setattr(routes_watch, "risolvi", non_va)
     pagina = (await visitatore.get(
         "/guarda", params={"u": "https://esempio.invalido/video/1"})).text
-    assert "non ha un lettore incorporabile" in pagina
+    assert "non è uscito un video" in pagina
+    assert "video privato" in pagina
+
+
+async def test_il_lettore_si_monta_su_quello_che_esce_dall_estrazione(
+        visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Le due tracce separate devono arrivare al browser come due elementi."""
+    async def finge(url: str, qualita: str = "") -> Estratto:
+        return Estratto(token="tv", token_audio="ta", titolo="Prova",
+                        altezza=720)
+
+    monkeypatch.setattr(routes_watch, "risolvi", finge)
+    pagina = (await visitatore.get(
+        "/guarda", params={"u": "https://esempio.invalido/video/1"})).text
+    assert 'data-flusso="/flusso/tv"' in pagina
+    assert 'data-audio="/flusso/ta"' in pagina
+    assert "<audio" in pagina
+    assert "due tracce" in pagina
 
 
 async def test_indirizzo_senza_protocollo(visitatore: AsyncClient) -> None:

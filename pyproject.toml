@@ -39,8 +39,10 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-# Gli assert sono il linguaggio dei test: S101 qui vorrebbe dire non scriverli.
-"tests/*" = ["S101"]
+# S101: gli assert sono il linguaggio dei test.
+# S105/S106: i token finti dei flussi non sono password; ruff vede la parola
+# "token" e si insospettisce, ma qui e' un identificativo usa e getta.
+"tests/*" = ["S101", "S105", "S106"]
 
 [tool.mypy]
 strict = true

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block titolo %}{{ piattaforma or "video" }} · cleanvid{% endblock %}
+{% block titolo %}{{ titolo or piattaforma or "video" }} · cleanvid{% endblock %}
 
 {% block contenuto %}
 {% if lettore %}
@@ -12,12 +12,50 @@
     Lettore di {{ lettore.piattaforma }}{% if lettore.diretta_probabile %}, in diretta{% endif %}.
     Questo indirizzo si può salvare e mandare a qualcuno.
   </p>
+
+{% elif estratto %}
+  <div class=palco>
+    <video id=video controls playsinline
+           {% if estratto.diretta %}autoplay{% endif %}
+           data-flusso="/flusso/{{ estratto.token }}"
+           data-hls="{{ 1 if estratto.hls else 0 }}"
+           {% if estratto.token_audio %}data-audio="/flusso/{{ estratto.token_audio }}"{% endif %}
+           ></video>
+    {% if estratto.token_audio %}
+      {# la traccia audio sta in un elemento suo: non si vede, e il javascript
+         la tiene incollata al video. Serve nel DOM, non nascosta con display
+         none, perche' un elemento non renderizzato certi browser non lo
+         suonano. #}
+      <audio id=audio preload=auto style="position:absolute;width:0;height:0"></audio>
+    {% endif %}
+  </div>
+
+  <div class=barra>
+    <span class=etichetta>
+      {% if estratto.diretta %}<b class=diretta>● in diretta</b>{% else %}registrazione{% endif %}
+      {% if estratto.token_audio %} · due tracce{% elif estratto.hls %} · HLS{% endif %}
+      {% if estratto.altezza %} · {{ estratto.altezza }}p{% endif %}
+    </span>
+    {% if estratto.diretta %}
+      <button id=torna-in-diretta class=secondario>Torna in diretta</button>
+    {% endif %}
+    <form method=get action="/guarda" class=qualita>
+      <input type=hidden name=u value="{{ url }}">
+      <select name=q onchange="this.form.submit()" aria-label="qualità">
+        <option value="" {% if not q %}selected{% endif %}>come viene</option>
+        {% for altezza in qualita_possibili %}
+          <option value="{{ altezza }}" {% if q == altezza %}selected{% endif %}>{{ altezza }}p</option>
+        {% endfor %}
+      </select>
+      <noscript><button class=secondario>applica</button></noscript>
+    </form>
+  </div>
+  <p class=guida>{{ estratto.titolo }}</p>
+
 {% else %}
   <div class=avviso>
-    <b>Questo sito non ha un lettore incorporabile</b>
-    Al passo 1 si apre solo quello che le piattaforme offrono da sé. Per tutto
-    il resto serve l'estrazione del flusso, che arriva con il trasloco della
-    logica video — il passo successivo.
+    <b>Da questo link non è uscito un video</b>
+    {{ perche or "Il sito non offre un lettore incorporabile e l’estrazione non ha trovato nulla di riproducibile." }}
   </div>
 {% endif %}
 
@@ -32,6 +70,13 @@
 </section>
 
 <p style="margin-top:22px"><a href="/">← torna alla home</a></p>
+{% endblock %}
+
+{% block coda %}
+{% if estratto %}
+  {% if estratto.hls %}<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>{% endif %}
+  <script src="/static/lettore.js"></script>
+{% endif %}
 {% endblock %}
 
 {% block piede %}

@@ -1,9 +1,15 @@
 """Le due pagine del passo 1: la home e quella che apre un video.
 
-Non c'e' ancora l'estrazione (passo 2): qui si apre con il lettore ufficiale
-della piattaforma, che non richiede ne' yt-dlp ne' processi esterni. Basta a
-dimostrare la cosa che va dimostrata adesso: che il giro completo - chi sei,
-cosa hai aperto, cosa ritrovi - regge una persona alla volta.
+Si prova prima il lettore ufficiale della piattaforma, e solo se non c'e' si
+passa all'estrazione. L'ordine non e' casuale: il lettore ufficiale costa
+zero, non scade e regge qualunque cosa la piattaforma cambi domani;
+l'estrazione costa qualche secondo di CPU, produce indirizzi che scadono, e
+va rifatta ogni volta che il sito cambia idea. Si paga quel prezzo solo
+quando non c'e' alternativa.
+
+Il rovescio, ed e' bene dirlo: dentro il lettore ufficiale la pubblicita'
+della piattaforma resta. Toglierla e' esattamente cio' che l'estrazione sa
+fare, e infatti per i siti senza lettore il video esce pulito.
 """
 
 from __future__ import annotations
@@ -18,6 +24,8 @@ from starlette.responses import Response
 
 from ..db import sessione
 from ..media.embed import lettore_ufficiale, piattaforma_di
+from ..media.estrazione import Estratto, NonEstraibile, risolvi
+from ..media.qualita import QUALITA
 from ..models import Genere, Utente
 from . import biblioteca
 from .identita import utente_corrente
@@ -69,6 +77,7 @@ async def apri(
 async def guarda(
     request: Request,
     u: str = "",
+    q: str = "",
     utente: Utente = Depends(utente_corrente),
     db: AsyncSession = Depends(sessione),
 ) -> Response:
@@ -79,16 +88,34 @@ async def guarda(
     piattaforma = piattaforma_di(url)
     lettore = lettore_ufficiale(url, host_pagina=request.url.hostname or "localhost")
 
+    estratto: Estratto | None = None
+    perche = ""
+    if lettore is None:
+        try:
+            estratto = await risolvi(url, q)
+        except NonEstraibile as e:
+            # il messaggio di yt-dlp si mostra cosi' com'e': dice quasi sempre
+            # la verita' ("video privato", "serve un account"), e riscriverlo
+            # in gentile vorrebbe dire nascondere l'unica cosa utile
+            perche = str(e)
+
     # la visita si annota comunque: anche un tentativo andato male e' un
     # tentativo, e ritrovarlo nella cronologia serve a riprovarci
-    await biblioteca.annota_visita(db, utente.id, url,
-                                   titolo="", piattaforma=piattaforma)
+    await biblioteca.annota_visita(
+        db, utente.id, url,
+        titolo=estratto.titolo if estratto else "",
+        piattaforma=piattaforma)
 
     return pagine.TemplateResponse(request, "guarda.html", {
         "utente": utente,
         "url": url,
+        "q": q,
+        "qualita_possibili": QUALITA,
         "piattaforma": piattaforma,
+        "titolo": estratto.titolo if estratto else "",
         "lettore": lettore,
+        "estratto": estratto,
+        "perche": perche,
     })
 
 

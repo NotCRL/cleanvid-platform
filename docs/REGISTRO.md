@@ -152,3 +152,96 @@ scriverne il motivo torna utile a nessuno.
 
 **Verificato.** `ruff check src tests` → all checks passed; `mypy src` → no
 issues in 17 files; `make prova` → 7 passed.
+
+
+---
+
+## 2026-09-22 — Passo 2: il trasloco di `media/`
+
+**Cosa cambia.** Un link senza lettore ufficiale ora dà comunque un video. Si
+estrae il flusso con yt-dlp, si serve dal nostro proxy con le intestazioni
+giuste, e la pubblicità cucita dentro il flusso sparisce per strada.
+
+**Come è fatto.** Sei moduli, ognuno con un mestiere solo:
+
+| Modulo | Cosa fa |
+|---|---|
+| `qualita.py` | da «720» al selettore di yt-dlp. Nessuna rete: si prova tutto |
+| `estrazione.py` | lancia yt-dlp, decide fra file unico, due tracce e master HLS |
+| `manifesto.py` | costruisce i master, riscrive le playlist, toglie gli spot |
+| `firme.py` | l'HMAC che ci impedisce di essere un proxy aperto |
+| `proxy.py` | i byte, con Range e connessioni riusate |
+| `deposito.py` | dove vivono i flussi e la cache, cioè Redis |
+
+**Le quattro decisioni che contano.**
+
+*Il dizionario globale non poteva passare.* Nel file unico i flussi stavano in
+`STREAMS[token]`: un processo solo, un utente solo. Con più worker il token
+registrato dal worker A arriva al worker B che non sa cosa sia — il video
+parte una volta su quattro e nessuno capisce perché. E niente scadeva mai.
+Ora è Redis, con una scadenza su ogni chiave.
+
+*La cache ha per chiave `(url, qualità)` e non l'utente.* yt-dlp costa cinque
+secondi di CPU misurati; dieci persone nella stessa stanza devono costarne
+uno. Un'estrazione non ha niente di personale — è una proprietà del link, non
+di chi lo apre — quindi condividerla non mescola le cose di nessuno. Il
+controllo si rifà **dentro** il semaforo: senza, dieci aperture simultanee
+farebbero dieci estrazioni, cioè esattamente ciò che la cache doveva evitare.
+
+*Asincrono, non `subprocess.run`.* Nel file unico ogni richiesta aveva il suo
+thread. Qui c'è un ciclo di eventi solo: cinque secondi bloccanti sono cinque
+secondi in cui non si muove nient'altro — non le altre pagine, non le chat
+delle stanze, non i byte dei video già in corso.
+
+*Il muxing in diretta non è passato.* yt-dlp e ffmpeg che cuciono video e
+audio mentre si guarda costano un processo per spettatore, non permettono di
+saltare avanti e producono un formato che metà browser non suona. In locale
+era un ripiego accettabile; su un servizio aperto è il modo di far cadere la
+macchina con dieci persone. Al suo posto: due tracce separate che il browser
+tiene allineate da solo, e il master HLS per le dirette. Costo sul server:
+zero, a parte i byte.
+
+**Verificato, su flussi veri e non finti.**
+
+```
+video 480p, due tracce: True, "Luis Fonsi - Despacito ft. Daddy Yankee"
+  video: 206 video/mp4 -> 2000000 byte
+  audio: 206 audio/mp4 -> 2000000 byte
+prima estrazione 5.01s | dalla cache 0.00s, stesso token
+diretta (Sky News): hls=True, master con 4 qualità
+  variante: 200, 445 segmenti riscritti sul nostro proxy
+```
+
+Più 34 test automatici, di cui 12 sul solo `manifesto.py`: è il pezzo con più
+casi strani del progetto, ed è tutto testo che entra e testo che esce, quindi
+si può provare davvero.
+
+---
+
+## 2026-09-22 — Bug: il video si apriva e non arrivava un byte
+
+**Cosa succedeva.** Il proxy rispondeva 206, con il `Content-Range` giusto, e
+poi il corpo era vuoto. Nessun errore nei log.
+
+**La causa.** Per capire se quello che arriva è una playlist o un pezzo di
+video bisogna guardare i primi sette byte — i server di Google etichettano
+`mpegurl` anche i segmenti, quindi il `Content-Type` non si può credere.
+Leggevo quei sette byte con `aiter_bytes(7)`, e poi riaprivo l'iterazione per
+servire il resto. Ma **lo stream di httpx si legge una volta sola**: la
+seconda `aiter_bytes` solleva `StreamConsumed`, anche se la prima si era
+fermata dopo sette byte.
+
+**Il rimedio.** Una dataclass `Sorgente` che tiene insieme la risposta,
+l'iteratore aperto **una volta sola**, e il primo boccone già letto. I byte
+già letti viaggiano con lei, perché rimetterli dentro non si può.
+
+**Perché non bufferizzare tutto e poi decidere.** Un segmento sono megabyte, e
+un film sono gigabyte: tenerli in memoria per guardarne l'inizio vorrebbe dire
+un server che muore al terzo spettatore.
+
+**Verificato.** Cinque test contro un sito finto servito su **HTTP vero** — una
+applicazione ASGI con cui httpx parla come parlerebbe con la rete, stesso
+streaming, stesso Range, stesse intestazioni. Una finzione messa più in su del
+proxy non avrebbe visto niente, perché il bug stava proprio nel modo in cui
+httpx consegna i byte. Poi di nuovo a mano contro googlevideo: 2 MB richiesti,
+2 MB arrivati, su entrambe le tracce.

@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from .api.identita import DA_MARCARE, scrivi_cookie
 from .config import impostazioni
 from .db import chiudi
+from .media import deposito, proxy
 
 
 @asynccontextmanager
@@ -22,6 +23,10 @@ async def ciclo_vita(app: FastAPI) -> AsyncIterator[None]:
     # deve avere tutto acceso per vedere una pagina statica.
     yield
     await chiudi()
+    # le connessioni tenute aperte apposta vanno restituite a mano: senza,
+    # uvicorn aspetta il timeout prima di morire a ogni ricarica
+    await proxy.chiudi()
+    await deposito.chiudi()
     # quando ci saranno le stanze, qui vanno avvisate prima di sparire:
     # await app.state.hub.chiudi_tutto()
 
@@ -52,8 +57,9 @@ def crea_app() -> FastAPI:
             scrivi_cookie(risposta, nuovo)
         return risposta
 
-    from .api import routes_watch
+    from .api import routes_flusso, routes_watch
     app.include_router(routes_watch.router)
+    app.include_router(routes_flusso.router)
     # in arrivo: biblioteca, stanze, websocket delle stanze
 
     app.mount("/static", StaticFiles(directory="src/cleanvid/web/static"),
