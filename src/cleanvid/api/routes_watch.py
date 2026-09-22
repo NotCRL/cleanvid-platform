@@ -29,6 +29,7 @@ from starlette.responses import Response
 from .. import seo
 from ..db import sessione
 from ..lingue import esiste
+from ..media.annunci import segmenti
 from ..media.embed import lettore_ufficiale, piattaforma_di
 from ..media.estrazione import Estratto, NonEstraibile, risolvi
 from ..media.qualita import QUALITA
@@ -107,6 +108,7 @@ async def guarda(
     request: Request,
     u: str = "",
     q: str = "",
+    m: str = "",
     c: Contesto = Depends(contesto),
     db: AsyncSession = Depends(sessione),
 ) -> Response:
@@ -116,6 +118,21 @@ async def guarda(
 
     piattaforma = piattaforma_di(url)
     lettore = lettore_ufficiale(url, host_pagina=request.url.hostname or "localhost")
+
+    # `m=diretto`: si estrae anche quando la piattaforma un lettore ce l'ha.
+    # E' la scelta fra due cose diverse, e vale la pena dirla:
+    #
+    #   il lettore loro  - parte subito, non scade, regge qualunque cosa
+    #                      cambino domani, ma la loro pubblicita' resta e i
+    #                      comandi sono i loro;
+    #   il lettore nostro - costa qualche secondo, l'indirizzo scade, ma il
+    #                      video esce pulito, si salta lo sponsor letto a
+    #                      voce, e funzionano il piccolo schermo e la ripresa.
+    #
+    # Il predefinito resta il loro, perche' e' quello che non delude mai.
+    nostro = m == "diretto"
+    if nostro:
+        lettore = None
 
     estratto: Estratto | None = None
     perche = ""
@@ -135,7 +152,17 @@ async def guarda(
         titolo=estratto.titolo if estratto else "",
         piattaforma=piattaforma)
 
+    # I segmenti da saltare si chiedono solo se c'e' un video da guardare, e
+    # solo per YouTube: per tutto il resto e' una richiesta buttata.
+    # Solo sul lettore nostro: dentro l'iframe della piattaforma non possiamo
+    # spostare il tempo del video, quindi chiederli sarebbe inutile.
+    da_saltare = await segmenti(url) if estratto else []
+
     return _pagina(request, "guarda.html", c,
+                   salti=da_saltare, nostro=nostro,
+                   ha_lettore_loro=lettore_ufficiale(
+                       url, host_pagina=request.url.hostname or "localhost")
+                   is not None,
                    url=url, q=q, qualita_possibili=QUALITA,
                    piattaforma=piattaforma,
                    titolo=estratto.titolo if estratto else "",

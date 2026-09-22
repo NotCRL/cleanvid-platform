@@ -47,15 +47,32 @@
       return this._aYouTube("mute");
     },
     _aYouTube(comando) {
-      // lettore incorporato: l'unico comando che passa e' quello a messaggi
+      /* Lettore incorporato: l'unico comando che passa e' quello a messaggi,
+       * e passa solo se l'indirizzo ha `enablejsapi=1` - altrimenti YouTube
+       * lo ignora senza dire niente. Quel parametro lo mette `media/embed.py`.
+       *
+       * Si riprova qualche volta perche' il lettore non ascolta finche' non
+       * e' pronto, e «pronto» arriva quando arriva: un comando mandato un
+       * decimo di secondo troppo presto si perde, e l'audio resta spento
+       * senza che nessuno capisca perche'.
+       */
       const f = telaio();
       if (!f || !/youtube/.test(f.src)) return false;
-      try {
-        f.contentWindow.postMessage(JSON.stringify(
-          { event: "command", func: comando, args: [] }), "*");
-        this._muto = comando === "mute";
-        return true;
-      } catch (e) { return false; }
+      this._muto = comando === "mute";
+      let giro = 0;
+      const manda = () => {
+        try {
+          f.contentWindow.postMessage(JSON.stringify(
+            { event: "command", func: comando, args: [] }),
+            "https://www.youtube.com");
+        } catch (e) {}
+        // se nel frattempo il muro ha cambiato idea, si smette
+        if (++giro < 6 && this._muto === (comando === "mute")) {
+          setTimeout(manda, 250 * giro);
+        }
+      };
+      manda();
+      return true;
     },
     comandi(mostra) {
       const v = video();

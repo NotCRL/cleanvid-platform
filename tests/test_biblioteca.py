@@ -10,11 +10,13 @@ from __future__ import annotations
 
 import uuid
 
+import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cleanvid.api import biblioteca
+from cleanvid.api import biblioteca, routes_watch
 from cleanvid.main import app
+from cleanvid.media.estrazione import Estratto
 from cleanvid.models import Genere, Utente, VoceBiblioteca
 from cleanvid.web.pagine import mm_ss
 
@@ -415,3 +417,101 @@ async def test_i_testi_del_muro_arrivano_al_javascript(
     assert testi_js["muro.pieno.t"] == "いっぱいです"
     # si manda solo quello che serve, non tutto il catalogo
     assert "home.faq.1.r" not in testi_js
+
+
+async def test_una_cella_parte_muta(visitatore: AsyncClient) -> None:
+    """Quattro video che partono insieme con l'audio non si ascoltano.
+
+    Chi decide quale suona e' il muro, dopo, a video gia' avviato.
+    """
+    pagina = (await visitatore.get(
+        "/it/cella", params={"u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
+    assert "mute=1" in pagina
+
+
+async def test_il_lettore_di_youtube_ascolta_i_comandi(
+        visitatore: AsyncClient) -> None:
+    """Senza `enablejsapi=1` YouTube ignora i comandi in silenzio, e nel muro
+    l'audio non si accende. Nessun errore, da nessuna parte."""
+    pagina = (await visitatore.get(
+        "/it/cella", params={"u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
+    assert "enablejsapi=1" in pagina
+
+
+async def test_fuori_dal_muro_il_video_non_parte_muto(
+        visitatore: AsyncClient) -> None:
+    """Una pagina sola: l'audio si vuole subito, non dopo un clic."""
+    pagina = (await visitatore.get(
+        "/it/guarda", params={"u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
+    assert "mute=1" not in pagina
+
+
+# --------------------------------------------------------------------------
+# la scelta fra il lettore loro e il nostro
+# --------------------------------------------------------------------------
+
+async def test_il_predefinito_e_il_lettore_della_piattaforma(
+        visitatore: AsyncClient) -> None:
+    """Parte subito e non scade mai: e' quello che non delude."""
+    pagina = (await visitatore.get(
+        "/it/guarda", params={"u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
+    assert "youtube.com/embed" in pagina
+    # ma la strada per l'altro deve essere in vista
+    assert "m=diretto" in pagina
+
+
+async def test_il_lettore_pulito_si_puo_chiedere(
+        visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Su YouTube il lettore ufficiale vincerebbe sempre: senza questa strada
+    lo SponsorBlock e il piccolo schermo non si userebbero mai."""
+    async def finge(url: str, qualita: str = "") -> Estratto:
+        return Estratto(token="tv", titolo="Prova", altezza=1080)
+
+    monkeypatch.setattr(routes_watch, "risolvi", finge)
+    pagina = (await visitatore.get("/it/guarda", params={
+        "u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk",
+        "m": "diretto"})).text
+    assert "youtube.com/embed" not in pagina
+    assert 'data-flusso="/flusso/tv"' in pagina
+    # e la strada per tornare indietro
+    assert "Lettore della piattaforma" in pagina
+
+
+async def test_cambiare_qualita_non_fa_tornare_al_lettore_loro(
+        visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Il modulo della qualita' deve portarsi dietro `m`, o al primo cambio
+    si torna nel lettore della piattaforma senza averlo chiesto."""
+    async def finge(url: str, qualita: str = "") -> Estratto:
+        return Estratto(token="tv", titolo="Prova")
+
+    monkeypatch.setattr(routes_watch, "risolvi", finge)
+    pagina = (await visitatore.get("/it/guarda", params={
+        "u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk",
+        "m": "diretto"})).text
+    assert '<input type=hidden name=m value=diretto>' in pagina
+
+
+async def test_i_segmenti_da_saltare_arrivano_al_lettore(
+        visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    async def finge(url: str, qualita: str = "") -> Estratto:
+        return Estratto(token="tv", titolo="Prova")
+
+    async def finti_segmenti(url: str) -> list[list[float]]:
+        return [[0.0, 21.8], [249.4, 281.5]]
+
+    monkeypatch.setattr(routes_watch, "risolvi", finge)
+    monkeypatch.setattr(routes_watch, "segmenti", finti_segmenti)
+    pagina = (await visitatore.get("/it/guarda", params={
+        "u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk",
+        "m": "diretto"})).text
+    assert "249.4" in pagina and "21.8" in pagina
+
+
+def test_sponsorblock_si_chiede_solo_a_youtube() -> None:
+    """Per ogni altro sito sarebbe una richiesta buttata: SponsorBlock non
+    sa niente di loro."""
+    from cleanvid.media.annunci import video_youtube
+
+    assert video_youtube("https://youtu.be/kJQP7kiw5Fk") == "kJQP7kiw5Fk"
+    assert video_youtube("https://www.youtube.com/watch?v=kJQP7kiw5Fk") == "kJQP7kiw5Fk"
+    assert video_youtube("https://vimeo.com/76979871") == ""

@@ -509,3 +509,131 @@ tiene più di quattro celle; un campo in più mandato dal browser non viene
 salvato; `javascript:` come indirizzo viene rifiutato; e i testi giapponesi
 arrivano davvero al javascript. Poi a mano sul server: muro, cella, salvataggio
 e rilettura di un gruppo.
+
+---
+
+## 2026-09-22 — Tre bug del muro, e perché l'audio non si sentiva
+
+Tutti e tre segnalati guardandolo funzionare. Nessuno sarebbe uscito da un test.
+
+### 1. L'audio non si accendeva su YouTube
+
+**La causa vera.** L'indirizzo del lettore incorporato non aveva
+`enablejsapi=1`. Senza quel parametro YouTube **ignora in silenzio** i comandi
+che gli si mandano: nessun errore, nessun avviso, il comando semplicemente non
+arriva. È il tipo di parametro che manca e non se ne capisce il perché.
+
+Aggiunto anche un secondo tentativo a ripetizione: il lettore non ascolta
+finché non è pronto, e «pronto» arriva quando arriva. Un comando mandato un
+decimo di secondo troppo presto si perde.
+
+**La causa in più.** Nel lettore a due tracce, `lettore.js` copiava sull'audio
+anche il `muted` del video. Ma lì il video è muto **per forza** — il suono esce
+dall'altro elemento — quindi ogni volta che qualcosa toccava il volume, la
+traccia audio si rimutava da sola. Ora si copia il volume e non il muto.
+
+**Cosa cambia di contorno.** Nel muro un riquadro parte muto: quattro video che
+partono insieme con l'audio non si ascoltano, si sopportano. Chi decide quale
+suona è il muro, dopo, a video già avviato.
+
+### 2. Due regolatori di volume per riquadro
+
+Il muro chiamava `comandi(true)` sul lettore, che accendeva i comandi nativi
+del browser — mentre il muro ne disegna già di suoi. Due volumi, due barre.
+
+Il muro non tocca più i comandi nativi: restano spenti sempre. Nasconderli,
+quando serve, lo fa già il CSS con le classi `zitto` e `nudo`.
+
+### 3. L'animazione dello spostamento si impuntava
+
+`getBoundingClientRect` restituisce la posizione **animata**, non quella del
+layout. Misurando un riquadro mentre stava ancora scivolando verso il suo
+posto, il punto di partenza calcolato era sbagliato e al giro dopo saltava.
+Si vedeva trascinandone uno in fretta: bastava un secondo scambio prima che il
+primo fosse finito.
+
+Ora le animazioni in corso si fermano prima di misurare.
+
+---
+
+## 2026-09-22 — L'italiano, le altre tredici lingue, e i titoli per i motori
+
+**L'italiano.** Tre errori veri:
+
+- *«il tuo utente»* non è italiano: un utente è una persona, non una cosa che
+  si possiede. Ora è **«il tuo profilo»**, in tre punti.
+- *«suonare un flusso»* si dice di un suono, non di un video: **«riprodurre»**.
+- *«Niente qui. La stella su una copertina la mette qui.»* — ripeteva «qui» e
+  non si capiva cosa fosse «la». Riscritta.
+
+Più `azione.conferma` all'infinito («Togliere questa voce?») portata alla
+seconda persona come tutto il resto, e `muro.audio_tocco` da «l'audio sta sul
+riquadro» a «l'audio va al riquadro», che è il movimento che succede davvero.
+
+**Le altre lingue.** Rilette; corrette dove suonavano tradotte invece che
+scritte: il francese *«Tourne sur votre ordinateur»* (→ *«Fonctionne»*), il
+portoghese *«Corre no teu computador»* (→ *«Funciona»*). Le nove chiavi
+italiane corrette sono state rifatte in tutte e dodici.
+
+**I titoli e le descrizioni per i motori di ricerca.** Riscritti tutti e
+quattordici, con tre regole:
+
+1. *La parola che la gente cerca sta all'inizio.* Nessuno cerca «cleanvid»:
+   cerca «video senza pubblicità». Prima il titolo era
+   `cleanvid — guarda un video senza tutto il resto`; ora è
+   `Video senza pubblicità — cleanvid`. Google pesa di più le prime parole, e
+   nell'elenco dei risultati sono quelle che si leggono.
+2. *Il marchio c'è in tutti*, in fondo: chi ci ha già visti una volta ci
+   riconosce nell'elenco.
+3. *Sotto i limiti in cui Google taglia*: 60 caratteri il titolo, 160 la
+   descrizione. Cinque erano lunghe e sono state accorciate.
+
+La descrizione dice cosa si fa, cosa si ottiene, e nomina «gratis» e «senza
+registrazione»: sono le due domande di chi cerca.
+
+Tre test nuovi lo tengono fermo: i limiti di lunghezza, il marchio in ogni
+titolo, e **il titolo che non comincia con il marchio**.
+
+---
+
+## 2026-09-22 — Il resto delle funzioni del file unico
+
+**La scelta fra due lettori.** `/guarda?u=…&m=diretto` estrae il flusso anche
+quando la piattaforma un lettore ce l'ha. È una scelta vera, e la pagina la
+dice:
+
+| | parte | scade | pubblicità | comandi |
+|---|---|---|---|---|
+| lettore della piattaforma | subito | mai | la loro resta | i loro |
+| lettore pulito | qualche secondo | sì | via | i nostri |
+
+Il predefinito resta il loro, perché è quello che non delude mai. **Senza
+questa strada, due delle funzioni qui sotto non si userebbero mai**: su YouTube
+il lettore ufficiale vincerebbe sempre.
+
+**SponsorBlock.** I pezzi segnalati a mano da chi guarda — lo sponsor letto a
+voce, l'autopromozione, il «iscriviti al canale» — si saltano. *Si saltano e
+non si tagliano*: tagliarli vorrebbe dire rimontare il flusso, e in un flusso
+rimontato la barra del tempo dice una cosa e il video un'altra. Solo YouTube,
+perché SponsorBlock sa solo di quello; per ogni altro sito la richiesta non si
+fa nemmeno. Il 404 («nessuno ha segnalato questo video») si ricorda come una
+risposta, per non richiederlo a ogni apertura.
+
+**Picture-in-picture.** Il bottone resta nascosto dove non si può fare:
+mostrarlo e poi non funzionare è peggio che non averlo.
+
+**L'icona e l'installazione sul telefono.** `/icon.png?s=…` disegna il PNG al
+volo — lo stesso segno del marchio, due lame e un taglio, non il triangolo di
+riproduzione che hanno tutti. Quattro misure da un disegno solo: tenerne
+quattro file vorrebbe dire quattro cose da rifare il giorno che il marchio
+cambia. Il `manifest.webmanifest` porta alla **lingua di chi installa**: chi
+installa dal giapponese si aspetta di riaprire il giapponese.
+
+**Cosa manca ancora del file unico.** La diagnosi degli errori — la pagina che
+spiega perché un link non ha funzionato e cosa si può provare. E la modalità
+ascolto, che non passa e il perché sta in `ARCHITETTURA.md`.
+
+**Verificato.** 97 test. Poi a mano: l'audio su una cella YouTube, l'icona in
+quattro misure, il manifesto in giapponese, il passaggio fra i due lettori, e
+SponsorBlock contro il servizio vero — `kJQP7kiw5Fk` restituisce due segmenti,
+`[0, 21.8]` e `[249.4, 281.5]`.

@@ -50,12 +50,38 @@ def test_i_segnaposto_restano_quelli() -> None:
             assert attesi == trovati, f"{ling.codice}/{chiave}"
 
 
-def test_i_titoli_per_i_motori_non_sono_troppo_lunghi() -> None:
-    """Oltre i 155 caratteri Google taglia la descrizione a meta' frase."""
+def test_i_titoli_per_i_motori_stanno_nei_limiti() -> None:
+    """Oltre questi numeri Google taglia, e taglia a meta' frase.
+
+    I limiti veri sono in pixel e non in caratteri, quindi questi sono
+    prudenti: 60 per il titolo e 160 per la descrizione lasciano margine
+    anche alle lingue che scrivono largo.
+    """
     for ling in LINGUE:
         propri = catalogo(ling.codice)
-        assert len(propri["meta.home.descrizione"]) <= 200, ling.codice
-        assert len(propri["meta.home.titolo"]) <= 70, ling.codice
+        assert len(propri["meta.home.titolo"]) <= 60, (
+            f"{ling.codice}: titolo di {len(propri['meta.home.titolo'])} caratteri")
+        assert len(propri["meta.home.descrizione"]) <= 160, (
+            f"{ling.codice}: descrizione di "
+            f"{len(propri['meta.home.descrizione'])} caratteri")
+
+
+def test_il_marchio_sta_in_ogni_titolo() -> None:
+    """Chi ci ha gia' visti una volta ci riconosce nell'elenco dei risultati."""
+    for ling in LINGUE:
+        assert "cleanvid" in catalogo(ling.codice)["meta.home.titolo"], ling.codice
+
+
+def test_il_titolo_non_comincia_col_marchio() -> None:
+    """La parola che la gente cerca sta all'inizio, non il nostro nome.
+
+    Nessuno cerca «cleanvid»: cerca «video senza pubblicita'». Google pesa di
+    piu' le prime parole, e nell'elenco dei risultati sono quelle che si
+    leggono.
+    """
+    for ling in LINGUE:
+        titolo = catalogo(ling.codice)["meta.home.titolo"]
+        assert not titolo.lower().startswith("cleanvid"), ling.codice
 
 
 def test_i_cataloghi_sono_json_valido_e_leggibile() -> None:
@@ -202,3 +228,36 @@ async def test_i_testi_cambiano_davvero_con_la_lingua(
     assert catalogo("it")["home.apri"] in it
     assert catalogo("ja")["home.apri"] in ja
     assert catalogo("it")["home.faq.1.d"] not in ja
+
+
+# --------------------------------------------------------------------------
+# l'icona e l'installazione sul telefono
+# --------------------------------------------------------------------------
+
+async def test_l_icona_si_disegna_in_ogni_misura(visitatore: AsyncClient) -> None:
+    """Quattro misure diverse da un disegno solo: Safari ne vuole 180,
+    Android 192 e 512, la scheda del browser 32."""
+    for n in (32, 180, 192, 512):
+        r = await visitatore.get("/icon.png", params={"s": n})
+        assert r.status_code == 200
+        assert r.headers["content-type"] == "image/png"
+        assert r.content[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+async def test_il_manifesto_porta_alla_lingua_di_chi_installa(
+        visitatore: AsyncClient) -> None:
+    """Chi installa dal giapponese si aspetta di riaprire il giapponese, non
+    di essere rispedito alla scelta ogni volta."""
+    r = await visitatore.get("/manifest.webmanifest",
+                             headers={"Accept-Language": "ja"})
+    dati = r.json()
+    assert dati["start_url"] == "/ja/"
+    assert dati["lang"] == "ja"
+    assert any(i["purpose"] == "maskable" for i in dati["icons"])
+
+
+async def test_la_pagina_dichiara_icona_e_manifesto(
+        visitatore: AsyncClient) -> None:
+    pagina = (await visitatore.get("/it/")).text
+    assert 'rel=manifest href="/manifest.webmanifest"' in pagina
+    assert "apple-touch-icon" in pagina

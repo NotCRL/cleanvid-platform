@@ -18,10 +18,12 @@
             allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
             allowfullscreen></iframe>
   </div>
-  <p class=lead>
-    {{ t("guarda.lettore_di", piattaforma=lettore.piattaforma) }}
-    {{ t("guarda.condivisibile") }}
-  </p>
+  <div class=barra>
+    <span class=etichetta>{{ t("guarda.lettore_di", piattaforma=lettore.piattaforma) }}</span>
+    <a class=iconbtn href="/{{ c.lingua.codice }}/guarda?u={{ url | urlencode }}&m=diretto"
+       title="{{ t('guarda.nostro.spiega') }}">{{ t("guarda.nostro") }}</a>
+  </div>
+  <p class=lead>{{ t("guarda.condivisibile") }}</p>
 
 {% elif estratto %}
   <div class=palco>
@@ -33,6 +35,7 @@
            data-riprendi="{{ riprendi or 0 }}"
            data-pagina="{{ url }}"
            data-posizione="/{{ c.lingua.codice }}/posizione"
+           data-salti="{{ salti | tojson | forceescape }}"
            {% if estratto.token_audio %}data-audio="/flusso/{{ estratto.token_audio }}"{% endif %}
            ></video>
     {% if estratto.token_audio %}
@@ -54,14 +57,21 @@
     {% if estratto.diretta %}
       <button id=torna-in-diretta class=iconbtn>{{ t("guarda.torna_in_diretta") }}</button>
     {% endif %}
+    <button id=pip class=iconbtn type=button hidden
+            title="{{ t('guarda.pip') }}">{{ t("guarda.pip") }}</button>
     {% if riprendi %}
       <span id=ripresa class=ripresa>
         {{ t("guarda.riprendi", tempo=riprendi | mm_ss) }}
         <button id=ricomincia class=scritta>{{ t("guarda.ricomincia") }}</button>
       </span>
     {% endif %}
+    {% if ha_lettore_loro %}
+      <a class=iconbtn href="/{{ c.lingua.codice }}/guarda?u={{ url | urlencode }}"
+         title="{{ t('guarda.loro.spiega') }}">{{ t("guarda.loro") }}</a>
+    {% endif %}
     <form method=get action="/{{ c.lingua.codice }}/guarda" class=qualita>
       <input type=hidden name=u value="{{ url }}">
+      {% if nostro %}<input type=hidden name=m value=diretto>{% endif %}
       <select name=q onchange="this.form.submit()" aria-label="{{ t('guarda.qualita') }}">
         <option value="" {% if not q %}selected{% endif %}>{{ t("guarda.come_viene") }}</option>
         {% for altezza in qualita_possibili %}

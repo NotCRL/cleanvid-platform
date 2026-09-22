@@ -25,7 +25,11 @@ from dataclasses import dataclass
 _SCHEMI: list[tuple[str, str, str]] = [
     ("YouTube",
      r"(?:youtube\.com/(?:watch\?(?:.*&)?v=|shorts/|live/|embed/)|youtu\.be/)([\w-]{11})",
-     "https://www.youtube.com/embed/{0}?autoplay=1&rel=0"),
+     # `enablejsapi=1` non e' un di piu': senza, il lettore di YouTube ignora
+     # in silenzio i comandi che gli mandiamo, e nel muro l'audio non si
+     # accende. E' il tipo di parametro che manca e non se ne capisce il
+     # perche', perche' non c'e' nessun errore da nessuna parte.
+     "https://www.youtube.com/embed/{0}?autoplay=1&rel=0&enablejsapi=1"),
     ("Vimeo",
      r"vimeo\.com/(?:video/)?(\d+)",
      "https://player.vimeo.com/video/{0}"),
@@ -60,18 +64,29 @@ def piattaforma_di(url: str) -> str:
     return host[4:] if host.startswith("www.") else host
 
 
-def lettore_ufficiale(url: str, host_pagina: str = "localhost") -> Lettore | None:
+def lettore_ufficiale(url: str, host_pagina: str = "localhost",
+                      per_cella: bool = False) -> Lettore | None:
     """L'indirizzo del lettore incorporabile, o None se quel sito non ne ha.
 
     `host_pagina` serve a Twitch, che rifiuta di farsi incorniciare se il
     parametro `parent` non combacia con l'indirizzo da cui la pagina e'
     aperta. E' il tipo di dettaglio che costa un pomeriggio a scoprirsi.
+
+    `per_cella` e' per il muro: li' un riquadro deve partire **muto**, perche'
+    di quattro video che partono insieme se ne ascolta uno solo. Chi decide
+    quale e' il muro, e lo dice al lettore dopo, a video gia' avviato.
     """
     for nome, schema, modello in _SCHEMI:
         trovato = re.search(schema, url, re.I)
         if not trovato:
             continue
         indirizzo = modello.format(trovato.group(1), host=host_pagina)
+        if per_cella:
+            # ogni piattaforma lo scrive a modo suo, e chi non lo capisce lo
+            # ignora - il che e' comunque meglio che quattro audio insieme
+            indirizzo += ("&mute=1" if "youtube" in indirizzo
+                          else "&muted=true" if "twitch" in indirizzo
+                          else "&muted=1")
         if "{host}" in modello:
             # Twitch accetta piu' parent: cosi' la pagina funziona sia da
             # localhost sia dall'indirizzo di rete, senza rigenerare nulla

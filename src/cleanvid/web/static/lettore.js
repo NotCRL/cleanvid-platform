@@ -31,9 +31,13 @@
     video.addEventListener("pause", () => audio.pause());
     video.addEventListener("seeking", () => { audio.currentTime = video.currentTime; });
     video.addEventListener("ratechange", () => { audio.playbackRate = video.playbackRate; });
+    // Il volume si copia, il muto NO. Il video qui e' muto per forza -
+    // l'audio esce dall'altro elemento - quindi copiare il suo `muted`
+    // vorrebbe dire rimutare la traccia audio ogni volta che qualcosa tocca
+    // il volume, compreso il muro quando accende il suono di un riquadro.
+    // E' il bug per cui nel muro l'audio non si sentiva.
     video.addEventListener("volumechange", () => {
       audio.volume = video.volume;
-      audio.muted = video.muted;
     });
 
     video.addEventListener("timeupdate", () => {
@@ -181,5 +185,68 @@
     // `pagehide` e non `unload`: su iOS `unload` non scatta quasi mai, e su
     // tutti gli altri e' quello che il browser promette di far partire
     window.addEventListener("pagehide", () => salva(true));
+  });
+})();
+
+/* Saltare i pezzi che nessuno vuole guardare, e il video che resta a galla.
+ *
+ * I segmenti arrivano da SponsorBlock, segnalati a mano da chi guarda: lo
+ * sponsor letto a voce, l'autopromozione, il «iscriviti al canale».
+ *
+ * **Si saltano, non si tagliano.** Tagliarli vorrebbe dire rimontare il
+ * flusso, e in un flusso rimontato la barra del tempo dice una cosa e il
+ * video un'altra. Saltare e' spostare `currentTime`, e chi guarda vede solo
+ * che il video prosegue.
+ */
+(function () {
+  "use strict";
+
+  const MARGINE = 0.3;   // si salta poco prima: il taglio secco si sente
+
+  function saltaSponsor(video, salti) {
+    if (!salti.length) return;
+    let ultimo = -1;
+
+    video.addEventListener("timeupdate", () => {
+      const t = video.currentTime;
+      for (let i = 0; i < salti.length; i++) {
+        const [da, a] = salti[i];
+        // gia' saltato questo: se chi guarda e' tornato indietro apposta
+        // dentro il pezzo, non glielo si porta via una seconda volta
+        if (i === ultimo) continue;
+        if (t >= da - MARGINE && t < a - 0.5) {
+          ultimo = i;
+          video.currentTime = a;
+          return;
+        }
+      }
+    });
+    // tornare indietro a mano azzera la memoria: da li' in poi si salta di nuovo
+    video.addEventListener("seeked", () => { ultimo = -1; });
+  }
+
+  /* Il video in un angolo mentre si fa altro. Il bottone resta nascosto dove
+     non si puo' fare: mostrarlo e poi non funzionare e' peggio che non averlo. */
+  function piccoloSchermo(video) {
+    const b = document.getElementById("pip");
+    if (!b) return;
+    if (!document.pictureInPictureEnabled || video.disablePictureInPicture) return;
+    b.hidden = false;
+    b.onclick = () => {
+      if (document.pictureInPictureElement) {
+        document.exitPictureInPicture().catch(() => {});
+        return;
+      }
+      video.requestPictureInPicture().catch(() => {});
+    };
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const video = document.getElementById("video");
+    if (!video) return;
+    piccoloSchermo(video);
+    let salti = [];
+    try { salti = JSON.parse(video.dataset.salti || "[]"); } catch (e) {}
+    saltaSponsor(video, salti);
   });
 })();

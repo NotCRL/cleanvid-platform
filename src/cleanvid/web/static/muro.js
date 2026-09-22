@@ -314,7 +314,9 @@
     const zittisci = (attivo) => {
       c.zitto = attivo;
       box.classList.toggle("zitto", attivo);
-      try { f.contentWindow.cellApi.comandi(!attivo); } catch (err) {}
+      // NON si toccano i comandi nativi del lettore: il muro disegna i suoi,
+      // e accendere anche quelli del browser darebbe due volumi per riquadro.
+      // Nascondere la barra del muro lo fa gia' il CSS, con la classe `zitto`.
       salva();
     };
     box.querySelector(".occhio").onclick = (e) => { e.stopPropagation(); zittisci(true); };
@@ -357,6 +359,28 @@
     });
   }
 
+  /* Le animazioni in corso si fermano prima di misurare.
+   *
+   * `getBoundingClientRect` restituisce la posizione **animata**, non quella
+   * del layout. Se si misura un riquadro mentre sta ancora scivolando verso
+   * il suo posto, il punto di partenza calcolato e' sbagliato, e al giro dopo
+   * il riquadro salta invece di scorrere. E' il bug che si vedeva
+   * trascinandone uno in fretta: bastava un secondo scambio prima che il
+   * primo fosse finito.
+   */
+  function fermaAnimazioni(escluso) {
+    celle.forEach((c) => {
+      if (c.id === escluso) return;
+      const box = riquadro(c.id);
+      if (!box || !box.dataset.animando) return;
+      box.style.transition = "none";
+      box.style.transform = "";
+      box.offsetHeight;                     // forza il calcolo prima di misurare
+      box.style.transition = "";
+      delete box.dataset.animando;
+    });
+  }
+
   function misura() {
     const m = new Map();
     celle.forEach((c) => {
@@ -375,12 +399,16 @@
       const ora = box.getBoundingClientRect();
       const dx = era.left - ora.left, dy = era.top - ora.top;
       if (!dx && !dy) return;
+      box.dataset.animando = "1";
       box.style.transition = "none";
       box.style.transform = "translate(" + dx + "px," + dy + "px)";
       box.offsetHeight;                     // forza il calcolo, o non anima
       box.style.transition = "transform " + ORDINE_MS + "ms cubic-bezier(.2,.9,.2,1)";
       box.style.transform = "";
-      setTimeout(() => { box.style.transition = ""; }, ORDINE_MS + 40);
+      setTimeout(() => {
+        box.style.transition = "";
+        delete box.dataset.animando;
+      }, ORDINE_MS + 40);
     });
   }
 
@@ -388,6 +416,7 @@
     const vecchio = celle.findIndex((c) => c.id === id);
     if (vecchio < 0 || nuovo < 0 || nuovo >= celle.length || nuovo === vecchio)
       return false;
+    fermaAnimazioni(id);                    // vedi sopra: si misura il layout
     const prima = misura();
     const [preso] = celle.splice(vecchio, 1);
     celle.splice(nuovo, 0, preso);
@@ -571,12 +600,8 @@
   /* ---------- solo i video ---------- */
   function soloVideo(attivo) {
     muro.classList.toggle("nudo", attivo);
-    grid.querySelectorAll(".cell").forEach((b) => {
-      const zitto = b.classList.contains("zitto");
-      try {
-        b.querySelector("iframe").contentWindow.cellApi.comandi(!attivo && !zitto);
-      } catch (e) {}
-    });
+    // anche qui: i comandi da nascondere sono quelli del muro, e li nasconde
+    // il CSS con la classe `nudo`. Quelli del lettore restano spenti sempre.
     const b = document.getElementById("nudo");
     b.classList.toggle("on", attivo);
     b.title = attivo ? T("muro.rimetti_comandi") : T("muro.solo_video");

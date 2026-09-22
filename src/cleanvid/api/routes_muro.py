@@ -98,7 +98,8 @@ async def cella(
     if not u.startswith(("http://", "https://")):
         return RedirectResponse(f"/{c.lingua.codice}/muro", status_code=303)
 
-    lettore = lettore_ufficiale(u, host_pagina=request.url.hostname or "localhost")
+    lettore = lettore_ufficiale(u, host_pagina=request.url.hostname or "localhost",
+                                per_cella=True)
     estratto: Estratto | None = None
     perche = ""
     if lettore is None:
