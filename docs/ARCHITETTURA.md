@@ -103,6 +103,12 @@ aperture mette in ginocchio la macchina.
    perché sta in [`REGISTRO.md`](REGISTRO.md).
 3. **Biblioteca** — cronologia, preferiti, fonti, gruppi, continua a guardare,
    per persona. A questo punto il servizio è pubblicabile.
+
+   *Fuori ordine, fatto il 22/09/2026:* il sito in quattordici lingue e la
+   struttura SEO — una lingua per indirizzo, hreflang, mappa del sito, pagine
+   dei video fuori dall'indice. Anticipato perché sono decisioni di struttura:
+   spostare gli indirizzi dopo la pubblicazione costa i posizionamenti già
+   guadagnati. Vedi [`LINGUE-E-SEO.md`](LINGUE-E-SEO.md).
 4. **Registrazione** — email e password attaccate alla riga che c'è già.
 5. **Stanze, prima versione** — crei, condividi il link, si guarda insieme.
    Niente elenco, niente password: solo la sincronia, che è la parte difficile.

@@ -245,3 +245,63 @@ streaming, stesso Range, stesse intestazioni. Una finzione messa più in su del
 proxy non avrebbe visto niente, perché il bug stava proprio nel modo in cui
 httpx consegna i byte. Poi di nuovo a mano contro googlevideo: 2 MB richiesti,
 2 MB arrivati, su entrambe le tracce.
+
+---
+
+## 2026-09-22 — Il sito in quattordici lingue, e la SEO che lo rende utile
+
+**Cosa cambia.** Le pagine stanno sotto `/{lingua}/`, in quattordici lingue.
+La lingua si cambia dalle impostazioni (l'ingranaggio in alto a destra, che
+mostra anche quella attuale). Chi arriva sulla radice viene mandato nella
+lingua del suo browser. C'è uno strumento che traduce i testi con Claude e
+lascia il risultato su disco.
+
+**Come è fatto e perché così:** per esteso in
+[`LINGUE-E-SEO.md`](LINGUE-E-SEO.md). In breve, le cinque decisioni:
+
+1. la lingua sta nell'indirizzo e non in un cookie — un motore indicizza
+   indirizzi, non sessioni;
+2. non si reindirizza in base al paese — Google visita da indirizzi americani e
+   non vedrebbe mai le altre tredici lingue, e chi usa una VPN resterebbe
+   inchiodato a una lingua che non ha scelto;
+3. le hreflang si generano da una funzione sola, perché devono essere
+   reciproche e Google butta via in blocco i gruppi che non tornano;
+4. `/guarda` è `noindex` — uno spazio di indirizzi infinito di pagine sottili
+   con dentro roba di altri non ci premia, ci classifica come sito di scarto;
+5. si traduce prima e non a richiesta, e il risultato si committa e si rilegge.
+
+**Cosa NON è stato fatto, ed è una scelta.** Niente geolocalizzazione per IP.
+Era nella richiesta, e per la lingua è lo strumento sbagliato: dice dov'è il
+router, non che lingua parla la persona. `Accept-Language` risponde alla
+domanda giusta, e un italiano a Berlino ha ancora `it` in cima. Se un giorno
+servirà davvero — per il fuso orario, o per quali piattaforme mostrare — si
+aggiungerà per quello, non per la lingua.
+
+**Verificato.** 51 test, fra cui: i quattordici cataloghi hanno le stesse 68
+chiavi e gli stessi segnaposto; i gruppi di hreflang di tre lingue diverse sono
+identici; ogni domanda dichiarata nei dati strutturati compare davvero
+nell'HTML. Poi a mano, sul server: `/ar/` esce con `dir=rtl`, `/ja/` con il
+titolo giapponese, il cambio lingua dalle impostazioni cambia anche dove porta
+la radice, e un browser tedesco su una pagina italiana si vede proporre il
+tedesco senza essere portato via.
+
+---
+
+## 2026-09-22 — Bug: la mappa del sito e il canonical dicevano indirizzi diversi
+
+**Cosa succedeva.** `sitemap.xml` dichiarava `https://…/it`, l'HTML della
+stessa pagina dichiarava `rel=canonical https://…/it/`. Per un motore di
+ricerca sono **due indirizzi diversi**: ci si contraddiceva da soli su ogni
+pagina del sito, in quattordici lingue.
+
+**La causa.** La home era scritta come percorso vuoto nell'elenco delle pagine
+indicizzabili, mentre il `canonical` nasce dal percorso della richiesta, che
+per la home è `/`.
+
+**Il rimedio.** La home è `/` anche nell'elenco. Una riga, con sopra scritto il
+perché.
+
+**Come si è trovato.** Da un test che confrontava le due cose. Non si sarebbe
+visto in nessun altro modo: il sito funzionava, le pagine si aprivano, e
+l'effetto sarebbe comparso mesi dopo nelle statistiche di ricerca. È il motivo
+per cui i test su questa parte sono più pedanti degli altri.

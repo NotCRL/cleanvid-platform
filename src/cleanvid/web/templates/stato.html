@@ -1,25 +1,20 @@
 {% extends "base.html" %}
-{% block titolo %}stato · cleanvid{% endblock %}
+{% block titolo %}{{ t("stato.titolo") }} — cleanvid{% endblock %}
+{% block robot %}<meta name=robots content="noindex,nofollow">{% endblock %}
 
 {% block contenuto %}
-<h1>Chi sei <span class=spento>per il servizio</span></h1>
-<p class=guida>Pagina di servizio: serve a vedere con gli occhi che la
-separazione per utente funziona. Aprendo lo stesso indirizzo da un browser in
-incognito compare un altro utente, con la sua biblioteca vuota.</p>
+<h1>{{ t("stato.titolo") }} <span class=spento>{{ t("stato.spento") }}</span></h1>
+<p class=guida>{{ t("stato.guida") }}</p>
 
 <section class=sezione>
-  <h2>Il tuo utente</h2>
+  <h2>{{ t("impostazioni.il_tuo_utente") }}</h2>
   <ul class=elenco>
-    <li><a>identificativo</a><span class=nota>{{ utente.id }}</span></li>
-    <li><a>tipo</a><span class=nota>{{ utente.tipo.value }}</span></li>
-    <li><a>nome visibile</a><span class=nota>{{ utente.nome_visibile }}</span></li>
-    <li><a>voci in cronologia</a><span class=nota>{{ quante }}</span></li>
+    <li><a>{{ t("stato.identificativo") }}</a><span class=nota>{{ utente.id }}</span></li>
+    <li><a>{{ t("stato.tipo") }}</a><span class=nota>{{ utente.tipo.value }}</span></li>
+    <li><a>{{ t("stato.nome_visibile") }}</a><span class=nota>{{ utente.nome_visibile }}</span></li>
+    <li><a>{{ t("stato.voci") }}</a><span class=nota>{{ quante }}</span></li>
   </ul>
 </section>
 
-<p style="margin-top:22px"><a href="/">← torna alla home</a></p>
-{% endblock %}
-
-{% block piede %}
-Quando ci saranno le pagine vere, questa andrà via.
+<p style="margin-top:22px"><a href="/{{ c.lingua.codice }}/">← {{ t("piede.torna_home") }}</a></p>
 {% endblock %}

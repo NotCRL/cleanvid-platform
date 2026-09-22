@@ -1,36 +1,72 @@
 {% extends "base.html" %}
-{% block titolo %}cleanvid{% endblock %}
 
 {% block contenuto %}
-<h1>Solo il player.<br><span class=spento>Tutto il resto, via.</span></h1>
-<p class=guida>Incolli l'indirizzo di una pagina e resta il video. Quello che
-apri finisce nella tua cronologia, che è tua e di nessun altro: sei già un
-utente, senza aver fatto niente.</p>
+<h1>{{ t("home.titolo") }}<br><span class=spento>{{ t("home.titolo.spento") }}</span></h1>
+<p class=guida>{{ t("home.guida") }}</p>
 
-<form class=apri method=post action="/apri">
+<form class=apri method=post action="/{{ c.lingua.codice }}/apri">
   <input type=url name=url required autofocus
-         placeholder="Incolla qui il link del video">
-  <button class=principale>Apri</button>
+         placeholder="{{ t('home.campo') }}"
+         aria-label="{{ t('home.campo') }}">
+  <button class=principale>{{ t("home.apri") }}</button>
 </form>
 
 <section class=sezione>
-  <h2>Aperti di recente</h2>
+  <h2>{{ t("home.recenti") }}</h2>
   {% if recenti %}
     <ul class=elenco>
       {% for voce in recenti %}
         <li>
-          <a href="/guarda?u={{ voce.url | urlencode }}">{{ voce.titolo or voce.url }}</a>
+          <a href="/{{ c.lingua.codice }}/guarda?u={{ voce.url | urlencode }}">{{ voce.titolo or voce.url }}</a>
           <span class=nota>{{ voce.piattaforma }}</span>
         </li>
       {% endfor %}
     </ul>
   {% else %}
-    <p class=vuoto>Ancora niente. Il primo link che apri compare qui.</p>
+    <p class=vuoto>{{ t("home.vuoto") }}</p>
   {% endif %}
+</section>
+
+{# Le due sezioni qui sotto sono il contenuto vero della pagina: quello che
+   un motore di ricerca puo' leggere e capire. Senza, la home sarebbe un
+   campo di testo e basta, e non ci sarebbe niente per cui trovarci. #}
+<section class=sezione>
+  <h2>{{ t("home.come.titolo") }}</h2>
+  <ol class=passi>
+    {% for n in [1, 2, 3] %}
+      <li>
+        <h3>{{ t("home.come." ~ n ~ ".titolo") }}</h3>
+        <p>{{ t("home.come." ~ n ~ ".testo") }}</p>
+      </li>
+    {% endfor %}
+  </ol>
+</section>
+
+<section class="sezione domande">
+  <h2>{{ t("home.faq.titolo") }}</h2>
+  {% for n in [1, 2, 3, 4, 5] %}
+    <details{% if n == 1 %} open{% endif %}>
+      <summary>{{ t("home.faq." ~ n ~ ".d") }}</summary>
+      <p>{{ t("home.faq." ~ n ~ ".r") }}</p>
+    </details>
+  {% endfor %}
+</section>
+
+<section class=sezione>
+  <h2>{{ t("piede.lingua") }}</h2>
+  {# L'elenco completo delle lingue, in chiaro nell'HTML: e' anche il modo in
+     cui un crawler scopre le altre versioni senza dover fidarsi solo della
+     mappa del sito. #}
+  <ul class=lingue>
+    {% for l in c.lingue %}
+      <li><a href="{{ c.altrove(l.codice) }}" hreflang="{{ l.codice }}"
+             {% if l.codice == c.lingua.codice %}class=adesso aria-current=page{% endif %}
+             >{{ l.bandiera }} {{ l.nome }}</a></li>
+    {% endfor %}
+  </ul>
 </section>
 {% endblock %}
 
-{% block piede %}
-Passo 1: database, utente anonimo, una pagina che apre un video.
-L'estrazione dei flussi arriva al passo successivo.
+{% block coda %}
+<script type="application/ld+json">{{ dati_strutturati | tojson }}</script>
 {% endblock %}

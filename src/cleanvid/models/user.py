@@ -54,6 +54,13 @@ class Utente(Base):
     # ("Ospite 4712") perche' in una chat "anonimo" tre volte non si distingue.
     nome_visibile: Mapped[str] = mapped_column(String(40), nullable=False)
 
+    # La lingua scelta. Non e' "quella del browser": e' quella che la persona
+    # ha deciso, e vale piu' di qualunque cosa dica l'intestazione del
+    # browser o l'indirizzo da cui arriva. Vuota finche' non sceglie: cosi' si
+    # distingue "non ha mai scelto" da "ha scelto l'inglese", che sono due
+    # cose diverse quando si decide se proporgliene un'altra.
+    lingua: Mapped[str | None] = mapped_column(String(8))
+
     creato: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False)
     visto: Mapped[datetime] = mapped_column(

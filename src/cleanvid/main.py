@@ -57,13 +57,18 @@ def crea_app() -> FastAPI:
             scrivi_cookie(risposta, nuovo)
         return risposta
 
-    from .api import routes_flusso, routes_watch
-    app.include_router(routes_watch.router)
-    app.include_router(routes_flusso.router)
-    # in arrivo: biblioteca, stanze, websocket delle stanze
-
+    # L'ordine conta. Starlette prende la prima rotta che combacia, e
+    # `/{lingua_url}/` combacia anche con `/robots.txt` - che diventerebbe una
+    # lingua inesistente e risponderebbe 404. Le rotte senza lingua vanno
+    # registrate prima. E' il tipo di errore che nessuno nota finche' non si
+    # guarda perche' il sito non compare su Google.
+    from .api import routes_flusso, routes_seo, routes_watch
     app.mount("/static", StaticFiles(directory="src/cleanvid/web/static"),
               name="static")
+    app.include_router(routes_flusso.router)
+    app.include_router(routes_seo.router)
+    app.include_router(routes_watch.router)
+    # in arrivo: stanze e websocket delle stanze
     return app
 
 

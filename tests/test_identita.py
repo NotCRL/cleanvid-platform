@@ -22,14 +22,14 @@ from cleanvid.media.estrazione import Estratto, NonEstraibile
 
 
 async def test_chi_arriva_e_subito_un_utente(visitatore: AsyncClient) -> None:
-    risposta = await visitatore.get("/")
+    risposta = await visitatore.get("/it/")
     assert risposta.status_code == 200
     assert COOKIE in visitatore.cookies, "senza cookie nessuno ritrova le sue cose"
 
 
 async def test_il_cookie_riporta_alla_stessa_riga(visitatore: AsyncClient) -> None:
-    prima = await visitatore.get("/stato")
-    dopo = await visitatore.get("/stato")
+    prima = await visitatore.get("/it/stato")
+    dopo = await visitatore.get("/it/stato")
     # la pagina di stato scrive l'identificativo: due visite, stesso utente
     assert _identificativo(prima.text) == _identificativo(dopo.text)
 
@@ -40,8 +40,8 @@ async def test_due_browser_due_biblioteche(visitatore: AsyncClient) -> None:
     Uno apre un video, l'altro non deve vederlo. Se questo test passa, la
     biblioteca per persona regge; se fallisce, non serve andare avanti.
     """
-    await visitatore.post("/apri", data={"url": "https://youtu.be/kJQP7kiw5Fk"})
-    sua_home = (await visitatore.get("/")).text
+    await visitatore.post("/it/apri", data={"url": "https://youtu.be/kJQP7kiw5Fk"})
+    sua_home = (await visitatore.get("/it/")).text
     assert "kJQP7kiw5Fk" in sua_home
 
     async with AsyncClient(
@@ -49,7 +49,7 @@ async def test_due_browser_due_biblioteche(visitatore: AsyncClient) -> None:
         base_url="http://prova",
         follow_redirects=True,
     ) as estraneo:
-        altra_home = (await estraneo.get("/")).text
+        altra_home = (await estraneo.get("/it/")).text
         assert "kJQP7kiw5Fk" not in altra_home
         assert "Ancora niente" in altra_home
 
@@ -64,13 +64,13 @@ async def test_riaprire_non_duplica(visitatore: AsyncClient) -> None:
     """
     indirizzo = "https://vimeo.com/76979871"
     for _ in range(3):
-        await visitatore.post("/apri", data={"url": indirizzo})
-    assert (await visitatore.get("/")).text.count('href="/guarda?u=') == 1
+        await visitatore.post("/it/apri", data={"url": indirizzo})
+    assert (await visitatore.get("/it/")).text.count('href="/it/guarda?u=') == 1
 
 
 async def test_il_lettore_ufficiale_viene_montato(visitatore: AsyncClient) -> None:
     pagina = (await visitatore.get(
-        "/guarda", params={"u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
+        "/it/guarda", params={"u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
     assert "youtube.com/embed/kJQP7kiw5Fk" in pagina
 
 
@@ -88,7 +88,7 @@ async def test_un_sito_da_cui_non_esce_niente_lo_dice(
 
     monkeypatch.setattr(routes_watch, "risolvi", non_va)
     pagina = (await visitatore.get(
-        "/guarda", params={"u": "https://esempio.invalido/video/1"})).text
+        "/it/guarda", params={"u": "https://esempio.invalido/video/1"})).text
     assert "non è uscito un video" in pagina
     assert "video privato" in pagina
 
@@ -102,7 +102,7 @@ async def test_il_lettore_si_monta_su_quello_che_esce_dall_estrazione(
 
     monkeypatch.setattr(routes_watch, "risolvi", finge)
     pagina = (await visitatore.get(
-        "/guarda", params={"u": "https://esempio.invalido/video/1"})).text
+        "/it/guarda", params={"u": "https://esempio.invalido/video/1"})).text
     assert 'data-flusso="/flusso/tv"' in pagina
     assert 'data-audio="/flusso/ta"' in pagina
     assert "<audio" in pagina
@@ -112,7 +112,7 @@ async def test_il_lettore_si_monta_su_quello_che_esce_dall_estrazione(
 async def test_indirizzo_senza_protocollo(visitatore: AsyncClient) -> None:
     """L'errore piu' comune di chi incolla: si completa invece di rifiutare."""
     risposta = await visitatore.post(
-        "/apri", data={"url": "youtube.com/watch?v=kJQP7kiw5Fk"})
+        "/it/apri", data={"url": "youtube.com/watch?v=kJQP7kiw5Fk"})
     assert "youtube.com/embed/kJQP7kiw5Fk" in risposta.text
 
 

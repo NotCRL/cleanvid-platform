@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block titolo %}{{ t("meta.impostazioni.titolo") }}{% endblock %}
+{% block descrizione %}{{ t("meta.impostazioni.descrizione") }}{% endblock %}
+
+{% block contenuto %}
+<h1>{{ t("impostazioni.titolo") }}</h1>
+<p class=guida>{{ t("impostazioni.guida") }}</p>
+
+{% if salvato %}<p class=fatto>{{ t("impostazioni.salvato") }}</p>{% endif %}
+
+<section class=sezione>
+  <h2>{{ t("impostazioni.lingua") }}</h2>
+  <p class=guida>{{ t("impostazioni.lingua.guida") }}</p>
+
+  {# Un `form` e non del javascript: cosi' la scelta funziona anche senza, e
+     soprattutto ogni lingua resta un link vero nell'elenco qui sotto, che un
+     crawler puo' seguire. #}
+  <form method=post action="/{{ c.lingua.codice }}/impostazioni/lingua">
+    <label class=campo>
+      <span>{{ t("impostazioni.lingua") }}</span>
+      <select name=scelta>
+        {% for l in c.lingue %}
+          <option value="{{ l.codice }}" {% if l.codice == c.lingua.codice %}selected{% endif %}>
+            {{ l.bandiera }} {{ l.nome }}
+          </option>
+        {% endfor %}
+      </select>
+    </label>
+    <button class=principale>{{ t("impostazioni.salva") }}</button>
+  </form>
+
+  <ul class=lingue>
+    {% for l in c.lingue %}
+      <li><a href="{{ c.altrove(l.codice) }}" hreflang="{{ l.codice }}"
+             {% if l.codice == c.lingua.codice %}class=adesso{% endif %}
+             >{{ l.bandiera }} {{ l.nome }}</a></li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class=sezione>
+  <h2>{{ t("impostazioni.il_tuo_utente") }}</h2>
+  <ul class=elenco>
+    <li><a>{{ t("impostazioni.nome_visibile") }}</a>
+        <span class=nota>{{ utente.nome_visibile }}</span></li>
+  </ul>
+</section>
+
+<p style="margin-top:22px"><a href="/{{ c.lingua.codice }}/">← {{ t("piede.torna_home") }}</a></p>
+{% endblock %}

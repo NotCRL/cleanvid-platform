@@ -30,6 +30,19 @@ quindi usano un database a parte — `make prova` lo crea se non c'è. Non
 puntarli su quello di sviluppo: si perderebbe la propria cronologia ogni
 volta.
 
+## Lingue
+
+Il sito è in quattordici lingue, una per indirizzo: `/it/`, `/en/`, `/ja/`.
+
+```bash
+make lingue      # cosa manca da tradurre
+make traduci     # traduce con Claude (serve ANTHROPIC_API_KEY)
+```
+
+L'italiano è l'originale, l'inglese è scritto a mano, le altre si generano e
+poi si rileggono. Il perché di ogni scelta — comprese quelle di SEO, che sono
+la stessa cosa — sta in [`docs/LINGUE-E-SEO.md`](docs/LINGUE-E-SEO.md).
+
 ## Dove sta cosa
 
 | Cartella | Cosa c'è |
@@ -39,6 +52,7 @@ volta.
 | `rooms/` | stanze: protocollo WebSocket e hub |
 | `api/` | le rotte |
 | `web/` | pagine e statici |
+| `lingue/` | i testi, una cartella per lingua |
 
 ## Le tre decisioni da non rimandare
 

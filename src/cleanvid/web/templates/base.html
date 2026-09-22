@@ -1,8 +1,29 @@
 <!doctype html>
+<html lang="{{ c.lingua.codice }}"{% if c.lingua.rtl %} dir=rtl{% endif %}>
 <meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name=theme-color content="#0a0a0c">
-<title>{% block titolo %}cleanvid{% endblock %}</title>
+<title>{% block titolo %}{{ t("meta.home.titolo") }}{% endblock %}</title>
+<meta name=description content="{% block descrizione %}{{ t("meta.home.descrizione") }}{% endblock %}">
+
+{# Canonico e alternative: assoluti, perche' relativi vengono ignorati in
+   silenzio, e generati sempre dalla stessa funzione, perche' un gruppo di
+   hreflang che non torna Google lo butta via tutto senza dirlo. #}
+<link rel=canonical href="{{ c.canonico }}">
+{% for a in c.alternative %}
+<link rel=alternate hreflang="{{ a.codice }}" href="{{ a.url }}">
+{%- endfor %}
+
+{% block robot %}{% endblock %}
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="cleanvid">
+<meta property="og:locale" content="{{ c.lingua.codice }}">
+<meta property="og:title" content="{{ self.titolo() }}">
+<meta property="og:description" content="{{ self.descrizione() }}">
+<meta property="og:url" content="{{ c.canonico }}">
+<meta name="twitter:card" content="summary">
+
 <style>
 :root{
   --sfondo:#0a0a0c; --scheda:#131317; --linea:#26262e;
@@ -22,7 +43,11 @@ a{color:var(--accento)}
   padding:18px 0;gap:14px}
 .marchio{font-weight:650;letter-spacing:-.01em;text-decoration:none;color:var(--testo)}
 .marchio span{color:var(--accento)}
+.strumenti{display:flex;align-items:center;gap:12px}
 .chi{color:var(--tenue);font-size:12.5px}
+.ingranaggio{color:var(--spento);text-decoration:none;font-size:13px;
+  border:1px solid var(--linea);border-radius:8px;padding:5px 10px;line-height:1}
+.ingranaggio:hover{color:#fff;border-color:#3a3a46}
 
 h1{font-size:clamp(26px,4.4vw,42px);line-height:1.1;letter-spacing:-.025em;
   margin:28px 0 12px;font-weight:700}
@@ -53,12 +78,8 @@ button.principale:hover{background:#243256;color:#fff}
 .vuoto{color:var(--tenue);font-size:13px}
 
 .palco{background:#000;border:1px solid var(--linea);border-radius:var(--raggio);
-  overflow:hidden;aspect-ratio:16/9;margin:18px 0}
+  overflow:hidden;aspect-ratio:16/9;margin:18px 0;position:relative}
 .palco iframe{width:100%;height:100%;border:0;display:block}
-.avviso{background:#241416;border:1px solid #4d2329;border-radius:var(--raggio);
-  padding:16px 18px;color:#ffc2c2;font-size:14px;line-height:1.55}
-.avviso b{display:block;margin-bottom:6px;color:#ffd9d9}
-.palco{position:relative}
 .palco video{width:100%;height:100%;display:block;background:#000}
 .barra{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:-4px 0 18px}
 .etichetta{color:var(--spento);font-size:12.5px}
@@ -67,17 +88,79 @@ button.secondario,select{padding:7px 12px;border-radius:9px;border:1px solid #2e
   background:#17171d;color:#d6d6dc;font:inherit;font-size:13px;cursor:pointer}
 button.secondario:hover,select:hover{background:#1f1f27;color:#fff}
 .qualita{margin-left:auto}
+.avviso{background:#241416;border:1px solid #4d2329;border-radius:var(--raggio);
+  padding:16px 18px;color:#ffc2c2;font-size:14px;line-height:1.55}
+.avviso b{display:block;margin-bottom:6px;color:#ffd9d9}
+
+.passi{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  margin:0;padding:0;list-style:none;counter-reset:passo}
+.passi li{background:var(--scheda);border:1px solid var(--linea);
+  border-radius:var(--raggio);padding:18px}
+.passi h3{margin:0 0 6px;font-size:15px;font-weight:600}
+.passi h3::before{counter-increment:passo;content:counter(passo);
+  display:inline-grid;place-items:center;width:22px;height:22px;margin-right:9px;
+  border-radius:50%;background:#1d2842;color:#9dbcff;font-size:12px;vertical-align:1px}
+.passi p{margin:0;color:var(--spento);font-size:13.5px;line-height:1.5}
+
+.domande{margin:0}
+.domande details{border-bottom:1px solid var(--linea);padding:14px 0}
+.domande summary{cursor:pointer;font-weight:550;font-size:14.5px;list-style:none}
+.domande summary::-webkit-details-marker{display:none}
+.domande summary::before{content:"+";color:var(--accento);margin-right:10px;
+  font-weight:600}
+.domande details[open] summary::before{content:"−"}
+.domande p{margin:10px 0 0 22px;color:var(--spento);font-size:14px;max-width:62ch}
+
+.proposta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  background:#12161f;border:1px solid #23304a;border-radius:var(--raggio);
+  padding:12px 16px;margin:16px 0 0;font-size:13.5px;color:#c6d4ee}
+.proposta a{font-weight:550}
+.proposta form{margin:0}
+.proposta button{background:none;border:0;color:var(--tenue);font:inherit;
+  font-size:13px;cursor:pointer;text-decoration:underline}
+
+.lingue{display:grid;gap:6px 18px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  list-style:none;margin:12px 0 0;padding:0}
+.lingue a{text-decoration:none;color:#c9c9d2;font-size:13.5px}
+.lingue a:hover{color:#fff}
+.lingue .adesso{color:var(--accento);font-weight:600}
+
+.campo{display:block;margin:0 0 18px}
+.campo span{display:block;font-size:13px;color:var(--spento);margin-bottom:7px}
+.fatto{color:#7ee0a8;font-size:13px;margin:0 0 16px}
+
 .piede{margin-top:44px;padding-top:18px;border-top:1px solid var(--linea);
   color:var(--tenue);font-size:12px}
+.piede a{color:var(--spento)}
 @media (max-width:640px){ .pagina{padding:0 16px 40px} }
 </style>
 
 <div class=pagina>
   <header class=testata>
-    <a class=marchio href="/">clean<span>vid</span></a>
-    {% if utente %}<span class=chi>{{ utente.nome_visibile }}</span>{% endif %}
+    <a class=marchio href="/{{ c.lingua.codice }}/">clean<span>vid</span></a>
+    <div class=strumenti>
+      {% if utente %}<span class=chi>{{ utente.nome_visibile }}</span>{% endif %}
+      <a class=ingranaggio href="/{{ c.lingua.codice }}/impostazioni"
+         title="{{ t('impostazioni.titolo') }}">⚙ {{ c.lingua.codice|upper }}</a>
+    </div>
   </header>
+
+  {% if c.proposta %}
+    {# Si propone, non si impone: chi ha aperto un link in una lingua voleva
+       quella lingua. Un rimbalzo automatico in base al browser o al paese
+       porterebbe via da una pagina condivisa apposta. #}
+    <p class=proposta>
+      <span>{{ t("proposta.testo", lingua=c.proposta.nome) }}</span>
+      <a href="{{ c.altrove(c.proposta.codice) }}">{{ t("proposta.vai", lingua=c.proposta.nome) }}</a>
+    </p>
+  {% endif %}
+
   {% block contenuto %}{% endblock %}
-  <footer class=piede>{% block piede %}{% endblock %}</footer>
+
+  <footer class=piede>
+    <p>{% block piede %}{{ t("piede.aperto") }}{% endblock %}</p>
+    <p><a href="/{{ c.lingua.codice }}/impostazioni">{{ t("piede.lingua") }}: {{ c.lingua.nome }}</a></p>
+  </footer>
 </div>
 {% block coda %}{% endblock %}
+</html>

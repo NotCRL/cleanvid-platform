@@ -1,4 +1,4 @@
-.PHONY: su giu avvia prova stile tipi
+.PHONY: su giu avvia prova stile tipi traduci
 
 su:      ## database e redis
 	docker compose up -d
@@ -15,3 +15,7 @@ stile:
 	ruff check src tests && ruff format --check src tests
 tipi:
 	mypy src
+traduci: ## traduce con Claude i testi che mancano (serve ANTHROPIC_API_KEY)
+	python strumenti/traduci.py $(LINGUE)
+lingue:  ## dice solo cosa manca, senza chiamare niente
+	python strumenti/traduci.py --controlla

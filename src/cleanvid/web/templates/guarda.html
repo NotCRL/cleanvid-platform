@@ -1,16 +1,26 @@
 {% extends "base.html" %}
-{% block titolo %}{{ titolo or piattaforma or "video" }} · cleanvid{% endblock %}
+{% block titolo %}{{ t("meta.guarda.titolo", titolo=titolo or piattaforma or "video") }}{% endblock %}
+{% block descrizione %}{{ t("meta.guarda.descrizione", titolo=titolo or piattaforma or "video") }}{% endblock %}
+
+{% block robot %}
+{# Fuori dall'indice, e non e' una rinuncia: `guarda?u=...` e' uno spazio di
+   indirizzi infinito, ogni pagina e' sottile e uguale alle altre, e il
+   contenuto dentro e' di qualcun altro. Un motore che ci trova dentro un
+   milione di pagine cosi' non ci premia: ci classifica come sito di scarto e
+   si porta dietro anche la home. #}
+<meta name=robots content="noindex,nofollow">
+{% endblock %}
 
 {% block contenuto %}
 {% if lettore %}
   <div class=palco>
-    <iframe src="{{ lettore.url_lettore }}"
+    <iframe src="{{ lettore.url_lettore }}" title="{{ titolo or piattaforma }}"
             allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
             allowfullscreen></iframe>
   </div>
   <p class=guida>
-    Lettore di {{ lettore.piattaforma }}{% if lettore.diretta_probabile %}, in diretta{% endif %}.
-    Questo indirizzo si può salvare e mandare a qualcuno.
+    {{ t("guarda.lettore_di", piattaforma=lettore.piattaforma) }}
+    {{ t("guarda.condivisibile") }}
   </p>
 
 {% elif estratto %}
@@ -19,6 +29,7 @@
            {% if estratto.diretta %}autoplay{% endif %}
            data-flusso="/flusso/{{ estratto.token }}"
            data-hls="{{ 1 if estratto.hls else 0 }}"
+           data-niente-flusso="{{ t('guarda.niente_flusso') }}"
            {% if estratto.token_audio %}data-audio="/flusso/{{ estratto.token_audio }}"{% endif %}
            ></video>
     {% if estratto.token_audio %}
@@ -32,44 +43,45 @@
 
   <div class=barra>
     <span class=etichetta>
-      {% if estratto.diretta %}<b class=diretta>● in diretta</b>{% else %}registrazione{% endif %}
-      {% if estratto.token_audio %} · due tracce{% elif estratto.hls %} · HLS{% endif %}
+      {% if estratto.diretta %}<b class=diretta>● {{ t("guarda.diretta") }}</b>
+      {% else %}{{ t("guarda.registrazione") }}{% endif %}
+      {% if estratto.token_audio %} · {{ t("guarda.due_tracce") }}{% elif estratto.hls %} · HLS{% endif %}
       {% if estratto.altezza %} · {{ estratto.altezza }}p{% endif %}
     </span>
     {% if estratto.diretta %}
-      <button id=torna-in-diretta class=secondario>Torna in diretta</button>
+      <button id=torna-in-diretta class=secondario>{{ t("guarda.torna_in_diretta") }}</button>
     {% endif %}
-    <form method=get action="/guarda" class=qualita>
+    <form method=get action="/{{ c.lingua.codice }}/guarda" class=qualita>
       <input type=hidden name=u value="{{ url }}">
-      <select name=q onchange="this.form.submit()" aria-label="qualità">
-        <option value="" {% if not q %}selected{% endif %}>come viene</option>
+      <select name=q onchange="this.form.submit()" aria-label="{{ t('guarda.qualita') }}">
+        <option value="" {% if not q %}selected{% endif %}>{{ t("guarda.come_viene") }}</option>
         {% for altezza in qualita_possibili %}
           <option value="{{ altezza }}" {% if q == altezza %}selected{% endif %}>{{ altezza }}p</option>
         {% endfor %}
       </select>
-      <noscript><button class=secondario>applica</button></noscript>
+      <noscript><button class=secondario>{{ t("impostazioni.salva") }}</button></noscript>
     </form>
   </div>
   <p class=guida>{{ estratto.titolo }}</p>
 
 {% else %}
   <div class=avviso>
-    <b>Da questo link non è uscito un video</b>
-    {{ perche or "Il sito non offre un lettore incorporabile e l’estrazione non ha trovato nulla di riproducibile." }}
+    <b>{{ t("guarda.niente.titolo") }}</b>
+    {{ perche or t("guarda.niente.testo") }}
   </div>
 {% endif %}
 
 <section class=sezione>
-  <h2>Indirizzo</h2>
+  <h2>{{ t("guarda.indirizzo") }}</h2>
   <ul class=elenco>
     <li>
-      <a href="{{ url }}" target=_blank rel="noopener noreferrer">{{ url }}</a>
+      <a href="{{ url }}" target=_blank rel="noopener noreferrer nofollow">{{ url }}</a>
       <span class=nota>{{ piattaforma }}</span>
     </li>
   </ul>
 </section>
 
-<p style="margin-top:22px"><a href="/">← torna alla home</a></p>
+<p style="margin-top:22px"><a href="/{{ c.lingua.codice }}/">← {{ t("piede.torna_home") }}</a></p>
 {% endblock %}
 
 {% block coda %}
@@ -79,6 +91,4 @@
 {% endif %}
 {% endblock %}
 
-{% block piede %}
-È finito nella tua cronologia: lo ritrovi nella home, con il tuo utente.
-{% endblock %}
+{% block piede %}{{ t("guarda.in_cronologia") }}{% endblock %}
