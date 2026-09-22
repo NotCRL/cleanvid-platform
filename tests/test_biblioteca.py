@@ -992,3 +992,12 @@ def test_la_diretta_non_si_tiene_in_memoria_tutta() -> None:
     """Su una diretta lunga sono centinaia di megabyte, e la scheda muore."""
     codice = pathlib.Path("src/cleanvid/web/static/lettore.js").read_text()
     assert "backBufferLength: 60" in codice
+
+
+def test_una_lista_senza_segmenti_non_e_un_guasto() -> None:
+    """E' una diretta che in questo momento manda solo pubblicita', e noi
+    l'abbiamo tolta. Trattarla come un errore vorrebbe dire ricaricare la
+    pagina a ogni interruzione."""
+    codice = pathlib.Path("src/cleanvid/web/static/lettore.js").read_text()
+    assert "Hls.ErrorDetails.LEVEL_EMPTY_ERROR" in codice
+    assert "setTimeout(() => hls.startLoad(), 2000)" in codice

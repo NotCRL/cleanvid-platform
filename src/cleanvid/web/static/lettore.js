@@ -129,6 +129,14 @@
     let guastiMedia = 0;
     hls.on(Hls.Events.ERROR, (_, guaio) => {
       if (!guaio.fatal) return;
+      /* Una lista senza segmenti non e' un guasto: e' una diretta che in
+         questo momento sta mandando solo pubblicita', e noi l'abbiamo
+         tolta. Fra qualche secondo tornera' della roba vera. Trattarla come
+         un errore vorrebbe dire ricaricare la pagina ogni interruzione. */
+      if (guaio.details === Hls.ErrorDetails.LEVEL_EMPTY_ERROR) {
+        setTimeout(() => hls.startLoad(), 2000);
+        return;
+      }
       if (guaio.type === Hls.ErrorTypes.NETWORK_ERROR) {
         // un indirizzo scaduto risponde 404 o 403: li' non c'e' niente da
         // riprovare, il flusso va estratto di nuovo

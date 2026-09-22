@@ -1218,3 +1218,44 @@ documento veniva dopo. Ora `.azioni` sta sopra, e `.indirizzo` sotto.
 
 Un pannello che si apre dentro una riga deve stare sopra alla riga sotto,
 sempre.
+
+---
+
+## 2026-09-22 — La pubblicità di Twitch: si riconosce dal titolo del segmento
+
+**Segnalato:** «vedo ancora pubblicità su Twitch». Vero, e il motivo è preciso.
+
+**Cosa guardavamo.** I marker standard: `#EXT-X-CUE-OUT`, `#EXT-X-DATERANGE`
+di classe `twitch-stitched-ad`, i SCTE-35. **A volte ci sono e a volte no.**
+
+**Cosa guardano i blocchi pubblicità che funzionano.** Il titolo del segmento.
+Twitch scrive dopo la virgola dell'`#EXTINF` a cosa serve quel pezzo, e per la
+diretta vera dice sempre `live`.
+
+Misurato adesso, su due canali in diretta nello stesso momento:
+
+```
+xqc:    titoli ['live']                  → 15 segmenti tenuti, 0 tolti
+gaules: titoli ['Amazon|2474283100494']  → 0 segmenti tenuti, 3 tolti
+```
+
+Su `gaules` c'era una pubblicità in corso e **nessun marker standard**: solo
+quel titolo. Con il vecchio criterio passava intera.
+
+**La regola nuova.** Se la playlist è di Twitch — lo dicono i suoi tag
+`#EXT-X-TWITCH-` — ogni segmento il cui titolo non è `live` è pubblicità.
+
+**Vale solo per Twitch, e la severità è voluta.** Su qualunque altro sito il
+titolo dell'`#EXTINF` è vuoto o dice altro, e applicare questa regola vorrebbe
+dire buttare via l'intero video. Per questo si controlla prima che sia davvero
+una playlist di Twitch, e c'è un test che passa una diretta pulita per essere
+sicuri che non venga toccata.
+
+**Di contorno: una lista senza segmenti non è un guasto.** Durante
+un'interruzione, tolti gli spot, può non restare niente. hls.js lo segnala
+come `LEVEL_EMPTY_ERROR` fatale, e il nostro gestore avrebbe ricaricato la
+pagina **a ogni interruzione pubblicitaria**. Ora si aspetta due secondi e si
+riprova, che è quello che sta succedendo davvero: fra poco torna roba vera.
+
+**Verificato.** 139 test, fra cui una playlist Twitch vera copiata così com'è,
+una con dentro `Amazon`, e una di un altro sito che non deve essere toccata.

@@ -205,3 +205,77 @@ def test_una_playlist_senza_numerazione_non_ne_inventa_una() -> None:
     """I video registrati non ce l'hanno: aggiungerla cambierebbe il senso."""
     esito = riscrivi_playlist("tok", "https://cdn.tale/x.m3u8", CON_SPOT)
     assert "MEDIA-SEQUENCE" not in esito.testo
+
+
+# --------------------------------------------------------------------------
+# la pubblicita' di Twitch, riconosciuta dal titolo del segmento
+# --------------------------------------------------------------------------
+
+TWITCH_VERA = """#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-TARGETDURATION:6
+#EXT-X-MEDIA-SEQUENCE:7982
+#EXT-X-TWITCH-LIVE-SEQUENCE:7982
+#EXT-X-TWITCH-ELAPSED-SECS:15962.450
+#EXT-X-PROGRAM-DATE-TIME:2026-09-22T21:48:09.234Z
+#EXTINF:2.000,live
+pezzo0.ts
+#EXT-X-PROGRAM-DATE-TIME:2026-09-22T21:48:11.234Z
+#EXTINF:2.000,live
+pezzo1.ts
+"""
+
+TWITCH_CON_SPOT = """#EXTM3U
+#EXT-X-TARGETDURATION:6
+#EXT-X-MEDIA-SEQUENCE:100
+#EXT-X-TWITCH-LIVE-SEQUENCE:100
+#EXTINF:2.000,Amazon
+spot0.ts
+#EXTINF:2.000,Amazon
+spot1.ts
+#EXT-X-DISCONTINUITY
+#EXTINF:2.000,live
+pezzo0.ts
+#EXTINF:2.000,live
+pezzo1.ts
+"""
+
+
+def test_su_twitch_lo_spot_si_riconosce_dal_titolo_del_segmento() -> None:
+    """E' il criterio che usano tutti i blocchi pubblicita' per Twitch che
+    funzionano.
+
+    I marker standard - CUE-OUT, DATERANGE di classe twitch-stitched-ad - a
+    volte ci sono e a volte no. Il titolo dell'EXTINF c'e' sempre, perche'
+    serve a loro: per i pezzi della diretta vera dice `live`, per gli spot
+    dice il nome dell'inserzionista o niente.
+    """
+    esito = riscrivi_playlist("tok", "https://usher.tale/x.m3u8", TWITCH_CON_SPOT)
+    assert esito.tolti == 2
+    assert "spot0.ts" not in esito.testo and "spot1.ts" not in esito.testo
+    assert esito.testo.count("/segmento?") == 2
+    # e la numerazione segue: i due tolti stavano in testa
+    assert "#EXT-X-MEDIA-SEQUENCE:102" in esito.testo
+
+
+def test_una_diretta_pulita_di_twitch_non_si_tocca() -> None:
+    """La regola e' severa: se sbagliasse, butterebbe via tutta la diretta."""
+    esito = riscrivi_playlist("tok", "https://usher.tale/x.m3u8", TWITCH_VERA)
+    assert esito.tolti == 0
+    assert esito.testo.count("/segmento?") == 2
+    assert "#EXT-X-MEDIA-SEQUENCE:7982" in esito.testo
+
+
+def test_la_regola_di_twitch_non_si_applica_agli_altri_siti() -> None:
+    """Altrove il titolo dell'EXTINF e' vuoto o dice altro, e applicarla
+    vorrebbe dire buttare via l'intero video."""
+    altrove = """#EXTM3U
+#EXT-X-MEDIA-SEQUENCE:5
+#EXTINF:4.000,
+pezzo0.ts
+#EXTINF:4.000,qualcosa
+pezzo1.ts
+"""
+    esito = riscrivi_playlist("tok", "https://cdn.tale/x.m3u8", altrove)
+    assert esito.tolti == 0
+    assert esito.testo.count("/segmento?") == 2

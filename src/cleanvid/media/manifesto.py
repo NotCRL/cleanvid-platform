@@ -128,6 +128,32 @@ def durata_interruzione(riga: str) -> float | None:
     return None
 
 
+# Twitch scrive il titolo del segmento dopo la virgola dell'`#EXTINF`, e per
+# i pezzi della diretta vera quel titolo e' sempre `live`. I segmenti di
+# pubblicita' ne hanno un altro - il nome dell'inserzionista, o niente.
+#
+# E' il criterio piu' affidabile che ci sia, e lo usano tutti i blocchi
+# pubblicita' per Twitch che funzionano. I marker standard (`CUE-OUT`,
+# `DATERANGE` di classe `twitch-stitched-ad`) a volte ci sono e a volte no:
+# quello, invece, c'e' sempre, perche' serve a loro.
+#
+# Vale SOLO per Twitch. Su qualunque altro sito il titolo dell'`#EXTINF` e'
+# vuoto o dice altro, e applicare questa regola vorrebbe dire buttare via
+# l'intero video.
+TWITCH_SEGNO = "#EXT-X-TWITCH-"
+TWITCH_VERO = "live"
+
+
+def e_di_twitch(testo: str) -> bool:
+    return TWITCH_SEGNO in testo
+
+
+def titolo_extinf(riga: str) -> str:
+    """Quello che sta dopo la virgola di un `#EXTINF`."""
+    _, _, coda = riga.partition(",")
+    return coda.strip()
+
+
 @dataclass(slots=True)
 class Ripulita:
     testo: str
@@ -158,6 +184,7 @@ def riscrivi_playlist(token: str, base: str, testo: str) -> Ripulita:
     visto_un_segmento = False
     riga_sequenza = -1             # dove sta il MEDIA-SEQUENCE, per riscriverlo
     sequenza = 0
+    twitch = e_di_twitch(testo)    # vedi sopra: cambia come si riconosce uno spot
 
     for riga in testo.splitlines():
         pulita = riga.strip()
@@ -173,7 +200,11 @@ def riscrivi_playlist(token: str, base: str, testo: str) -> Ripulita:
                 fuori.append("#EXT-X-DISCONTINUITY")
                 continue
             if su.startswith("#EXTINF"):
-                if restano > 0:
+                # su Twitch il titolo del segmento dice da solo se e' un pezzo
+                # della diretta o uno spot, e lo dice sempre
+                spot_di_twitch = (twitch
+                                  and titolo_extinf(pulita).lower() != TWITCH_VERO)
+                if restano > 0 or spot_di_twitch:
                     m = re.match(r"#EXTINF:\s*([0-9.]+)", pulita)
                     sospeso = float(m.group(1)) if m else 0.0
                     continue
