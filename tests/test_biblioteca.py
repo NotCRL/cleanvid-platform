@@ -825,3 +825,28 @@ def test_il_pulsante_di_ritorno_del_muro_fa_qualcosa() -> None:
     assert 'id=pilota' in modello
     assert 'getElementById("pilota")' in codice
     assert "soloVideo(false)" in codice
+
+
+def test_con_la_chat_di_fianco_il_titolo_passa_sotto() -> None:
+    """«Affiancati» vuol dire alla stessa altezza.
+
+    Tenendo il titolo nella colonna di sinistra, la colonna della chat si
+    allungava anche sopra di lui e finiva molto piu' alta del video. Con il
+    titolo a tutta larghezza sotto, lettore e chat stanno nella stessa riga e
+    la riga e' una sola altezza.
+    """
+    foglio = pathlib.Path("src/cleanvid/web/static/stile.css").read_text()
+    assert ('.scena.chat-fianco{grid-template-areas:"palco accanto" '
+            '"principale principale"}') in foglio
+    # e con la chat sotto il titolo torna di fianco alla colonna
+    assert ('.scena.chat-sotto{grid-template-areas:"palco palco" '
+            '"principale accanto"}') in foglio
+
+
+def test_l_altezza_in_cinema_la_decide_il_lettore() -> None:
+    """Un solo numero da regolare invece di due da tenere uguali a mano."""
+    foglio = pathlib.Path("src/cleanvid/web/static/stile.css").read_text()
+    blocco = foglio.split(".scena.cinema.conchat.chat-fianco > .palco")[1][:160]
+    assert "height:min(58vw" in blocco
+    # la chat non ha un'altezza sua: segue la riga
+    assert ".scena.cinema.conchat.chat-fianco .chat{height:" not in foglio

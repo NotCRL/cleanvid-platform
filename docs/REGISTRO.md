@@ -964,3 +964,33 @@ faceva la stessa cosa in piccolo.
 
 **Verificato.** 116 test, fra cui uno che tiene ferme tutte e tre le righe:
 `align-items: start` sulla griglia, `align-self: stretch` sulla colonna.
+
+---
+
+## 2026-09-22 — In cinema il lettore e la chat non erano alla stessa altezza
+
+**Cosa succedeva.** Con la chat di fianco, la colonna della chat era molto più
+alta del video: partiva dal bordo del lettore e finiva sotto il titolo e le
+azioni.
+
+**La causa.** Nella griglia, `chat-fianco` dava alla colonna le aree
+`"palco accanto"` e `"principale accanto"`: la chat occupava **due righe**, il
+lettore una. Con `align-self: stretch` — messo poco prima per tutt'altro
+motivo — la chat si prendeva diligentemente tutte e due.
+
+**Il rimedio.** Con la chat di fianco il titolo passa **sotto, a tutta
+larghezza**: `"palco accanto"` / `"principale principale"`. Lettore e chat
+stanno nella stessa riga, e una riga ha una sola altezza. È anche quello che
+«affiancati» vuol dire.
+
+Con la chat sotto il titolo torna di fianco alla colonna, perché lì la colonna
+comincia proprio all'altezza del titolo.
+
+**Un numero solo.** L'altezza in cinema la decide il lettore — ora
+`min(58vw, 100vh - 128px)`, un po' più alta di prima visto che il titolo non
+gli sta più accanto — e la chat la segue perché sta nella stessa riga e si
+allunga. Prima erano due valori uguali scritti in due posti: il tipo di cosa
+che resta uguale finché qualcuno non ne cambia uno solo.
+
+**Verificato.** 119 test, fra cui uno che fallisce se la chat si riprende
+un'altezza sua invece di seguire la riga.

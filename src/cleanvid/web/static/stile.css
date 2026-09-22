@@ -1587,7 +1587,12 @@ body.cell.chat-sotto.conchat > #chat{flex:0 0 clamp(120px,34%,260px);
    insieme. `chat-sotto`: il lettore prende tutta la larghezza e la colonna
    comincia sotto, di fianco al titolo. */
 .scena.chat-sotto{grid-template-areas:"palco palco" "principale accanto"}
-.scena.chat-fianco{grid-template-areas:"palco accanto" "principale accanto"}
+/* Con la chat di fianco il titolo passa SOTTO a tutta larghezza, e non di
+   fianco anche lui. Cosi' lettore e chat stanno nella stessa riga e hanno la
+   stessa altezza - che e' quello che vuol dire «affiancati». Tenendo il
+   titolo nella colonna di sinistra, la chat si allungava anche sopra di lui e
+   finiva piu' alta del video di una ventina di centimetri. */
+.scena.chat-fianco{grid-template-areas:"palco accanto" "principale principale"}
 /* Senza chat non c'e' niente da affiancare al lettore: la lista «da
    riprendere» sta bene sotto, di fianco al titolo, e il video resta largo. */
 .scena:not(.conchat){grid-template-areas:"palco palco" "principale accanto"}
@@ -1611,9 +1616,11 @@ body.cell.chat-sotto.conchat > #chat{flex:0 0 clamp(120px,34%,260px);
    Un po' di margine ai lati resta: a filo del bordo non si legge niente. */
 .scena.cinema.conchat.chat-fianco{margin-left:calc(50% - 50vw);
   margin-right:calc(50% - 50vw);width:100vw;max-width:100vw;padding:0 20px}
+/* L'altezza la decide il lettore, e la chat la segue perche' sta nella stessa
+   riga e si allunga (`align-self: stretch`, piu' sotto). Un solo numero da
+   regolare invece di due da tenere uguali a mano. */
 .scena.cinema.conchat.chat-fianco > .palco{aspect-ratio:auto;
-  height:min(52vw,calc(100vh - 150px))}
-.scena.cinema.conchat.chat-fianco .chat{height:min(52vw,calc(100vh - 150px))}
+  height:min(58vw,calc(100vh - 128px))}
 
 /* Se non c'e' niente da mettere di fianco, la griglia torna a una colonna:
    una colonna vuota larga trecento pixel e' un buco, non un layout. */
