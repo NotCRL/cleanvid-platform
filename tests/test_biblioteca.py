@@ -795,3 +795,19 @@ async def test_una_registrazione_non_ha_la_colonna_della_chat(
     pagina = (await visitatore.get(
         "/it/guarda", params={"u": "https://www.twitch.tv/unaltro"})).text
     assert "conchat" not in pagina
+
+
+def test_la_chat_si_allunga_quanto_la_riga() -> None:
+    """La griglia ha `align-items: start`, giusto per il titolo e per la
+    lista «da riprendere» - roba che comincia in alto e finisce dove finisce.
+
+    Per la chat no: li' vale l'altezza della riga. Con `start` la colonna
+    restava alta quanto il suo contenuto, cioe' poco, e in «solo il lettore»
+    si vedeva una striscia di chat con sotto mezzo schermo vuoto.
+    """
+    foglio = pathlib.Path("src/cleanvid/web/static/stile.css").read_text()
+    # si corregge sulla colonna, non sulla griglia: `align-items: stretch`
+    # avrebbe toccato anche il lettore, che l'altezza se la calcola da 16:9
+    assert ".scena.conchat.solo > .accanto{align-self:stretch" in foglio
+    assert ".scena.conchat.chat-fianco > .accanto," in foglio
+    assert ".scena{display:grid;gap:16px 24px;align-items:start" in foglio

@@ -939,3 +939,28 @@ niente: non c'è una colonna da allargare.
 **Verificato.** 115 test, fra cui: le tre viste ci sono, la via d'uscita c'è,
 `requestFullscreen` non è tornato nel nostro javascript, e la colonna della
 chat si accende solo con una diretta.
+
+---
+
+## 2026-09-22 — La chat non si allungava quanto la riga
+
+**Cosa succedeva.** In «solo il lettore» la chat era una striscia in alto, con
+sotto mezzo schermo vuoto, invece di riempire la colonna.
+
+**La causa.** La griglia della pagina ha `align-items: start`. È giusto per
+quello che ci sta dentro di solito — il titolo, la lista «da riprendere»:
+roba che comincia in alto e finisce dove finisce. Per la chat no: lì vale
+l'altezza della riga, e con `start` la colonna restava alta quanto il suo
+contenuto, cioè poco.
+
+**Il rimedio, e perché non sulla griglia.** `align-self: stretch` sulla sola
+colonna della chat. Cambiare `align-items` su tutta la griglia avrebbe toccato
+anche il lettore, che l'altezza se la calcola dal rapporto 16:9: sarebbe
+diventato un ragionamento circolare fra l'altezza della riga e quella del suo
+contenuto, del tipo che a volte funziona e a volte no a seconda del browser.
+
+Vale anche per la vista normale con la chat di fianco, dove lo stesso `start`
+faceva la stessa cosa in piccolo.
+
+**Verificato.** 116 test, fra cui uno che tiene ferme tutte e tre le righe:
+`align-items: start` sulla griglia, `align-self: stretch` sulla colonna.

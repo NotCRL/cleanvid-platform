@@ -1783,3 +1783,21 @@ button.scritta{background:none;border:0;color:var(--accent);font:inherit;
 [dir=rtl] .scena.solo > #esci-solo{right:auto;left:14px}
 
 body.vista-solo{overflow:hidden}
+
+
+/* La chat si allunga quanto la riga in cui sta.
+ *
+ * La griglia della pagina ha `align-items: start`, che e' giusto per il
+ * titolo e per la lista «da riprendere» - roba che comincia in alto e finisce
+ * dove finisce. Per la chat no: li' vale l'altezza della riga, e con `start`
+ * la colonna restava alta quanto il suo contenuto, cioe' poco.
+ *
+ * Si corregge sulla singola colonna con `align-self` e non sulla griglia:
+ * `align-items: stretch` avrebbe toccato anche il lettore, che l'altezza se
+ * la calcola dal rapporto 16:9, e sarebbe diventato un ragionamento
+ * circolare fra riga e contenuto. */
+.scena.conchat.chat-fianco > .accanto,
+.scena.conchat.solo > .accanto{align-self:stretch;min-height:0;overflow:hidden;
+  display:flex;flex-direction:column}
+.scena.conchat.chat-fianco .chat,
+.scena.conchat.solo .chat{flex:1;height:auto;min-height:0}
