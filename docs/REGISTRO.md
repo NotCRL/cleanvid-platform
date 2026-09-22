@@ -1088,3 +1088,50 @@ qualcosa da offrire: il bagliore vale su ogni video col lettore nostro. Mostra
 quello che si applica, e quando non si applica niente non c'è affatto.
 
 **Verificato.** 121 test.
+
+---
+
+## 2026-09-22 — La stella non ricarica più la pagina
+
+**Cosa succedeva.** Mettere o togliere dai preferiti faceva un giro completo:
+modulo, rimbalzo, pagina rifatta. Sulla pagina del video **questo faceva
+ripartire il video da capo** — per una stella.
+
+**Il rimedio.** Il javascript intercetta il modulo e fa la stessa cosa di
+lato; la rotta risponde in JSON a chi lo chiede, e col solito rimbalzo a
+tutti gli altri. Il modulo HTML resta e funziona da solo: senza javascript la
+stella va lo stesso, con il ricaricamento. È la forma vecchia, ed è quella che
+regge quando il resto non c'è.
+
+Se la rete non risponde si lascia fare al modulo. Fallire in silenzio su un
+bottone è il modo di far credere a qualcuno di aver salvato una cosa che non
+ha salvato.
+
+---
+
+## 2026-09-22 — Il bagliore doveva essere zero, e non lo era
+
+**Cosa succedeva.** Prima che il video partisse si intravedeva comunque un
+alone. La tela era già in pagina con la sua opacità, e una tela **nera**
+sfocata non è «niente»: è un alone scuro, che sul tema chiaro si vede
+benissimo e sembra sporco.
+
+**Il rimedio.** Opacità zero, proprio zero. Il bagliore compare solo se sono
+vere tutte e tre:
+
+1. lo vuoi (preferenza accesa);
+2. c'è un fotogramma davvero disegnato sulla tela;
+3. il video sta andando.
+
+**`playing`, non `play`.** Il primo vuol dire che sta davvero andando, il
+secondo solo che glielo hanno chiesto — e fra i due, su una diretta, possono
+passare secondi di schermo nero. Con `play` si sarebbe acceso su quel nero.
+
+**Entra e esce in dissolvenza**, 0,6 secondi. È una luce, e una luce che
+compare di colpo è un lampo. Vale anche allo spegnimento dalle preferenze:
+la classe che toglie la tela dalla pagina si rimuove **dopo** la dissolvenza,
+altrimenti l'alone sparirebbe di scatto.
+
+Si spegne in pausa e a fine video, e si riaccende ripartendo.
+
+**Verificato.** 125 test.

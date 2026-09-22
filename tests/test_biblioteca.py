@@ -889,3 +889,51 @@ def test_in_cinema_il_lettore_resta_sedici_noni() -> None:
     assert "height:auto" in blocco
     # e la chat non ha un'altezza sua: segue la riga
     assert ".scena.cinema.conchat.chat-fianco .chat{height:" not in foglio
+
+
+def test_il_bagliore_parte_da_zero() -> None:
+    """Finche' il video non parte la tela e' nera, e una tela nera sfocata
+    non e' «niente»: e' un alone scuro che sul tema chiaro si vede benissimo
+    e sembra sporco. Quindi zero, proprio zero."""
+    foglio = pathlib.Path("src/cleanvid/web/static/stile.css").read_text()
+    spento = ".scena.cinema.con-bagliore > #bagliore{display:block"
+    blocco = foglio.split(spento)[1][:300]
+    assert "opacity:0" in blocco
+    assert "transition:opacity" in blocco      # entra e esce in dissolvenza
+    acceso = ".scena.cinema.con-bagliore.bagliore-acceso > #bagliore"
+    assert acceso + "{opacity:.62}" in foglio
+
+
+def test_il_bagliore_si_accende_solo_quando_il_video_va() -> None:
+    """Tre condizioni insieme: lo vuoi, c'e' un fotogramma disegnato, e il
+    video sta davvero andando."""
+    codice = pathlib.Path("src/cleanvid/web/static/bagliore.js").read_text()
+    assert "acceso && haFotogramma && !video.paused && !video.ended" in codice
+    # `playing` e non `play`: fra i due, su una diretta, passano secondi di
+    # schermo nero
+    assert 'video.addEventListener("playing"' in codice
+    assert 'video.addEventListener("pause", rivedi)' in codice
+
+
+async def test_la_stella_risponde_in_json_a_chi_lo_chiede(
+        visitatore: AsyncClient) -> None:
+    """Su una pagina che sta suonando un video, ricaricare vuol dire farlo
+    ripartire da capo. Per una stella."""
+    r = await visitatore.post(
+        "/it/preferito", data={"url": "https://vimeo.com/76979871"},
+        headers={"Accept": "application/json"})
+    assert r.json() == {"preferito": True}
+    r = await visitatore.post(
+        "/it/preferito", data={"url": "https://vimeo.com/76979871"},
+        headers={"Accept": "application/json"})
+    assert r.json() == {"preferito": False}
+
+
+async def test_senza_javascript_la_stella_funziona_lo_stesso(
+        visitatore: AsyncClient) -> None:
+    """Il modulo HTML c'e' e rimbalza: e' la forma vecchia, ed e' quella che
+    regge quando il resto non c'e'."""
+    r = await visitatore.post(
+        "/it/preferito", data={"url": "https://vimeo.com/76979871"},
+        follow_redirects=False)
+    assert r.status_code == 303

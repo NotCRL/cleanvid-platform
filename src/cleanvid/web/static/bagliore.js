@@ -32,20 +32,34 @@
   const pennello = tela.getContext("2d", { alpha: false });
   if (!pennello) return;
 
-  let acceso = true;
+  let acceso = true;          // la preferenza: lo vuole o no
+  let haFotogramma = false;   // c'e' gia' qualcosa di disegnato sulla tela
   let battito = null;
 
+  /* Il bagliore si vede solo se TUTTE e tre sono vere: lo vuole, c'e' un
+   * fotogramma disegnato, e il video sta andando.
+   *
+   * Finche' il video non parte la tela e' nera, e una tela nera sfocata non
+   * e' «niente»: e' un alone scuro che sul tema chiaro si vede benissimo e
+   * sembra sporco. Quindi zero, proprio zero, finche' non c'e' qualcosa da
+   * mostrare. */
+  function rivedi() {
+    const visibile = acceso && haFotogramma && !video.paused && !video.ended;
+    teatro.classList.toggle("bagliore-acceso", visibile);
+  }
+
   function disegna() {
-    // niente da disegnare se e' fermo o non e' ancora arrivato niente
     if (video.paused || video.readyState < 2) return;
     try {
       pennello.drawImage(video, 0, 0, LARGO, ALTO);
+      haFotogramma = true;
+      rivedi();
     } catch (e) {
       // un video di un'altra origine sporca la tela. A noi non serve
       // rileggerne i pixel, solo mostrarla, quindi va bene lo stesso - ma se
       // il browser si rifiuta del tutto, si smette invece di riprovare
       // quattro volte al secondo per sempre.
-      spegni();
+      metti("spento", false);
     }
   }
 
@@ -54,12 +68,18 @@
     teatro.classList.add("con-bagliore");
     if (battito === null) battito = setInterval(disegna, OGNI);
     disegna();
+    rivedi();
   }
 
   function spegni() {
     acceso = false;
-    teatro.classList.remove("con-bagliore");
+    rivedi();                 // prima sparisce, con la sua dissolvenza
     if (battito !== null) { clearInterval(battito); battito = null; }
+    // `con-bagliore` si toglie DOPO: e' quella che leva la tela dalla pagina,
+    // e toglierla subito farebbe sparire l'alone di scatto invece che piano
+    setTimeout(() => {
+      if (!acceso) teatro.classList.remove("con-bagliore");
+    }, 650);
   }
 
   function metti(stato, ricorda) {
@@ -71,6 +91,16 @@
       catch (e) {}
     }
   }
+
+  /* Il video dice quando c'e' qualcosa da illuminare. `playing` e non `play`:
+     il primo vuol dire che sta davvero andando, il secondo solo che glielo
+     hanno chiesto - e fra i due, su una diretta, possono passare secondi di
+     schermo nero. */
+  video.addEventListener("playing", () => { disegna(); rivedi(); });
+  video.addEventListener("pause", rivedi);
+  video.addEventListener("ended", rivedi);
+  video.addEventListener("emptied", () => { haFotogramma = false; rivedi(); });
+  video.addEventListener("seeking", disegna);
 
   document.querySelectorAll("[data-bagliore]").forEach((b) => {
     b.addEventListener("click", () => {

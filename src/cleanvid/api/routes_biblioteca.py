@@ -15,7 +15,7 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..db import sessione
@@ -51,7 +51,19 @@ async def preferito(
     utente: Utente = Depends(utente_corrente),
     db: AsyncSession = Depends(sessione),
 ) -> Response:
-    await biblioteca.preferito(db, utente.id, url, titolo, piattaforma)
+    """Mette o toglie dai preferiti.
+
+    Risponde in due modi, e serve: al javascript restituisce lo stato nuovo,
+    cosi' la stella si accende sul posto e **la pagina non si ricarica** - su
+    una pagina che sta suonando un video, ricaricare vuol dire farlo
+    ripartire da capo per una stella.
+
+    A un modulo mandato senza javascript risponde con il solito rimbalzo,
+    perche' quello e' l'unico modo che ha di vedere il risultato.
+    """
+    adesso = await biblioteca.preferito(db, utente.id, url, titolo, piattaforma)
+    if "application/json" in (request.headers.get("accept") or ""):
+        return JSONResponse({"preferito": adesso})
     return RedirectResponse(_indietro(request, lingua_url), status_code=303)
 
 

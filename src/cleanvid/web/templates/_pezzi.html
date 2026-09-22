@@ -56,12 +56,14 @@
 
   {% if azioni %}
     <span class=vacts>
-      <form method=post action="/{{ c.lingua.codice }}/preferito">
+      <form method=post action="/{{ c.lingua.codice }}/preferito" data-preferito>
         <input type=hidden name=url value="{{ voce.url }}">
         <input type=hidden name=titolo value="{{ voce.titolo }}">
         <input type=hidden name=piattaforma value="{{ voce.piattaforma }}">
         <button class="act{% if e_preferito %} acceso{% endif %}" type=submit
                 aria-pressed="{{ 'true' if e_preferito else 'false' }}"
+                data-si="{{ t('azione.togli_preferito') }}"
+                data-no="{{ t('azione.preferito') }}"
                 title="{{ t('azione.togli_preferito') if e_preferito else t('azione.preferito') }}"
                 aria-label="{{ t('azione.togli_preferito') if e_preferito else t('azione.preferito') }}"
                 >{{ ICONE.stella | safe }}</button>

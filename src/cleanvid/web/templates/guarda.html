@@ -70,12 +70,14 @@
     {# Le azioni, a pillole. Quelle che si usano stanno a sinistra; le viste e
        la qualita', che si toccano una volta e basta, stanno a destra. #}
     <div class=azioni>
-      <form method=post action="/{{ c.lingua.codice }}/preferito">
+      <form method=post action="/{{ c.lingua.codice }}/preferito" data-preferito>
         <input type=hidden name=url value="{{ url }}">
         <input type=hidden name=titolo value="{{ titolo }}">
         <input type=hidden name=piattaforma value="{{ piattaforma }}">
         <button class="chip{% if e_preferito %} acceso{% endif %}"
-                aria-pressed="{{ 'true' if e_preferito else 'false' }}">
+                aria-pressed="{{ 'true' if e_preferito else 'false' }}"
+                data-si="{{ t('azione.togli_preferito') }}"
+                data-no="{{ t('azione.preferito') }}">
           <i>{{ "★" if e_preferito else "☆" }}</i>
           <span>{{ t("azione.togli_preferito") if e_preferito else t("azione.preferito") }}</span>
         </button>
@@ -230,6 +232,7 @@
 {% endif %}
 {% if lettore or estratto %}
   <script src="/static/copertine.js"></script>
+  <script src="/static/preferiti.js"></script>
   <script src="/static/viste.js"></script>
   {% if estratto %}<script src="/static/bagliore.js"></script>{% endif %}
 {% endif %}

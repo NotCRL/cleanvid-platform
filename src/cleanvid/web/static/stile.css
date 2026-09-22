@@ -1833,26 +1833,40 @@ body.vista-solo{overflow:hidden}
  * e l'asse verticale resta `visible` - se no il pannello delle preferenze si
  * ritroverebbe tagliato quando si apre. */
 #bagliore{display:none}
-.scena.cinema.con-bagliore{overflow:visible clip}
+.scena.cinema{overflow:visible clip}
+
+/* La tela c'e' ma NON si vede finche' non c'e' qualcosa da illuminare.
+   Opacita' zero, non «poca»: finche' il video non parte la tela e' nera, e
+   una tela nera sfocata non e' niente - e' un alone scuro che sul tema chiaro
+   si vede benissimo e sembra sporco.
+
+   L'accensione e lo spegnimento sono una dissolvenza, non uno scatto: e' una
+   luce, e una luce che compare di colpo e' un lampo. */
 .scena.cinema.con-bagliore > #bagliore{display:block;grid-area:palco;
   width:100%;height:100%;z-index:0;pointer-events:none;
-  filter:blur(56px) saturate(2.1) brightness(1.15);opacity:.62;
-  transform:scale(1.03);
-  /* il passaggio da un fotogramma all'altro non deve vedersi come uno scatto */
-  transition:opacity .5s}
+  filter:blur(56px) saturate(2.1) brightness(1.15);
+  transform:scale(1.03);opacity:0;
+  transition:opacity .6s cubic-bezier(.4,0,.2,1)}
+.scena.cinema.con-bagliore.bagliore-acceso > #bagliore{opacity:.62}
 .scena.cinema > .palco{position:relative;z-index:1}
 
 /* Sul tema chiaro serve meno: il bagliore deve accendere il fondo, non
-   sbiancarlo. */
-:root[data-theme="light"] .scena.cinema.con-bagliore > #bagliore{opacity:.4;
+   sbiancarlo. L'opacita' cambia solo da acceso - da spento resta zero come
+   dappertutto. */
+:root[data-theme="light"] .scena.cinema.con-bagliore > #bagliore{
   filter:blur(56px) saturate(1.7) brightness(1.05)}
+:root[data-theme="light"] .scena.cinema.con-bagliore.bagliore-acceso >
+  #bagliore{opacity:.4}
 @media (prefers-color-scheme:light){
   :root:not([data-theme="dark"]) .scena.cinema.con-bagliore > #bagliore{
-    opacity:.4;filter:blur(56px) saturate(1.7) brightness(1.05)}
+    filter:blur(56px) saturate(1.7) brightness(1.05)}
+  :root:not([data-theme="dark"]) .scena.cinema.con-bagliore.bagliore-acceso >
+    #bagliore{opacity:.4}
 }
 
-/* Chi ha chiesto meno movimento non se lo trova acceso di sua iniziativa: lo
-   decide il javascript, ma anche qui si toglie l'animazione. */
+/* Chi ha chiesto meno movimento: niente dissolvenza. Il bagliore resta -
+   quello lo decide il javascript, che da spento non lo accende di sua
+   iniziativa - ma se lo si accende, compare e basta. */
 @media (prefers-reduced-motion:reduce){
   .scena.cinema.con-bagliore > #bagliore{transition:none}
 }
