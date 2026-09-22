@@ -99,7 +99,11 @@
   </ul>
 </section>
 
-<p style="margin-top:22px"><a href="/{{ c.lingua.codice }}/">← {{ t("piede.torna_home") }}</a></p>
+<p style="margin-top:22px">
+  <a href="/{{ c.lingua.codice }}/">← {{ t("piede.torna_home") }}</a>
+  &nbsp;·&nbsp;
+  <a href="/{{ c.lingua.codice }}/muro">{{ t("muro.titolo") }}</a>
+</p>
 {% endblock %}
 
 {% block coda %}

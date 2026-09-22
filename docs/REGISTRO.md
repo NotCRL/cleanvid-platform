@@ -430,3 +430,82 @@ applica prima del disegno, le schede hanno il markup a cui lo stile parla, e
 la copertina arriva con `data-copertina` e non con `src`. Poi a mano:
 `stile.css` servito, 78 KB, tema e copertine caricati, iniziali e tinte
 stabili.
+
+---
+
+## 2026-09-22 — Il muro: da uno a quattro video insieme
+
+**Cosa cambia.** `/{lingua}/muro`: si incollano fino a quattro link e si
+guardano insieme. Affiancati, incolonnati o a griglia; i bordi fra i riquadri
+si trascinano per cambiarne le misure; un riquadro si sposta prendendolo per
+la presa, o con le frecce. L'audio sta su uno solo — quello che tocchi.
+Ogni riquadro ha la sua qualità, e c'è un comando «leggero» che li porta tutti
+a 480p. I gruppi si salvano e si riaprono, dalla home o dal menu del muro.
+
+**Come è fatto.** `api/routes_muro.py`, `web/static/muro.js` (il grosso),
+`web/static/cella.js`, `web/static/avvisi.js`, e i due modelli `muro.html` e
+`cella.html`.
+
+**I quattro vincoli che decidono tutto.** Arrivano dal file unico e sono costati
+tempo la prima volta. Vanno letti prima di toccare qualcosa:
+
+1. **Non si ricostruisce mai il muro.** Aggiungere un riquadro rifacendo la
+   griglia fa ripartire da capo tutti i video che stavano suonando — è il bug
+   che avevi segnalato allora, e la misura fu 8,3 s → 14,3 s → 20,3 s di
+   riavvii. Ogni operazione tocca una cella sola.
+2. **I riquadri non si spostano mai nel DOM.** Spostare un `<iframe>` lo
+   ricarica. Cambia solo la proprietà `order`, che la griglia rispetta: il
+   video non se ne accorge nemmeno.
+3. **Il movimento è fatto con la tecnica FLIP.** Si misura dov'erano, si cambia
+   l'ordine, si misura dove sono finiti, si rimettono al punto di partenza con
+   una trasformazione e si lasciano andare. Il browser anima solo `transform`,
+   quindi scorre liscio anche con quattro video accesi.
+4. **La qualità è parte dell'indirizzo del riquadro.** Cambiarla vuol dire
+   ricaricare quel riquadro — e un solo posto costruisce quell'indirizzo.
+
+**Perché ogni riquadro è un iframe.** Quattro `<video>` nella stessa pagina
+sembrano più semplici e non lo sono: con l'iframe ogni video ha il suo
+contesto — il suo lettore, il suo HLS, il suo errore quando c'è — e uno che si
+pianta non porta giù gli altri tre. Il prezzo è che il muro non può toccare
+quei `<video>`, ed è il motivo per cui esiste `cellApi`: il filo con cui la
+pagina di fuori comanda il riquadro.
+
+**Perché il riquadro si disegna i suoi comandi** invece di usare quelli del
+browser: dentro un riquadro piccolo Chrome toglie da solo volume e schermo
+intero, e su una diretta mostra una durata che non vuol dire niente.
+
+**Cosa sta dove.** Disposizione, misure, quali video, quale ha l'audio: nel
+`localStorage`. Cambiano dieci volte al minuto mentre si sistemano le
+finestre, e mandarle al server sarebbe una richiesta per ogni pixel
+trascinato. Al server va solo ciò che deve sopravvivere alla scheda chiusa: i
+gruppi.
+
+**Le due cose che il server non si fida a fare.**
+
+*Una cella non finisce in cronologia.* Un muro da quattro, ricaricato,
+riempirebbe la cronologia ogni volta. In cronologia ci va quello che si apre
+di proposito.
+
+*Di un gruppo si salva solo indirizzo e titolo.* Quello che arriva dal browser
+non si copia mai intero in un campo JSON, o si finisce per salvare qualunque
+cosa a qualcuno venga in mente di mandare. E un gruppo di un altro risponde
+404, non 403: dire «esiste ma non è tuo» direbbe a chi prova a indovinare un
+id se ha indovinato.
+
+**I testi.** Il muro costruisce quasi tutta la sua interfaccia da sé, quindi le
+frasi non possono stare nel modello: arrivano al javascript in `window.TESTI`,
+e si manda **solo** quello che usa, non tutto il catalogo — sono dati che
+finiscono nell'HTML di ogni caricamento. 48 chiavi nuove, in tutte e
+quattordici le lingue.
+
+**Cosa non è passato.** Il cassetto laterale condiviso con le altre pagine: qui
+i salvati servono al muro soltanto, e un cassetto generico usato da un posto
+solo è complicazione senza guadagno. Al suo posto un pannello che vive nella
+pagina del muro, già pieno: aprirlo non deve costare una richiesta.
+
+**Verificato.** 84 test, fra cui: un estraneo non legge il gruppo di un altro
+nemmeno conoscendone l'id; una cella non sporca la cronologia; un gruppo non
+tiene più di quattro celle; un campo in più mandato dal browser non viene
+salvato; `javascript:` come indirizzo viene rifiutato; e i testi giapponesi
+arrivano davvero al javascript. Poi a mano sul server: muro, cella, salvataggio
+e rilettura di un gruppo.

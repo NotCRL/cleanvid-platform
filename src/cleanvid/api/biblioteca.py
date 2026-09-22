@@ -181,7 +181,8 @@ async def salva_fonte(db: AsyncSession, utente_id: uuid.UUID,
 
 
 async def salva_gruppo(db: AsyncSession, utente_id: uuid.UUID, nome: str,
-                       celle: Sequence[str], colonne: int = 2) -> VoceBiblioteca:
+                       celle: Sequence[object], colonne: int = 2,
+                       disposizione: str = "griglia") -> VoceBiblioteca:
     """Un gruppo e' l'insieme di video che si aprono insieme, e come stanno.
 
     La chiave e' il nome: salvare due volte con lo stesso nome sovrascrive
@@ -192,7 +193,8 @@ async def salva_gruppo(db: AsyncSession, utente_id: uuid.UUID, nome: str,
     return await _metti(
         db, utente_id, Genere.GRUPPO, f"gruppo:{pulito.lower()}",
         titolo=pulito,
-        dati={"celle": list(celle)[:4], "colonne": colonne})
+        dati={"celle": list(celle)[:4], "colonne": colonne,
+              "disposizione": disposizione})
 
 
 async def _metti(db: AsyncSession, utente_id: uuid.UUID, genere: Genere,
@@ -223,7 +225,7 @@ async def rinomina(db: AsyncSession, utente_id: uuid.UUID,
     E' quello che significa `titolo_tuo`: chi ha rinominato "il canale di
     nonna" non se lo vede tornare "Live stream #4821" alla prossima apertura.
     """
-    voce = await _mia(db, utente_id, voce_id)
+    voce = await mia(db, utente_id, voce_id)
     if voce is None:
         return False
     voce.titolo = titolo.strip()[:300]
@@ -233,15 +235,15 @@ async def rinomina(db: AsyncSession, utente_id: uuid.UUID,
 
 async def elimina(db: AsyncSession, utente_id: uuid.UUID,
                   voce_id: uuid.UUID) -> bool:
-    voce = await _mia(db, utente_id, voce_id)
+    voce = await mia(db, utente_id, voce_id)
     if voce is None:
         return False
     await db.delete(voce)
     return True
 
 
-async def _mia(db: AsyncSession, utente_id: uuid.UUID,
-               voce_id: uuid.UUID) -> VoceBiblioteca | None:
+async def mia(db: AsyncSession, utente_id: uuid.UUID,
+              voce_id: uuid.UUID) -> VoceBiblioteca | None:
     """Una voce per id, ma **solo se e' di chi la chiede**.
 
     Non esiste in questo file una funzione che prenda un id e restituisca la

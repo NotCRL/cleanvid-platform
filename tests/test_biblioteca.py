@@ -304,3 +304,114 @@ async def test_la_copertina_non_blocca_la_pagina(visitatore: AsyncClient) -> Non
     # `data-copertina` e non `src`: la mette il javascript quando c'e'
     assert "data-copertina=" in pagina
     assert 'src="/copertina' not in pagina
+
+
+# --------------------------------------------------------------------------
+# il muro
+# --------------------------------------------------------------------------
+
+async def test_il_muro_si_apre(visitatore: AsyncClient) -> None:
+    pagina = (await visitatore.get("/it/muro")).text
+    for pezzo in ("id=wall", "id=grid", "id=addform", "window.MURO",
+                  "window.TESTI", "/static/muro.js"):
+        assert pezzo in pagina, pezzo
+    # fuori dall'indice: e' uno strumento, non una pagina da trovare cercando
+    assert 'content="noindex,nofollow"' in pagina
+
+
+async def test_una_cella_e_solo_il_lettore(visitatore: AsyncClient) -> None:
+    """Niente testata, niente piede: dentro un riquadro darebbero fastidio
+    e ruberebbero spazio al video."""
+    pagina = (await visitatore.get(
+        "/it/cella", params={"u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
+    assert "id=incorniciato" in pagina
+    assert "/static/cella.js" in pagina
+    assert "class=testata" not in pagina
+    assert "class=foot" not in pagina
+
+
+async def test_una_cella_non_finisce_in_cronologia(visitatore: AsyncClient) -> None:
+    """Un muro da quattro, ricaricato, riempirebbe la cronologia ogni volta.
+
+    In cronologia ci va quello che si apre di proposito, non i riquadri.
+    """
+    await visitatore.get("/it/cella",
+                         params={"u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})
+    assert "kJQP7kiw5Fk" not in (await visitatore.get("/it/")).text
+
+
+async def test_un_gruppo_si_salva_e_si_rilegge(visitatore: AsyncClient) -> None:
+    r = await visitatore.post("/it/gruppo", data={
+        "nome": "Sera",
+        "celle": '[{"url":"https://vimeo.com/76979871","title":"uno"},'
+                 '{"url":"https://youtu.be/kJQP7kiw5Fk","title":"due"}]',
+        "colonne": "2", "disposizione": "riga"})
+    assert r.json()["ok"] is True
+    gruppo_id = r.json()["id"]
+
+    elenco = (await visitatore.get("/it/gruppi.json")).json()["gruppi"]
+    assert [g["nome"] for g in elenco] == ["Sera"]
+    assert elenco[0]["quanti"] == 2
+
+    uno = (await visitatore.get(f"/it/gruppo/{gruppo_id}.json")).json()
+    assert uno["disposizione"] == "riga"
+    assert [c["title"] for c in uno["celle"]] == ["uno", "due"]
+
+
+async def test_il_gruppo_di_un_altro_non_si_legge(visitatore: AsyncClient) -> None:
+    """404 e non 403: dire «esiste ma non e' tuo» direbbe a chi prova a
+    indovinare un id se ha indovinato."""
+    r = await visitatore.post("/it/gruppo", data={
+        "nome": "Mio", "celle": '[{"url":"https://vimeo.com/76979871"}]'})
+    gruppo_id = r.json()["id"]
+
+    async with AsyncClient(transport=ASGITransport(app=app),
+                           base_url="http://prova",
+                           follow_redirects=True) as estraneo:
+        assert (await estraneo.get(f"/it/gruppo/{gruppo_id}.json")).status_code == 404
+        assert (await estraneo.get("/it/gruppi.json")).json()["gruppi"] == []
+
+
+async def test_un_gruppo_non_tiene_piu_di_quattro_celle(
+        visitatore: AsyncClient) -> None:
+    celle = [{"url": f"https://tale/{n}"} for n in range(9)]
+    import json as _json
+    r = await visitatore.post("/it/gruppo", data={
+        "nome": "Troppi", "celle": _json.dumps(celle)})
+    uno = (await visitatore.get(f"/it/gruppo/{r.json()['id']}.json")).json()
+    assert len(uno["celle"]) == 4
+
+
+async def test_quello_che_arriva_dal_browser_non_si_copia_intero(
+        visitatore: AsyncClient) -> None:
+    """Si tiene solo indirizzo e titolo. Copiare il resto vorrebbe dire
+    salvare qualunque cosa a qualcuno venga in mente di mandare."""
+    r = await visitatore.post("/it/gruppo", data={
+        "nome": "Furbo",
+        "celle": '[{"url":"https://vimeo.com/1","title":"ok",'
+                 '"sorpresa":"non deve restare","admin":true}]'})
+    uno = (await visitatore.get(f"/it/gruppo/{r.json()['id']}.json")).json()
+    assert set(uno["celle"][0]) == {"url", "title"}
+
+
+async def test_un_indirizzo_che_non_e_un_indirizzo_viene_scartato(
+        visitatore: AsyncClient) -> None:
+    r = await visitatore.post("/it/gruppo", data={
+        "nome": "Niente", "celle": '[{"url":"javascript:alert(1)"}]'})
+    assert r.status_code == 400
+    assert r.json()["ok"] is False
+
+
+async def test_i_testi_del_muro_arrivano_al_javascript(
+        visitatore: AsyncClient) -> None:
+    """Il muro costruisce la sua interfaccia da se': senza questi, i bottoni
+    avrebbero per etichetta il nome della chiave."""
+    import json as _json
+    import re as _re
+    pagina = (await visitatore.get("/ja/muro")).text
+    grezzo = _re.search(r"window\.TESTI = (\{.*?\});", pagina, _re.S)
+    assert grezzo
+    testi_js = _json.loads(grezzo.group(1))
+    assert testi_js["muro.pieno.t"] == "いっぱいです"
+    # si manda solo quello che serve, non tutto il catalogo
+    assert "home.faq.1.r" not in testi_js

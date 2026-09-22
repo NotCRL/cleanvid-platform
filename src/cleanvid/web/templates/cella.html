@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="{{ c.lingua.codice }}">
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>{{ (estratto.titolo if estratto else piattaforma) or url }} · cleanvid</title>
+<meta name=robots content="noindex,nofollow">
+<link rel=stylesheet href="/static/stile.css">
+<script src="/static/tema.js"></script>
+
+{# Un riquadro del muro: solo il lettore, niente intorno. La pagina che ci
+   contiene disegna i comandi, perche' quelli nativi dentro un riquadro
+   piccolo il browser li mutila da solo. #}
+<body class=cell data-diretta="{{ 1 if estratto and estratto.diretta else 0 }}">
+
+{% if lettore %}
+  <iframe id=incorniciato src="{{ lettore.url_lettore }}"
+          allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe>
+{% elif estratto %}
+  <video id=video playsinline autoplay muted
+         data-flusso="/flusso/{{ estratto.token }}"
+         data-hls="{{ 1 if estratto.hls else 0 }}"
+         {% if estratto.token_audio %}data-audio="/flusso/{{ estratto.token_audio }}"{% endif %}
+         ></video>
+  {% if estratto.token_audio %}
+    <audio id=audio preload=auto style="position:absolute;width:0;height:0"></audio>
+  {% endif %}
+{% else %}
+  <div class="stage guasta">
+    <div class=guasto>
+      <b>{{ t("guarda.niente.titolo") }}</b>
+      <span>{{ perche or t("guarda.niente.testo") }}</span>
+    </div>
+  </div>
+{% endif %}
+
+{% if estratto %}
+  {% if estratto.hls %}<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>{% endif %}
+  <script src="/static/lettore.js"></script>
+{% endif %}
+<script src="/static/cella.js"></script>
+</html>

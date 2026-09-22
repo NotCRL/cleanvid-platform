@@ -66,6 +66,7 @@ def crea_app() -> FastAPI:
         routes_biblioteca,
         routes_copertina,
         routes_flusso,
+        routes_muro,
         routes_seo,
         routes_watch,
     )
@@ -75,6 +76,7 @@ def crea_app() -> FastAPI:
     app.include_router(routes_copertina.router)
     app.include_router(routes_seo.router)
     app.include_router(routes_biblioteca.router)
+    app.include_router(routes_muro.router)
     app.include_router(routes_watch.router)
     # in arrivo: stanze e websocket delle stanze
     return app

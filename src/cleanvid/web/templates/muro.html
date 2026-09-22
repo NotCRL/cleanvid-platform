@@ -1,0 +1,159 @@
+{# Il muro non estende `base.html` e non e' una dimenticanza: quella pagina ha
+   una colonna centrata, una testata e un piede, ed e' fatta per essere letta.
+   Il muro prende tutto lo schermo e non ha niente da leggere. Forzarlo dentro
+   quel guscio avrebbe voluto dire disfarlo pezzo per pezzo con delle
+   eccezioni, che e' il modo di avere due pagine che si rompono a vicenda. #}
+
+{% macro scelte(gruppi, preferiti, recenti, t, c) %}
+<div class=scelte>
+  {% if gruppi %}
+    <h3>{{ t("home.gruppi") }}</h3>
+    <ul>{% for g in gruppi %}
+      <li><a href="#" data-gruppo="{{ g.id }}">{{ g.titolo }}
+        <span>{{ g.dati.celle | length }}</span></a></li>
+    {% endfor %}</ul>
+  {% endif %}
+  {% if preferiti %}
+    <h3>{{ t("home.preferiti") }}</h3>
+    <ul>{% for v in preferiti %}
+      <li><a href="#" data-add="{{ v.url }}" data-titolo="{{ v | nome_voce }}"
+             >{{ v | nome_voce }}<span>{{ v.piattaforma }}</span></a></li>
+    {% endfor %}</ul>
+  {% endif %}
+  {% if recenti %}
+    <h3>{{ t("home.recenti") }}</h3>
+    <ul>{% for v in recenti %}
+      <li><a href="#" data-add="{{ v.url }}" data-titolo="{{ v | nome_voce }}"
+             >{{ v | nome_voce }}<span>{{ v.piattaforma }}</span></a></li>
+    {% endfor %}</ul>
+  {% endif %}
+</div>
+{% endmacro %}
+<!doctype html>
+<html lang="{{ c.lingua.codice }}"{% if c.lingua.rtl %} dir=rtl{% endif %}>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>{{ t("muro.titolo") }} · cleanvid</title>
+<meta name=robots content="noindex,nofollow">
+<link rel=stylesheet href="/static/stile.css">
+<script src="/static/tema.js"></script>
+
+<div id=wall>
+  <div class=wallbar>
+    <form id=addform class=walladd>
+      <input type=url id=addurl required placeholder="{{ t('home.campo') }}"
+             aria-label="{{ t('home.campo') }}">
+      <button title="{{ t('muro.aggiungi') }}" aria-label="{{ t('muro.aggiungi') }}">
+        <i>&plus;</i><span class=etichetta>{{ t("muro.aggiungi") }}</span></button>
+    </form>
+
+    <button id=wallpick class=iconbtn type=button
+            title="{{ t('muro.salvati') }}" aria-label="{{ t('muro.salvati') }}">
+      <i>&#9776;</i><span class=etichetta>{{ t("muro.salvati") }}</span></button>
+
+    <span class=sep></span>
+
+    <span class="layouts primario">
+      <button type=button data-disp=riga title="{{ t('muro.affiancati') }}"
+              aria-label="{{ t('muro.affiancati') }}">&#9707;</button>
+      <button type=button data-disp=colonna title="{{ t('muro.incolonnati') }}"
+              aria-label="{{ t('muro.incolonnati') }}"
+              style="transform:rotate(90deg)">&#9707;</button>
+      <button type=button data-disp=griglia title="{{ t('muro.griglia') }}"
+              aria-label="{{ t('muro.griglia') }}" class=on>&#9638;</button>
+    </span>
+    <span class="layouts primario colscelta">
+      {% for n in [1, 2, 3, 4] %}
+        <button type=button data-cols="{{ n }}"
+                title="{{ n }} · {{ t('muro.colonne') }}"
+                {% if n == 2 %}class=on{% endif %}>{{ n }}</button>
+      {% endfor %}
+    </span>
+
+    <span class=hint id=wallhint>{{ t("muro.vuoto") }}</span>
+
+    <button id=piu class=iconbtn type=button aria-expanded=false
+            title="{{ t('muro.altro') }}" aria-label="{{ t('muro.altro') }}">
+      <i>&#8943;</i><span class=etichetta>{{ t("muro.altro") }}</span></button>
+
+    <div id=extra>
+      <div class=extra-testa>{{ t("muro.comandi") }}<i id=extrax
+        role=button tabindex=0 aria-label="{{ t('azione.elimina') }}">&times;</i></div>
+      <div class=extra-riga>
+        <span class=extra-et>{{ t("muro.disposizione") }}</span>
+        <span class="layouts secondario">
+          <button type=button data-disp=riga title="{{ t('muro.affiancati') }}">&#9707;</button>
+          <button type=button data-disp=colonna title="{{ t('muro.incolonnati') }}"
+                  style="transform:rotate(90deg)">&#9707;</button>
+          <button type=button data-disp=griglia title="{{ t('muro.griglia') }}" class=on>&#9638;</button>
+        </span>
+      </div>
+      <div class="extra-riga colscelta">
+        <span class=extra-et>{{ t("muro.colonne") }}</span>
+        <span class="layouts secondario">
+          {% for n in [1, 2, 3, 4] %}
+            <button type=button data-cols="{{ n }}" {% if n == 2 %}class=on{% endif %}>{{ n }}</button>
+          {% endfor %}
+        </span>
+      </div>
+      <button id=reset class=iconbtn type=button title="{{ t('muro.misure_uguali') }}">
+        <i>&#8634;</i><span class=etichetta>{{ t("muro.misure_uguali") }}</span></button>
+      <button id=nudo class=iconbtn type=button title="{{ t('muro.solo_video') }}">
+        <i>&#128065;&#65038;</i><span class=etichetta>{{ t("muro.solo_video") }}</span></button>
+      <button id=leggero class=iconbtn type=button title="{{ t('muro.leggero.spiega') }}">
+        <i>&#9673;</i><span class=etichetta>{{ t("muro.leggero") }}</span></button>
+      <button id=salvagruppo class=iconbtn type=button title="{{ t('muro.salva_gruppo') }}">
+        <i>&#10022;</i><span class=etichetta>{{ t("muro.salva_gruppo") }}</span></button>
+      <select id=apregruppo aria-label="{{ t('home.gruppi') }}">
+        <option value="">{{ t("muro.gruppi") }}</option>
+      </select>
+    </div>
+
+    <a class="iconbtn only casa" href="/{{ c.lingua.codice }}/"
+       title="{{ t('piede.torna_home') }}" aria-label="{{ t('piede.torna_home') }}"
+       ><i>&#8962;</i></a>
+  </div>
+  <div id=extravelo></div>
+
+  <div id=gridwrap>
+    <div id=grid></div>
+
+    {# Il muro vuoto: scegliere invece di digitare. Chi arriva qui ha gia'
+       aperto dei video, e ritrovarseli e' piu' rapido che ricopiare un link. #}
+    <div id=vuoto>
+      <div class=vuoto-testa>
+        <h2>{{ t("muro.titolo") }}</h2>
+        <p>{{ t("muro.vuoto") }}</p>
+        <button id=vuotoincolla class=principale type=button>{{ t("muro.incolla.t") }}</button>
+      </div>
+      {{ scelte(gruppi, preferiti_voci, recenti, t, c) }}
+    </div>
+  </div>
+
+  {# Il pannello dei salvati e' gia' nella pagina: aprirlo non deve costare
+     una richiesta, e chi lo apre vuole scegliere subito. #}
+  <aside id=salvati>
+    <header>{{ t("muro.salvati") }}</header>
+    {{ scelte(gruppi, preferiti_voci, recenti, t, c) }}
+  </aside>
+
+  <button id=pilota type=button title="{{ t('muro.rimetti_comandi') }}"
+          aria-label="{{ t('muro.rimetti_comandi') }}"><i>&#128065;&#65038;</i></button>
+</div>
+<div id=notif role=status aria-live=polite></div>
+
+<script>
+window.MURO = {
+  cella: "/{{ c.lingua.codice }}/cella",
+  gruppi: "/{{ c.lingua.codice }}/gruppi.json",
+  gruppo: "/{{ c.lingua.codice }}/gruppo/",
+  salvaGruppo: "/{{ c.lingua.codice }}/gruppo",
+  massimo: {{ massimo }},
+  qualita: [{valore: "", etichetta: {{ t("guarda.come_viene") | tojson }}}
+    {%- for q in qualita_possibili %}, {valore: "{{ q }}", etichetta: "{{ q }}p"}{% endfor %}]
+};
+window.TESTI = {{ testi_muro | tojson }};
+</script>
+<script src="/static/avvisi.js"></script>
+<script src="/static/muro.js"></script>
+</html>

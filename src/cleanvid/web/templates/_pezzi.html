@@ -31,7 +31,7 @@
 {% set gruppo = voce.genere.value == "gruppo" %}
 <article class=vcard>
   <a class=vgo title="{{ nome }}"
-     href="{% if gruppo %}/{{ c.lingua.codice }}/{% else %}/{{ c.lingua.codice }}/guarda?u={{ voce.url | urlencode }}{% endif %}">
+     href="{% if gruppo %}/{{ c.lingua.codice }}/muro?gruppo={{ voce.id }}{% else %}/{{ c.lingua.codice }}/guarda?u={{ voce.url | urlencode }}{% endif %}">
     <span class=poster style="--seed:{{ nome | tinta }}">
       {# `data-copertina` e non `src`: la copertina arriva quando e' pronta,
          e finche' non c'e' si vede il riquadro con le iniziali invece di

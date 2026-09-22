@@ -10,6 +10,9 @@
            placeholder="{{ t('home.campo') }}" aria-label="{{ t('home.campo') }}">
     <button class=principale>{{ t("home.apri") }}</button>
   </form>
+  <p class=hero-note>
+    <a class=altrove href="/{{ c.lingua.codice }}/muro">{{ ICONE.griglia | safe }}{{ t("muro.titolo") }}</a>
+  </p>
 </header>
 
 {# Gli scaffali, nell'ordine in cui servono davvero: prima quello che hai

@@ -109,6 +109,10 @@ aperture mette in ginocchio la macchina.
    dei video fuori dall'indice. Anticipato perché sono decisioni di struttura:
    spostare gli indirizzi dopo la pubblicazione costa i posizionamenti già
    guadagnati. Vedi [`LINGUE-E-SEO.md`](LINGUE-E-SEO.md).
+   *Fatto il 22/09/2026 anche il muro* (da 1 a 4 video insieme, gruppi
+   salvati), portato dal file unico con i suoi vincoli. Vedi
+   [`REGISTRO.md`](REGISTRO.md).
+
 4. **Registrazione** — email e password attaccate alla riga che c'è già.
 5. **Stanze, prima versione** — crei, condividi il link, si guarda insieme.
    Niente elenco, niente password: solo la sincronia, che è la parte difficile.
