@@ -133,5 +133,8 @@
   "stato.spento": "bagi layanan ini",
   "stato.tipo": "jenis",
   "stato.titolo": "Siapa Anda",
-  "stato.voci": "entri dalam riwayat"
+  "stato.voci": "entri dalam riwayat",
+  "vista.cinema": "Bioskop",
+  "vista.normale": "Biasa",
+  "vista.pieno": "Layar penuh"
 }

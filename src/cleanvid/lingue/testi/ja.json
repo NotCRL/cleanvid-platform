@@ -133,5 +133,8 @@
   "stato.spento": "このサービスにとって",
   "stato.tipo": "種別",
   "stato.titolo": "あなたが誰か",
-  "stato.voci": "履歴の件数"
+  "stato.voci": "履歴の件数",
+  "vista.cinema": "シアター",
+  "vista.normale": "標準",
+  "vista.pieno": "全画面"
 }

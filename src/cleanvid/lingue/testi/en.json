@@ -133,5 +133,8 @@
   "stato.spento": "to the service",
   "stato.tipo": "type",
   "stato.titolo": "Who you are",
-  "stato.voci": "entries in history"
+  "stato.voci": "entries in history",
+  "vista.cinema": "Theater",
+  "vista.normale": "Default",
+  "vista.pieno": "Full screen"
 }

@@ -133,5 +133,8 @@
   "stato.spento": "pour le service",
   "stato.tipo": "type",
   "stato.titolo": "Qui vous êtes",
-  "stato.voci": "entrées dans l'historique"
+  "stato.voci": "entrées dans l'historique",
+  "vista.cinema": "Cinéma",
+  "vista.normale": "Normal",
+  "vista.pieno": "Plein écran"
 }

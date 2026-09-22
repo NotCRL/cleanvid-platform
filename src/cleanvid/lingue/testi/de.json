@@ -133,5 +133,8 @@
   "stato.spento": "für den Dienst",
   "stato.tipo": "Typ",
   "stato.titolo": "Wer Sie sind",
-  "stato.voci": "Einträge im Verlauf"
+  "stato.voci": "Einträge im Verlauf",
+  "vista.cinema": "Kinomodus",
+  "vista.normale": "Normal",
+  "vista.pieno": "Vollbild"
 }

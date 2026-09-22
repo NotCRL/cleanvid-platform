@@ -133,5 +133,8 @@
   "stato.spento": "dla serwisu",
   "stato.tipo": "typ",
   "stato.titolo": "Kim jesteś",
-  "stato.voci": "pozycje w historii"
+  "stato.voci": "pozycje w historii",
+  "vista.cinema": "Kinowy",
+  "vista.normale": "Zwykły",
+  "vista.pieno": "Pełny ekran"
 }

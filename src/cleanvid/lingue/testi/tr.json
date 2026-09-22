@@ -133,5 +133,8 @@
   "stato.spento": "servis açısından",
   "stato.tipo": "tür",
   "stato.titolo": "Kimsiniz",
-  "stato.voci": "geçmişteki kayıtlar"
+  "stato.voci": "geçmişteki kayıtlar",
+  "vista.cinema": "Sinema",
+  "vista.normale": "Normal",
+  "vista.pieno": "Tam ekran"
 }

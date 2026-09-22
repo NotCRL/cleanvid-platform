@@ -119,24 +119,25 @@ async def guarda(
     piattaforma = piattaforma_di(url)
     lettore = lettore_ufficiale(url, host_pagina=request.url.hostname or "localhost")
 
-    # `m=diretto`: si estrae anche quando la piattaforma un lettore ce l'ha.
-    # E' la scelta fra due cose diverse, e vale la pena dirla:
+    # IL PREDEFINITO E' IL LETTORE NOSTRO. Si chiede il loro con `m=loro`.
     #
-    #   il lettore loro  - parte subito, non scade, regge qualunque cosa
-    #                      cambino domani, ma la loro pubblicita' resta e i
-    #                      comandi sono i loro;
-    #   il lettore nostro - costa qualche secondo, l'indirizzo scade, ma il
-    #                      video esce pulito, si salta lo sponsor letto a
-    #                      voce, e funzionano il piccolo schermo e la ripresa.
+    #   il nostro - il video esce pulito, si salta lo sponsor letto a voce,
+    #               funzionano il piccolo schermo, la ripresa e le tre viste.
+    #               Costa qualche secondo la prima volta, e l'indirizzo del
+    #               flusso scade dopo qualche ora.
+    #   il loro   - parte subito e non scade mai, ma la loro pubblicita'
+    #               resta, i comandi sono i loro, e dentro quell'iframe non
+    #               possiamo fare niente di tutto il resto.
     #
-    # Il predefinito resta il loro, perche' e' quello che non delude mai.
-    nostro = m == "diretto"
-    if nostro:
-        lettore = None
+    # Il loro resta come ripiego automatico: se l'estrazione non riesce si
+    # apre quello invece di mostrare una pagina vuota. Cosi' la scelta del
+    # predefinito non costa mai un video che non parte.
+    loro = m == "loro"
+    ha_lettore_loro = lettore is not None
 
     estratto: Estratto | None = None
     perche = ""
-    if lettore is None:
+    if not loro:
         try:
             estratto = await risolvi(url, q)
         except NonEstraibile as e:
@@ -144,6 +145,15 @@ async def guarda(
             # la verita' ("video privato", "serve un account"), e riscriverlo
             # in gentile vorrebbe dire nascondere l'unica cosa utile
             perche = str(e)
+
+    if estratto is not None:
+        lettore = None          # si e' estratto: il loro non serve
+    elif not ha_lettore_loro:
+        lettore = None          # non c'e' nemmeno come ripiego
+    else:
+        perche = ""             # si ripiega sul loro: non c'e' niente da dire
+
+    nostro = estratto is not None
 
     # la visita si annota comunque: anche un tentativo andato male e' un
     # tentativo, e ritrovarlo nella cronologia serve a riprovarci
@@ -165,9 +175,7 @@ async def guarda(
 
     return _pagina(request, "guarda.html", c,
                    salti=da_saltare, nostro=nostro, chat=chat,
-                   ha_lettore_loro=lettore_ufficiale(
-                       url, host_pagina=request.url.hostname or "localhost")
-                   is not None,
+                   ha_lettore_loro=ha_lettore_loro,
                    url=url, q=q, qualita_possibili=QUALITA,
                    piattaforma=piattaforma,
                    titolo=estratto.titolo if estratto else "",

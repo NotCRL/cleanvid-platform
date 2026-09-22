@@ -134,7 +134,10 @@
     "stato.spento": "1141770f98c7aeac",
     "stato.tipo": "e103bf13e6d917d3",
     "stato.titolo": "bf5d62bef3c1a385",
-    "stato.voci": "6c4658bbb94d84ea"
+    "stato.voci": "6c4658bbb94d84ea",
+    "vista.cinema": "89ec0bb81771a421",
+    "vista.normale": "1aaf3e0e4a95dd31",
+    "vista.pieno": "dfd986c06545a4be"
   },
   "de": {
     "azione.conferma": "c83542957bdb5ea7",
@@ -271,7 +274,10 @@
     "stato.spento": "1141770f98c7aeac",
     "stato.tipo": "e103bf13e6d917d3",
     "stato.titolo": "bf5d62bef3c1a385",
-    "stato.voci": "6c4658bbb94d84ea"
+    "stato.voci": "6c4658bbb94d84ea",
+    "vista.cinema": "89ec0bb81771a421",
+    "vista.normale": "1aaf3e0e4a95dd31",
+    "vista.pieno": "dfd986c06545a4be"
   },
   "en": {
     "azione.conferma": "c83542957bdb5ea7",
@@ -408,7 +414,10 @@
     "stato.spento": "1141770f98c7aeac",
     "stato.tipo": "e103bf13e6d917d3",
     "stato.titolo": "bf5d62bef3c1a385",
-    "stato.voci": "6c4658bbb94d84ea"
+    "stato.voci": "6c4658bbb94d84ea",
+    "vista.cinema": "89ec0bb81771a421",
+    "vista.normale": "1aaf3e0e4a95dd31",
+    "vista.pieno": "dfd986c06545a4be"
   },
   "es": {
     "azione.conferma": "c83542957bdb5ea7",
@@ -545,7 +554,10 @@
     "stato.spento": "1141770f98c7aeac",
     "stato.tipo": "e103bf13e6d917d3",
     "stato.titolo": "bf5d62bef3c1a385",
-    "stato.voci": "6c4658bbb94d84ea"
+    "stato.voci": "6c4658bbb94d84ea",
+    "vista.cinema": "89ec0bb81771a421",
+    "vista.normale": "1aaf3e0e4a95dd31",
+    "vista.pieno": "dfd986c06545a4be"
   },
   "fr": {
     "azione.conferma": "c83542957bdb5ea7",
@@ -682,7 +694,10 @@
     "stato.spento": "1141770f98c7aeac",
     "stato.tipo": "e103bf13e6d917d3",
     "stato.titolo": "bf5d62bef3c1a385",
-    "stato.voci": "6c4658bbb94d84ea"
+    "stato.voci": "6c4658bbb94d84ea",
+    "vista.cinema": "89ec0bb81771a421",
+    "vista.normale": "1aaf3e0e4a95dd31",
+    "vista.pieno": "dfd986c06545a4be"
   },
   "hi": {
     "azione.conferma": "c83542957bdb5ea7",
@@ -819,7 +834,10 @@
     "stato.spento": "1141770f98c7aeac",
     "stato.tipo": "e103bf13e6d917d3",
     "stato.titolo": "bf5d62bef3c1a385",
-    "stato.voci": "6c4658bbb94d84ea"
+    "stato.voci": "6c4658bbb94d84ea",
+    "vista.cinema": "89ec0bb81771a421",
+    "vista.normale": "1aaf3e0e4a95dd31",
+    "vista.pieno": "dfd986c06545a4be"
   },
   "id": {
     "azione.conferma": "c83542957bdb5ea7",
@@ -956,7 +974,10 @@
     "stato.spento": "1141770f98c7aeac",
     "stato.tipo": "e103bf13e6d917d3",
     "stato.titolo": "bf5d62bef3c1a385",
-    "stato.voci": "6c4658bbb94d84ea"
+    "stato.voci": "6c4658bbb94d84ea",
+    "vista.cinema": "89ec0bb81771a421",
+    "vista.normale": "1aaf3e0e4a95dd31",
+    "vista.pieno": "dfd986c06545a4be"
   },
   "ja": {
     "azione.conferma": "c83542957bdb5ea7",
@@ -1093,7 +1114,10 @@
     "stato.spento": "1141770f98c7aeac",
     "stato.tipo": "e103bf13e6d917d3",
     "stato.titolo": "bf5d62bef3c1a385",
-    "stato.voci": "6c4658bbb94d84ea"
+    "stato.voci": "6c4658bbb94d84ea",
+    "vista.cinema": "89ec0bb81771a421",
+    "vista.normale": "1aaf3e0e4a95dd31",
+    "vista.pieno": "dfd986c06545a4be"
   },
   "pl": {
     "azione.conferma": "c83542957bdb5ea7",
@@ -1230,7 +1254,10 @@
     "stato.spento": "1141770f98c7aeac",
     "stato.tipo": "e103bf13e6d917d3",
     "stato.titolo": "bf5d62bef3c1a385",
-    "stato.voci": "6c4658bbb94d84ea"
+    "stato.voci": "6c4658bbb94d84ea",
+    "vista.cinema": "89ec0bb81771a421",
+    "vista.normale": "1aaf3e0e4a95dd31",
+    "vista.pieno": "dfd986c06545a4be"
   },
   "pt": {
     "azione.conferma": "c83542957bdb5ea7",
@@ -1367,7 +1394,10 @@
     "stato.spento": "1141770f98c7aeac",
     "stato.tipo": "e103bf13e6d917d3",
     "stato.titolo": "bf5d62bef3c1a385",
-    "stato.voci": "6c4658bbb94d84ea"
+    "stato.voci": "6c4658bbb94d84ea",
+    "vista.cinema": "89ec0bb81771a421",
+    "vista.normale": "1aaf3e0e4a95dd31",
+    "vista.pieno": "dfd986c06545a4be"
   },
   "ru": {
     "azione.conferma": "c83542957bdb5ea7",
@@ -1504,7 +1534,10 @@
     "stato.spento": "1141770f98c7aeac",
     "stato.tipo": "e103bf13e6d917d3",
     "stato.titolo": "bf5d62bef3c1a385",
-    "stato.voci": "6c4658bbb94d84ea"
+    "stato.voci": "6c4658bbb94d84ea",
+    "vista.cinema": "89ec0bb81771a421",
+    "vista.normale": "1aaf3e0e4a95dd31",
+    "vista.pieno": "dfd986c06545a4be"
   },
   "tr": {
     "azione.conferma": "c83542957bdb5ea7",
@@ -1641,7 +1674,10 @@
     "stato.spento": "1141770f98c7aeac",
     "stato.tipo": "e103bf13e6d917d3",
     "stato.titolo": "bf5d62bef3c1a385",
-    "stato.voci": "6c4658bbb94d84ea"
+    "stato.voci": "6c4658bbb94d84ea",
+    "vista.cinema": "89ec0bb81771a421",
+    "vista.normale": "1aaf3e0e4a95dd31",
+    "vista.pieno": "dfd986c06545a4be"
   },
   "zh": {
     "azione.conferma": "c83542957bdb5ea7",
@@ -1778,6 +1814,9 @@
     "stato.spento": "1141770f98c7aeac",
     "stato.tipo": "e103bf13e6d917d3",
     "stato.titolo": "bf5d62bef3c1a385",
-    "stato.voci": "6c4658bbb94d84ea"
+    "stato.voci": "6c4658bbb94d84ea",
+    "vista.cinema": "89ec0bb81771a421",
+    "vista.normale": "1aaf3e0e4a95dd31",
+    "vista.pieno": "dfd986c06545a4be"
   }
 }

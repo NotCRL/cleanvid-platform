@@ -133,5 +133,8 @@
   "stato.spento": "para o serviço",
   "stato.tipo": "tipo",
   "stato.titolo": "Quem és",
-  "stato.voci": "entradas no histórico"
+  "stato.voci": "entradas no histórico",
+  "vista.cinema": "Cinema",
+  "vista.normale": "Normal",
+  "vista.pieno": "Ecrã inteiro"
 }

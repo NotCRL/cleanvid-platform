@@ -133,5 +133,8 @@
   "stato.spento": "per il servizio",
   "stato.tipo": "tipo",
   "stato.titolo": "Chi sei",
-  "stato.voci": "voci in cronologia"
+  "stato.voci": "voci in cronologia",
+  "vista.cinema": "Cinema",
+  "vista.normale": "Normale",
+  "vista.pieno": "Schermo intero"
 }

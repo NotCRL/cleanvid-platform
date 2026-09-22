@@ -139,3 +139,37 @@ async def db() -> AsyncIterator[AsyncSession]:
     async with fabbrica()() as s:
         yield s
         await s.rollback()
+
+
+@pytest.fixture(autouse=True)
+def niente_ytdlp(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Nessun test lancia yt-dlp, nemmeno di rimbalzo.
+
+    Senza questo i test che aprono una pagina video finiscono per estrarre
+    davvero: la suite passa da un secondo a trenta, dipende dalla rete, dalla
+    versione di yt-dlp e dall'umore del sito, e un giorno fallisce per un
+    motivo che non ha niente a che fare con il codice.
+
+    Chi vuole provare il caso in cui l'estrazione fallisce se lo rimette a
+    modo suo, che e' esattamente quello che fanno i test di quel caso.
+    """
+    from cleanvid.api import routes_muro, routes_watch
+    from cleanvid.media.estrazione import Estratto
+
+    async def finta(url: str, qualita: str = "") -> Estratto:
+        return Estratto(token="finto", titolo="Video di prova",
+                        altezza=int(qualita) if qualita.isdigit() else 720)
+
+    monkeypatch.setattr(routes_watch, "risolvi", finta)
+    monkeypatch.setattr(routes_muro, "risolvi", finta)
+
+
+@pytest.fixture(autouse=True)
+def niente_sponsorblock(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Stessa ragione: e' un servizio di qualcun altro, su internet."""
+    from cleanvid.api import routes_watch
+
+    async def nessuno(url: str) -> list[list[float]]:
+        return []
+
+    monkeypatch.setattr(routes_watch, "segmenti", nessuno)

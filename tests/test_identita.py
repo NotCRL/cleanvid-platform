@@ -68,9 +68,11 @@ async def test_riaprire_non_duplica(visitatore: AsyncClient) -> None:
     assert (await visitatore.get("/it/")).text.count('href="/it/guarda?u=') == 1
 
 
-async def test_il_lettore_ufficiale_viene_montato(visitatore: AsyncClient) -> None:
-    pagina = (await visitatore.get(
-        "/it/guarda", params={"u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
+async def test_il_lettore_ufficiale_si_puo_ancora_avere(
+        visitatore: AsyncClient) -> None:
+    """Non e' piu' il predefinito, ma resta a un clic."""
+    pagina = (await visitatore.get("/it/guarda", params={
+        "u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk", "m": "loro"})).text
     assert "youtube.com/embed/kJQP7kiw5Fk" in pagina
 
 
@@ -110,10 +112,17 @@ async def test_il_lettore_si_monta_su_quello_che_esce_dall_estrazione(
 
 
 async def test_indirizzo_senza_protocollo(visitatore: AsyncClient) -> None:
-    """L'errore piu' comune di chi incolla: si completa invece di rifiutare."""
+    """L'errore piu' comune di chi incolla: si completa invece di rifiutare.
+
+    Si guarda dove si viene mandati e non cosa c'e' nella pagina: aprirla
+    davvero vorrebbe dire un'estrazione vera dentro un test.
+    """
     risposta = await visitatore.post(
-        "/it/apri", data={"url": "youtube.com/watch?v=kJQP7kiw5Fk"})
-    assert "youtube.com/embed/kJQP7kiw5Fk" in risposta.text
+        "/it/apri", data={"url": "youtube.com/watch?v=kJQP7kiw5Fk"},
+        follow_redirects=False)
+    assert risposta.status_code == 303
+    assert "https%3A%2F%2Fyoutube.com%2Fwatch%3Fv%3DkJQP7kiw5Fk" in (
+        risposta.headers["location"])
 
 
 def _identificativo(html: str) -> str:

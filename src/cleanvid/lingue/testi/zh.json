@@ -133,5 +133,8 @@
   "stato.spento": "对这个服务而言",
   "stato.tipo": "类型",
   "stato.titolo": "你是谁",
-  "stato.voci": "历史记录条数"
+  "stato.voci": "历史记录条数",
+  "vista.cinema": "影院",
+  "vista.normale": "普通",
+  "vista.pieno": "全屏"
 }

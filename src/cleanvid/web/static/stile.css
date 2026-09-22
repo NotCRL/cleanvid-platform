@@ -1558,3 +1558,47 @@ body.cell.conchat > #chat iframe{flex:1;width:100%;border:0;min-height:0;
   .conchat{grid-template-columns:1fr}
   .chat{min-height:420px}
 }
+
+
+/* Le tre viste del lettore singolo.
+ *
+ * `normale` sta nella colonna della pagina, come tutto il resto. `cinema` si
+ * allarga fino ai bordi della finestra - il trucco e' `calc(50% - 50vw)` sui
+ * margini, che porta il blocco fuori dalla colonna senza doverlo spostare nel
+ * documento, quindi senza ricaricare il video.
+ *
+ * Lo schermo intero e' quello vero del browser e non una finta a tutta
+ * pagina: cosi' sparisce anche la barra del browser, che su un portatile sono
+ * due centimetri di schermo. */
+
+.vista{margin:18px 0 12px}
+.vista .palco{margin:0}
+
+.vista.cinema{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);
+  width:100vw;max-width:100vw;background:#000;padding:0}
+.vista.cinema .palco{border-radius:0;border-left:0;border-right:0;
+  max-height:calc(100vh - 190px);margin:0 auto}
+.vista.cinema.conchat{padding-right:0}
+
+/* La chat si allarga insieme al video: una chat che resta stretta mentre il
+   video si allarga sembra un errore. */
+.vista.conchat{display:grid;gap:12px;
+  grid-template-columns:minmax(0,1fr) minmax(0,320px);align-items:stretch}
+.vista.cinema.conchat{grid-template-columns:minmax(0,1fr) minmax(0,clamp(260px,22vw,380px))}
+.vista.cinema .chat{border-radius:0;border-top:0;border-bottom:0;border-right:0}
+@media (max-width:760px){
+  .vista.conchat{grid-template-columns:1fr}
+  .vista.cinema{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw)}
+}
+
+/* A schermo intero il palco prende tutto e la chat sparisce: li' dentro
+   serve il video, e una colonna di testo di fianco toglie solo spazio. */
+.vista:fullscreen{margin:0;display:block;background:#000}
+.vista:fullscreen .palco{height:100vh;max-height:none;border:0;border-radius:0;
+  aspect-ratio:auto}
+.vista:fullscreen .chat{display:none}
+
+.layouts.viste{margin-left:auto}
+.titolo-video{font-size:clamp(17px,2.2vw,22px);line-height:1.3;margin:4px 0 10px;
+  font-weight:600;letter-spacing:-.01em}
+.cuore{margin:0 0 4px}

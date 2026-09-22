@@ -133,5 +133,8 @@
   "stato.spento": "для сервиса",
   "stato.tipo": "тип",
   "stato.titolo": "Кто вы",
-  "stato.voci": "записей в истории"
+  "stato.voci": "записей в истории",
+  "vista.cinema": "Кинорежим",
+  "vista.normale": "Обычный",
+  "vista.pieno": "Во весь экран"
 }

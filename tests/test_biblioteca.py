@@ -487,45 +487,80 @@ async def test_fuori_dal_muro_il_video_non_parte_muto(
 # la scelta fra il lettore loro e il nostro
 # --------------------------------------------------------------------------
 
-async def test_il_predefinito_e_il_lettore_della_piattaforma(
-        visitatore: AsyncClient) -> None:
-    """Parte subito e non scade mai: e' quello che non delude."""
+async def test_il_predefinito_e_il_lettore_nostro(
+        visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Anche dove la piattaforma un lettore ce l'ha.
+
+    E' la scelta che fa funzionare tutto il resto: lo sponsor saltato, il
+    piccolo schermo, la ripresa, le tre viste. Dentro l'iframe di un altro
+    sito nessuna di quelle cose si puo' fare.
+    """
+    async def finge(url: str, qualita: str = "") -> Estratto:
+        return Estratto(token="tv", titolo="Prova")
+
+    monkeypatch.setattr(routes_watch, "risolvi", finge)
+    pagina = (await visitatore.get(
+        "/it/guarda", params={"u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
+    assert 'data-flusso="/flusso/tv"' in pagina
+    assert "youtube.com/embed" not in pagina
+    # ma la strada per il loro deve restare in vista
+    assert "m=loro" in pagina
+
+
+async def test_se_l_estrazione_fallisce_si_apre_il_loro(
+        visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """La scelta del predefinito non deve mai costare un video che non parte.
+
+    Meglio il lettore della piattaforma, con la sua pubblicita', che una
+    pagina che dice «non e' uscito niente» quando un modo per vederlo c'era.
+    """
+    async def non_va(url: str, qualita: str = "") -> object:
+        raise NonEstraibile("yt-dlp non ce la fa")
+
+    monkeypatch.setattr(routes_watch, "risolvi", non_va)
     pagina = (await visitatore.get(
         "/it/guarda", params={"u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
     assert "youtube.com/embed" in pagina
-    # ma la strada per l'altro deve essere in vista
-    assert "m=diretto" in pagina
+    # e non si spiega un guasto che non c'e' stato
+    assert "yt-dlp non ce la fa" not in pagina
 
 
-async def test_il_lettore_pulito_si_puo_chiedere(
+async def test_su_un_sito_senza_lettore_il_guasto_si_spiega(
         visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Su YouTube il lettore ufficiale vincerebbe sempre: senza questa strada
-    lo SponsorBlock e il piccolo schermo non si userebbero mai."""
-    async def finge(url: str, qualita: str = "") -> Estratto:
-        return Estratto(token="tv", titolo="Prova", altezza=1080)
+    """Li' il ripiego non c'e', quindi il motivo e' l'unica cosa utile."""
+    async def non_va(url: str, qualita: str = "") -> object:
+        raise NonEstraibile("video privato")
 
-    monkeypatch.setattr(routes_watch, "risolvi", finge)
+    monkeypatch.setattr(routes_watch, "risolvi", non_va)
+    pagina = (await visitatore.get(
+        "/it/guarda", params={"u": "https://esempio.invalido/v/1"})).text
+    assert "video privato" in pagina
+
+
+async def test_il_lettore_della_piattaforma_si_puo_chiedere(
+        visitatore: AsyncClient) -> None:
+    """Resta a un clic, per chi lo preferisce o quando il nostro fa i capricci."""
     pagina = (await visitatore.get("/it/guarda", params={
-        "u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk",
-        "m": "diretto"})).text
-    assert "youtube.com/embed" not in pagina
-    assert 'data-flusso="/flusso/tv"' in pagina
-    # e la strada per tornare indietro
-    assert "Lettore della piattaforma" in pagina
+        "u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk", "m": "loro"})).text
+    assert "youtube.com/embed" in pagina
+    # e la strada per tornare al nostro
+    assert "Lettore pulito" in pagina
 
 
-async def test_cambiare_qualita_non_fa_tornare_al_lettore_loro(
+async def test_le_tre_viste_ci_sono(
         visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Il modulo della qualita' deve portarsi dietro `m`, o al primo cambio
-    si torna nel lettore della piattaforma senza averlo chiesto."""
+    """Normale, cinema, schermo intero: le stesse tre di qualunque sito di
+    video, con le stesse scorciatoie."""
     async def finge(url: str, qualita: str = "") -> Estratto:
         return Estratto(token="tv", titolo="Prova")
 
     monkeypatch.setattr(routes_watch, "risolvi", finge)
     pagina = (await visitatore.get("/it/guarda", params={
-        "u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk",
-        "m": "diretto"})).text
-    assert '<input type=hidden name=m value=diretto>' in pagina
+        "u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
+    for vista in ("normale", "cinema", "pieno"):
+        assert f'data-vista={vista}' in pagina
+    assert "(T)" in pagina and "(F)" in pagina
+    assert "/static/viste.js" in pagina
 
 
 async def test_i_segmenti_da_saltare_arrivano_al_lettore(
@@ -539,8 +574,7 @@ async def test_i_segmenti_da_saltare_arrivano_al_lettore(
     monkeypatch.setattr(routes_watch, "risolvi", finge)
     monkeypatch.setattr(routes_watch, "segmenti", finti_segmenti)
     pagina = (await visitatore.get("/it/guarda", params={
-        "u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk",
-        "m": "diretto"})).text
+        "u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
     assert "249.4" in pagina and "21.8" in pagina
 
 
@@ -623,6 +657,6 @@ async def test_nella_pagina_del_video_la_chat_sta_di_fianco(
 
     monkeypatch.setattr(routes_watch, "risolvi", diretta)
     pagina = (await visitatore.get("/it/guarda", params={
-        "u": "https://www.twitch.tv/unaltro", "m": "diretto"})).text
-    assert 'class="conchat"' in pagina
+        "u": "https://www.twitch.tv/unaltro"})).text
+    assert "conchat" in pagina
     assert "<aside class=chat>" in pagina

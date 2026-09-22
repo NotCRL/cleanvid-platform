@@ -740,3 +740,76 @@ in casa.
 **Verificato.** 102 test, fra cui: niente chat su una registrazione, chat su
 una diretta, l'iframe che parte senza `src`, e i domini dichiarati giusti per
 entrambe le piattaforme. Poi a mano su una diretta Twitch vera.
+
+---
+
+## 2026-09-22 — Il lettore nostro come predefinito, e le tre viste
+
+**Cosa cambia.** Aprendo un video si apre **il nostro lettore**, anche dove la
+piattaforma ne ha uno. E il lettore ha le tre viste a cui la gente è abituata:
+normale, cinema, schermo intero.
+
+**Il predefinito rovesciato.** Fino a ieri vinceva il lettore della
+piattaforma, perché parte subito e non scade mai. La decisione è cambiata, ed
+è la scelta giusta per una ragione che si vede meglio adesso che le funzioni
+ci sono: **dentro l'iframe di un altro sito non si può fare niente di tutto il
+resto.** Niente sponsor saltato, niente piccolo schermo, niente ripresa da
+dove si era rimasti, niente viste, niente qualità scelta da noi. Tenere quel
+lettore come predefinito voleva dire che quasi nessuno avrebbe mai visto le
+funzioni per cui questo progetto esiste.
+
+**Il prezzo, detto.** Un video costa qualche secondo la prima volta, e
+l'indirizzo del flusso scade dopo qualche ora — poi la pagina va ricaricata.
+Chi preferisce l'altro lo trova a un clic nella barra.
+
+**Il ripiego automatico, che è la parte importante.** Se l'estrazione non
+riesce e la piattaforma un lettore ce l'ha, si apre quello **senza dire
+niente**: la scelta del predefinito non deve mai costare un video che non
+parte. Il motivo del guasto si mostra solo dove il ripiego non c'è — lì è
+l'unica cosa utile.
+
+### Le tre viste
+
+| | cos'è |
+|---|---|
+| normale | nella colonna della pagina, come tutto il resto |
+| cinema | il lettore si allarga fino ai bordi della finestra |
+| schermo intero | quello vero del browser, non una finta a tutta pagina |
+
+**Le scorciatoie sono quelle di sempre**: **T** per il cinema, **F** per lo
+schermo intero, **spazio** o **K** per la pausa, **M** per il muto, **frecce**
+per cinque secondi avanti e indietro. Non si inventano tasti nuovi per una
+cosa che tutti fanno già allo stesso modo: una scorciatoia diversa dalle altre
+non si impara, si sbaglia. Non scattano mentre si scrive in un campo, o si
+finirebbe a schermo intero digitando «f».
+
+**Come è fatto il cinema.** `margin-left: calc(50% - 50vw)` porta il blocco
+fuori dalla colonna **senza spostarlo nel documento**: se lo si spostasse
+davvero, l'iframe si ricaricherebbe e il video ripartirebbe da capo. È lo
+stesso vincolo del muro, in un altro posto.
+
+**La chat si allarga insieme al video**, perché una chat che resta stretta
+mentre il video si allarga sembra un errore. A schermo intero sparisce: lì
+serve il video, e una colonna di testo di fianco toglie solo spazio.
+
+**La vista si ricorda, ma solo fra normale e cinema.** Lo schermo intero no,
+di proposito: una pagina che si apre da sola a tutto schermo è una pagina che
+ha preso il controllo dello schermo senza che nessuno glielo chiedesse — e i
+browser stessi non lo permettono fuori da un gesto.
+
+### Il titolo, e una pulizia
+
+La pagina ora mostra il titolo del video come intestazione, sotto il lettore, e
+la stella dei preferiti gli sta accanto invece che in fondo. Prima il titolo
+era una riga grigia persa sotto la barra dei comandi.
+
+### I test non chiamano più yt-dlp
+
+Cambiando il predefinito, ogni test che apriva una pagina video ha cominciato
+a estrarre davvero: la suite è passata da un secondo a trentadue, e dipendeva
+dalla rete, dalla versione di yt-dlp e dall'umore del sito. Ora una fixture
+mette yt-dlp e SponsorBlock fuori gioco per tutti, e chi vuole provare il caso
+del fallimento se lo rimette a modo suo. Torna a due secondi.
+
+**Verificato.** 104 test. Poi a mano: il predefinito estrae, `m=loro` apre
+l'altro, le tre viste ci sono su entrambi, e il ripiego funziona.

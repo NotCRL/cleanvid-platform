@@ -133,5 +133,8 @@
   "stato.spento": "بالنسبة إلى الخدمة",
   "stato.tipo": "النوع",
   "stato.titolo": "من أنت",
-  "stato.voci": "المدخلات في السجلّ"
+  "stato.voci": "المدخلات في السجلّ",
+  "vista.cinema": "وضع السينما",
+  "vista.normale": "عادي",
+  "vista.pieno": "ملء الشاشة"
 }

@@ -133,5 +133,8 @@
   "stato.spento": "इस सेवा के लिए",
   "stato.tipo": "प्रकार",
   "stato.titolo": "आप कौन हैं",
-  "stato.voci": "इतिहास में प्रविष्टियाँ"
+  "stato.voci": "इतिहास में प्रविष्टियाँ",
+  "vista.cinema": "सिनेमा",
+  "vista.normale": "सामान्य",
+  "vista.pieno": "पूरी स्क्रीन"
 }
