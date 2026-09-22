@@ -16,7 +16,7 @@
 {# Una griglia sola per lettore, titolo e colonna di fianco. Passando da
    cinema a normale cambiano solo le aree della griglia: niente si sposta nel
    documento, quindi il video non riparte. E' lo stesso vincolo del muro. #}
-<div id=teatro class="scena cinema{{ ' conchat' if chat else '' }}">
+<div id=teatro class="scena cinema chat-fianco{{ ' conchat' if chat else '' }}">
 
   <div class=palco>
     {% if lettore %}
@@ -118,6 +118,26 @@
         </form>
       {% endif %}
 
+      {% if chat %}
+        {# Le preferenze di questa pagina stanno in questa pagina: una cosa
+           che si vuole provare a occhio non si va a cambiare altrove e poi si
+           torna indietro. Nelle impostazioni del sito restano le cose che
+           valgono ovunque - lingua e tema. #}
+        <details class=preferenze>
+          <summary class=chip title="{{ t('guarda.preferenze') }}">
+            <i>&#9881;</i><span>{{ t("guarda.preferenze") }}</span></summary>
+          <div class=pannello>
+            <span class=voce>{{ t("guarda.chat") }}</span>
+            <span class="layouts secondario">
+              <button type=button data-chatdove=fianco class=on
+                      >{{ t("guarda.chat_fianco") }}</button>
+              <button type=button data-chatdove=sotto
+                      >{{ t("guarda.chat_sotto") }}</button>
+            </span>
+          </div>
+        </details>
+      {% endif %}
+
       <span class="layouts viste">
         <button type=button data-vista=normale
                 title="{{ t('vista.normale') }} (T)" aria-label="{{ t('vista.normale') }}"
@@ -125,9 +145,9 @@
         <button type=button data-vista=cinema class=on
                 title="{{ t('vista.cinema') }} (T)" aria-label="{{ t('vista.cinema') }}"
                 >&#9644;</button>
-        <button type=button data-vista=pieno
-                title="{{ t('vista.pieno') }} (F)" aria-label="{{ t('vista.pieno') }}"
-                >&#9974;</button>
+        {# Niente bottone per lo schermo intero: ce l'ha gia' il lettore,
+           dove la gente lo cerca. Due bottoni per la stessa cosa, uno dentro
+           il video e uno fuori, sono uno di troppo. #}
       </span>
     </div>
 

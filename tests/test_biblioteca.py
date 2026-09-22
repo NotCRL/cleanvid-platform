@@ -558,9 +558,13 @@ async def test_le_tre_viste_ci_sono(
     monkeypatch.setattr(routes_watch, "risolvi", finge)
     pagina = (await visitatore.get("/it/guarda", params={
         "u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
-    for vista in ("normale", "cinema", "pieno"):
+    for vista in ("normale", "cinema"):
         assert f'data-vista={vista}' in pagina
-    assert "(T)" in pagina and "(F)" in pagina
+    assert "(T)" in pagina
+    # niente bottone ne' scorciatoia per lo schermo intero: ce l'ha gia' il
+    # lettore del browser, ed e' li' che la gente lo cerca
+    assert "data-vista=pieno" not in pagina
+    assert "(F)" not in pagina
     assert "/static/viste.js" in pagina
 
 
@@ -678,20 +682,19 @@ async def test_il_cinema_e_il_predefinito(visitatore: AsyncClient) -> None:
     assert 'class="scena cinema' in pagina
 
 
-def test_lo_schermo_intero_e_quello_del_browser() -> None:
-    """Mandare a tutto schermo il contenitore si porta dietro la nostra
-    cornice: e' una pagina ingrandita, non un video a tutto schermo.
+def test_lo_schermo_intero_lo_fa_il_lettore() -> None:
+    """Nessuna scorciatoia nostra per lo schermo intero.
 
-    Si guarda il codice e non la pagina: questa e' una decisione che vive nel
-    javascript, e l'HTML non la dice. Non e' il tipo di test che si vorrebbe
-    scrivere, ma l'alternativa e' un browser vero dentro la suite.
+    Il bottone ce l'ha gia' il lettore del browser, ed e' li' che la gente lo
+    cerca. Una `f` che spalanca lo schermo mentre si sta facendo altro
+    sorprende invece di aiutare.
+
+    Si guarda il codice e non la pagina: e' una decisione che vive nel
+    javascript, e l'HTML non la dice.
     """
     codice = pathlib.Path("src/cleanvid/web/static/viste.js").read_text()
-    # si chiede al video, non al riquadro che lo contiene
-    assert "v.requestFullscreen()" in codice
-    assert "teatro.requestFullscreen" not in codice
-    # e su iPhone, dove `requestFullscreen` sul video non c'e'
-    assert "webkitEnterFullscreen" in codice
+    assert 'case "f":' not in codice
+    assert "requestFullscreen" not in codice
 
 
 async def test_la_colonna_di_fianco_non_ripropone_questo_video(
@@ -738,3 +741,26 @@ def test_la_cella_non_eredita_la_griglia_della_pagina_del_video() -> None:
         pulita = riga.strip()
         if pulita.startswith(".conchat"):
             raise AssertionError(f"regola generica su .conchat: {pulita}")
+
+
+async def test_su_una_diretta_c_e_il_pannello_delle_preferenze(
+        visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Le preferenze di questa pagina stanno in questa pagina: una cosa che
+    si vuole provare a occhio non si va a cambiare altrove e poi si torna."""
+    async def diretta(url: str, qualita: str = "") -> Estratto:
+        return Estratto(token="tv", titolo="Prova", diretta=True)
+
+    monkeypatch.setattr(routes_watch, "risolvi", diretta)
+    pagina = (await visitatore.get("/it/guarda", params={
+        "u": "https://www.twitch.tv/unaltro"})).text
+    assert "class=preferenze" in pagina
+    assert "data-chatdove=fianco class=on" in pagina
+    assert "data-chatdove=sotto" in pagina
+
+
+async def test_senza_chat_niente_pannello(visitatore: AsyncClient) -> None:
+    """Un pannello di preferenze con dentro una sola voce che non si applica
+    e' un bottone che non serve a niente."""
+    pagina = (await visitatore.get(
+        "/it/guarda", params={"u": "https://vimeo.com/76979871"})).text
+    assert "class=preferenze" not in pagina

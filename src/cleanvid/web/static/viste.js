@@ -8,8 +8,10 @@
  * browser - gli stessi comandi, gli stessi gesti, le stesse abitudini su
  * ogni sito - e su telefono anche la rotazione automatica.
  *
- * `T` passa al cinema, `F` va a tutto schermo: sono quelle di sempre, e non
- * si inventano tasti nuovi per una cosa che tutti fanno gia' allo stesso modo.
+ * `T` passa al cinema. Per lo schermo intero non c'e' una scorciatoia: quel
+ * bottone ce l'ha gia' il lettore del browser, ed e' li' che la gente lo
+ * cerca. Le scorciatoie che restano sono quelle che riguardano la pagina, non
+ * quelle che il lettore sa fare da se'.
  */
 (() => {
   "use strict";
@@ -20,19 +22,9 @@
 
   const bottoni = document.querySelectorAll("[data-vista]");
   const video = () => document.getElementById("video");
-  const telaio = () => document.getElementById("incorniciato");
 
   function segna(quale) {
     bottoni.forEach((b) => b.classList.toggle("on", b.dataset.vista === quale));
-  }
-
-  function aTuttoSchermo() {
-    // il video, non il contenitore: si vuole il lettore del browser, non la
-    // nostra pagina ingrandita
-    const v = video() || telaio();
-    if (!v) return;
-    if (v.requestFullscreen) v.requestFullscreen().catch(() => {});
-    else if (v.webkitEnterFullscreen) v.webkitEnterFullscreen();  // iPhone
   }
 
   function metti(quale, ricorda) {
@@ -47,10 +39,7 @@
   }
 
   bottoni.forEach((b) => {
-    b.addEventListener("click", () => {
-      if (b.dataset.vista === "pieno") aTuttoSchermo();
-      else metti(b.dataset.vista, true);
-    });
+    b.addEventListener("click", () => metti(b.dataset.vista, true));
   });
 
   document.addEventListener("keydown", (e) => {
@@ -65,10 +54,11 @@
       case "t":
         metti(teatro.classList.contains("cinema") ? "normale" : "cinema", true);
         break;
-      case "f":
-        if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-        else aTuttoSchermo();
-        break;
+      /* Niente scorciatoia per lo schermo intero, ed e' una scelta: il
+         lettore del browser ce l'ha gia' il suo bottone, e una `f` che
+         spalanca lo schermo mentre si sta facendo altro sorprende invece di
+         aiutare. `T` resta perche' cambia la forma della pagina, che un
+         bottone del lettore non puo' fare. */
       case "i":
         { const b = document.getElementById("pip"); if (b && !b.hidden) b.click(); }
         break;
@@ -100,6 +90,42 @@
         break;
     }
   });
+
+  /* Dove sta la chat: di fianco al video, alla sua stessa altezza, oppure
+   * sotto.
+   *
+   * Di fianco e' il predefinito perche' e' quello che fa una diretta: si
+   * guarda e si legge insieme, e mettere la chat sotto vuol dire scorrere
+   * avanti e indietro fra due cose che succedono nello stesso momento.
+   *
+   * Sotto ha senso su uno schermo stretto o quando il video conta piu' della
+   * chat, e allora e' una scelta - che si ricorda. */
+  const CHIAVE_CHAT = "cleanvid.chat";
+
+  function chatDove(dove, ricorda) {
+    const fianco = dove !== "sotto";
+    teatro.classList.toggle("chat-fianco", fianco);
+    teatro.classList.toggle("chat-sotto", !fianco);
+    document.querySelectorAll("[data-chatdove]").forEach((b) =>
+      b.classList.toggle("on", (b.dataset.chatdove === "sotto") === !fianco));
+    if (ricorda) {
+      try { localStorage.setItem(CHIAVE_CHAT, fianco ? "fianco" : "sotto"); }
+      catch (e) {}
+    }
+    window.dispatchEvent(new Event("resize"));
+  }
+
+  document.querySelectorAll("[data-chatdove]").forEach((b) => {
+    b.addEventListener("click", () => {
+      chatDove(b.dataset.chatdove, true);
+      // il pannello si chiude da solo: la scelta e' fatta
+      const aperto = b.closest("details");
+      if (aperto) aperto.open = false;
+    });
+  });
+
+  try { chatDove(localStorage.getItem(CHIAVE_CHAT) || "fianco", false); }
+  catch (e) { chatDove("fianco", false); }
 
   /* Il cinema e' il predefinito: un video si guarda, e la colonna stretta di
      una pagina di testo non e' la forma giusta per guardarlo. Chi preferisce

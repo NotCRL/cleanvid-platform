@@ -1581,21 +1581,39 @@ body.cell.chat-sotto.conchat > #chat{flex:0 0 clamp(120px,34%,260px);
 
 .scena{display:grid;gap:16px 24px;align-items:start;margin:14px 0 8px;
   grid-template-columns:minmax(0,1fr) minmax(0,var(--fianco,352px))}
-.scena.cinema{grid-template-areas:"palco palco" "principale accanto"}
-.scena.normale{grid-template-areas:"palco accanto" "principale accanto"}
+/* Dove sta la colonna di fianco decide la forma della griglia.
+   `chat-fianco`: parte dalla riga del lettore, quindi gli sta accanto alla
+   stessa altezza - quello che serve a una diretta, dove si guarda e si legge
+   insieme. `chat-sotto`: il lettore prende tutta la larghezza e la colonna
+   comincia sotto, di fianco al titolo. */
+.scena.chat-sotto{grid-template-areas:"palco palco" "principale accanto"}
+.scena.chat-fianco{grid-template-areas:"palco accanto" "principale accanto"}
+/* Senza chat non c'e' niente da affiancare al lettore: la lista «da
+   riprendere» sta bene sotto, di fianco al titolo, e il video resta largo. */
+.scena:not(.conchat){grid-template-areas:"palco palco" "principale accanto"}
 .scena > .palco{grid-area:palco;margin:0}
 .scena > .principale{grid-area:principale;min-width:0}
 .scena > .accanto{grid-area:accanto;min-width:0}
 
 /* Il cinema esce dalla colonna della pagina senza uscire dal documento:
    `calc(50% - 50vw)` e' la larghezza che manca per arrivare ai bordi. */
-.scena.cinema > .palco{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);
+.scena.cinema:not(.conchat.chat-fianco) > .palco{
+  margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);
   width:100vw;max-width:100vw;border-radius:0;border-left:0;border-right:0;
   /* `aspect-ratio` e `max-height` insieme litigano: vince il rapporto e il
      video sfora sotto la piega. Qui l'altezza e' 16:9 finche' ci sta, e la
      finestra quando non ci sta piu'. */
   aspect-ratio:auto;height:min(56.25vw,calc(100vh - 205px))}
-.scena.cinema.conchat > .palco{height:min(56.25vw,calc(100vh - 165px))}
+.scena.cinema.conchat.chat-sotto > .palco{height:min(56.25vw,calc(100vh - 165px))}
+
+/* Cinema con la chat di fianco: a uscire dalla colonna non e' il lettore da
+   solo ma lettore e chat insieme, o la chat resterebbe fuori dallo schermo.
+   Un po' di margine ai lati resta: a filo del bordo non si legge niente. */
+.scena.cinema.conchat.chat-fianco{margin-left:calc(50% - 50vw);
+  margin-right:calc(50% - 50vw);width:100vw;max-width:100vw;padding:0 20px}
+.scena.cinema.conchat.chat-fianco > .palco{aspect-ratio:auto;
+  height:min(52vw,calc(100vh - 150px))}
+.scena.cinema.conchat.chat-fianco .chat{height:min(52vw,calc(100vh - 150px))}
 
 /* Se non c'e' niente da mettere di fianco, la griglia torna a una colonna:
    una colonna vuota larga trecento pixel e' un buco, non un layout. */
@@ -1685,4 +1703,27 @@ button.scritta{background:none;border:0;color:var(--accent);font:inherit;
     grid-template-areas:"palco" "principale" "accanto"}
   .scena.cinema > .palco{max-height:none}
   .seguito .mini{flex-basis:150px}
+}
+
+
+/* Il pannello delle preferenze della pagina: un `details`, non un menu
+   scritto in javascript. Cosi' si apre e si chiude senza codice, si chiude
+   con Escape da solo, e chi arriva con la tastiera ci entra come in ogni
+   altro elemento della pagina. */
+.preferenze{position:relative;display:inline-block}
+.preferenze > summary{list-style:none;display:inline-flex}
+.preferenze > summary::-webkit-details-marker{display:none}
+.preferenze[open] > summary{background:var(--surface-4);color:var(--text-max);
+  border-color:var(--line-3)}
+.preferenze .pannello{position:absolute;right:0;top:calc(100% + 8px);z-index:30;
+  min-width:230px;padding:13px 15px;border-radius:var(--r);
+  border:1px solid var(--line-2);background:var(--chrome-2);
+  backdrop-filter:var(--sfoca);-webkit-backdrop-filter:var(--sfoca);
+  box-shadow:var(--sh-2);display:flex;flex-direction:column;gap:9px}
+.preferenze .voce{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--dim);font-weight:600}
+[dir=rtl] .preferenze .pannello{right:auto;left:0}
+@media (max-width:560px){
+  .preferenze .pannello{position:fixed;left:14px;right:14px;top:auto;
+    bottom:calc(14px + var(--safe-b));min-width:0}
 }

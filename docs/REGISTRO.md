@@ -852,3 +852,51 @@ sito restano le cose che valgono ovunque — la lingua, il tema.
 
 **Verificato.** 110 test, fra cui uno che fallisce se torna una regola
 generica su `.conchat`.
+
+---
+
+## 2026-09-22 — Le preferenze della pagina del video, e via la scorciatoia F
+
+### Chat di fianco o sotto, nel lettore singolo
+
+Come nel muro, ma con una forma diversa perché il posto è diverso: un bottone
+**Preferenze** accanto alle viste, che apre un pannellino con **Chat: di
+fianco / sotto**.
+
+*Di fianco* è il predefinito, ed è la scelta che fa una diretta: si guarda e
+si legge **insieme**. Mettere la chat sotto vuol dire scorrere avanti e
+indietro fra due cose che succedono nello stesso momento.
+
+*Sotto* ha senso su uno schermo stretto, o quando il video conta più della
+chat. Allora è una scelta, e si ricorda.
+
+**Come è fatto.** La posizione della chat decide le aree della griglia:
+`chat-fianco` fa partire la colonna dalla riga del lettore, quindi gli sta
+accanto alla stessa altezza; `chat-sotto` dà al lettore tutta la larghezza e
+fa cominciare la colonna sotto, di fianco al titolo. Come sempre, **cambiano
+solo le aree**: niente si sposta nel documento e il video non riparte.
+
+Una cosa che non tornava e che ho sistemato: in cinema, a uscire dalla colonna
+non può essere il lettore da solo se la chat gli sta accanto — resterebbe
+fuori dallo schermo. Con la chat di fianco esce **tutto il blocco**, lettore e
+chat insieme, con un margine ai lati: a filo del bordo non si legge niente.
+
+**Il pannello è un `details`, non un menu scritto in javascript.** Si apre e si
+chiude da solo, si chiude con Escape, e chi arriva con la tastiera ci entra
+come in ogni altro elemento. Su schermo stretto diventa un foglio dal basso.
+
+**Senza chat il bottone non c'è**: un pannello di preferenze con dentro una
+sola voce che non si applica è un bottone che non serve a niente.
+
+### Via la `F`, e via il bottone dello schermo intero
+
+Tolti tutti e due. Il bottone dello schermo intero ce l'ha già il lettore del
+browser, ed è lì che la gente lo cerca: due bottoni per la stessa cosa, uno
+dentro il video e uno fuori, sono uno di troppo. E una `f` che spalanca lo
+schermo mentre si sta facendo altro sorprende invece di aiutare.
+
+`T` resta, perché cambia la forma della pagina — che un bottone del lettore
+non può fare.
+
+**Verificato.** 112 test, fra cui uno che fallisce se `requestFullscreen`
+torna nel nostro javascript.
