@@ -678,10 +678,14 @@ async def test_il_cinema_e_il_predefinito(visitatore: AsyncClient) -> None:
     assert 'class="scena cinema' in pagina
 
 
-async def test_lo_schermo_intero_e_quello_del_browser(
-        visitatore: AsyncClient) -> None:
+def test_lo_schermo_intero_e_quello_del_browser() -> None:
     """Mandare a tutto schermo il contenitore si porta dietro la nostra
-    cornice: e' una pagina ingrandita, non un video a tutto schermo."""
+    cornice: e' una pagina ingrandita, non un video a tutto schermo.
+
+    Si guarda il codice e non la pagina: questa e' una decisione che vive nel
+    javascript, e l'HTML non la dice. Non e' il tipo di test che si vorrebbe
+    scrivere, ma l'alternativa e' un browser vero dentro la suite.
+    """
     codice = pathlib.Path("src/cleanvid/web/static/viste.js").read_text()
     # si chiede al video, non al riquadro che lo contiene
     assert "v.requestFullscreen()" in codice
