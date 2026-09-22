@@ -105,3 +105,36 @@ def lettore_ufficiale(url: str, host_pagina: str = "localhost",
             diretta_probabile=(nome == "Twitch" and "/videos/" not in url),
         )
     return None
+
+
+def chat_incorporabile(url: str, host_pagina: str = "localhost") -> str | None:
+    """L'indirizzo della chat della diretta, o None se non ce n'e' una.
+
+    Vale solo per le dirette: il `live_chat` di YouTube su un video registrato
+    apre un riquadro con dentro un errore, che e' peggio di niente. Chi chiama
+    deve aver gia' stabilito che si tratta di una diretta.
+
+    Twitch e YouTube accettano l'iframe solo se il dominio dichiarato combacia
+    con quello da cui si apre la pagina - `parent` per l'uno, `embed_domain`
+    per l'altro. E' lo stesso inciampo del lettore di Twitch, e si risolve
+    allo stesso modo: prendendolo dall'indirizzo della richiesta.
+    """
+    dominio = (host_pagina or "").split(":")[0] or "localhost"
+
+    canale = re.search(r"twitch\.tv/(?!videos/|clips/|directory)"
+                       r"([a-zA-Z0-9_]{3,25})", url, re.I)
+    if canale:
+        # piu' `parent`: cosi' la stessa pagina funziona da localhost e
+        # dall'indirizzo di rete senza rigenerare niente
+        genitori = dict.fromkeys([dominio, "localhost", "127.0.0.1"])
+        parenti = "&".join(f"parent={h}" for h in genitori)
+        return (f"https://www.twitch.tv/embed/{canale.group(1)}/chat"
+                f"?darkpopout&{parenti}")
+
+    video = re.search(
+        r"(?:youtube\.com/(?:watch\?(?:.*&)?v=|shorts/|live/|embed/)"
+        r"|youtu\.be/)([\w-]{11})", url, re.I)
+    if video:
+        return (f"https://www.youtube.com/live_chat?v={video.group(1)}"
+                f"&embed_domain={urllib.parse.quote(dominio)}")
+    return None

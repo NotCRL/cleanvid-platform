@@ -10,7 +10,7 @@
 {# Un riquadro del muro: solo il lettore, niente intorno. La pagina che ci
    contiene disegna i comandi, perche' quelli nativi dentro un riquadro
    piccolo il browser li mutila da solo. #}
-<body class=cell data-diretta="{{ 1 if estratto and estratto.diretta else 0 }}">
+<body class=cell data-diretta="{{ 1 if (estratto and estratto.diretta) or (lettore and lettore.diretta_probabile) else 0 }}">
 
 {% if lettore %}
   <iframe id=incorniciato src="{{ lettore.url_lettore }}"
@@ -31,6 +31,13 @@
       <span>{{ perche or t("guarda.niente.testo") }}</span>
     </div>
   </div>
+{% endif %}
+
+{% if chat %}
+  {# L'`src` sta in un attributo a parte e non nell'iframe: la chat si carica
+     quando qualcuno la chiede. Quattro chat sempre accese in un muro da
+     quattro sono quattro connessioni aperte che nessuno sta leggendo. #}
+  <div id=chat data-chat="{{ chat }}"><iframe title="chat"></iframe></div>
 {% endif %}
 
 {% if estratto %}

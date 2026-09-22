@@ -552,3 +552,77 @@ def test_sponsorblock_si_chiede_solo_a_youtube() -> None:
     assert video_youtube("https://youtu.be/kJQP7kiw5Fk") == "kJQP7kiw5Fk"
     assert video_youtube("https://www.youtube.com/watch?v=kJQP7kiw5Fk") == "kJQP7kiw5Fk"
     assert video_youtube("https://vimeo.com/76979871") == ""
+
+
+# --------------------------------------------------------------------------
+# la chat delle dirette
+# --------------------------------------------------------------------------
+
+async def test_la_chat_c_e_solo_se_e_una_diretta(
+        visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Il `live_chat` di YouTube su un video registrato apre un riquadro con
+    dentro un errore, che e' peggio di niente."""
+    async def registrazione(url: str, qualita: str = "") -> Estratto:
+        return Estratto(token="tv", titolo="Prova", diretta=False)
+
+    monkeypatch.setattr(routes_muro, "risolvi", registrazione)
+    pagina = (await visitatore.get(
+        "/it/cella", params={"u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
+    assert "id=chat" not in pagina
+
+    async def diretta(url: str, qualita: str = "") -> Estratto:
+        return Estratto(token="tv", titolo="Prova", diretta=True, hls=True)
+
+    monkeypatch.setattr(routes_muro, "risolvi", diretta)
+    pagina = (await visitatore.get(
+        "/it/cella", params={"u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
+    assert "id=chat" in pagina
+    assert "youtube.com/live_chat" in pagina
+
+
+async def test_la_chat_non_si_carica_finche_non_la_chiedi(
+        visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Quattro chat sempre accese in un muro da quattro sono quattro
+    connessioni aperte che nessuno sta leggendo."""
+    async def diretta(url: str, qualita: str = "") -> Estratto:
+        return Estratto(token="tv", titolo="Prova", diretta=True)
+
+    monkeypatch.setattr(routes_muro, "risolvi", diretta)
+    pagina = (await visitatore.get(
+        "/it/cella", params={"u": "https://www.twitch.tv/unaltro"})).text
+    # l'indirizzo sta in un attributo a parte, l'iframe parte vuoto
+    assert 'data-chat="https://www.twitch.tv/embed/' in pagina
+    assert "<iframe title=\"chat\"></iframe>" in pagina
+
+
+def test_la_chat_dichiara_il_dominio_da_cui_si_apre() -> None:
+    """Twitch e YouTube rifiutano l'iframe se non combacia: `parent` per
+    l'uno, `embed_domain` per l'altro. E' lo stesso inciampo del lettore."""
+    from cleanvid.media.embed import chat_incorporabile
+
+    twitch = chat_incorporabile("https://www.twitch.tv/tale", "cleanvid.example")
+    assert twitch is not None
+    assert "parent=cleanvid.example" in twitch
+    assert "parent=localhost" in twitch      # cosi' vale anche in casa
+
+    youtube = chat_incorporabile("https://youtu.be/kJQP7kiw5Fk", "cleanvid.example")
+    assert youtube is not None
+    assert "embed_domain=cleanvid.example" in youtube
+
+    # un sito qualunque non ha una chat da incorniciare
+    assert chat_incorporabile("https://vimeo.com/76979871", "x") is None
+    # e nemmeno una registrazione di Twitch
+    assert chat_incorporabile("https://www.twitch.tv/videos/12345", "x") is None
+
+
+async def test_nella_pagina_del_video_la_chat_sta_di_fianco(
+        visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Sopra coprirebbe il video, ed e' esattamente quello che questo sito toglie."""
+    async def diretta(url: str, qualita: str = "") -> Estratto:
+        return Estratto(token="tv", titolo="Prova", diretta=True)
+
+    monkeypatch.setattr(routes_watch, "risolvi", diretta)
+    pagina = (await visitatore.get("/it/guarda", params={
+        "u": "https://www.twitch.tv/unaltro", "m": "diretto"})).text
+    assert 'class="conchat"' in pagina
+    assert "<aside class=chat>" in pagina

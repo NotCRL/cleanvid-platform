@@ -30,7 +30,7 @@ from .. import seo
 from ..db import sessione
 from ..lingue import esiste
 from ..media.annunci import segmenti
-from ..media.embed import lettore_ufficiale, piattaforma_di
+from ..media.embed import chat_incorporabile, lettore_ufficiale, piattaforma_di
 from ..media.estrazione import Estratto, NonEstraibile, risolvi
 from ..media.qualita import QUALITA
 from ..models import Genere, Utente
@@ -158,8 +158,13 @@ async def guarda(
     # spostare il tempo del video, quindi chiederli sarebbe inutile.
     da_saltare = await segmenti(url) if estratto else []
 
+    in_diretta = bool(estratto and estratto.diretta) or bool(
+        lettore and lettore.diretta_probabile)
+    chat = chat_incorporabile(
+        url, request.url.hostname or "localhost") if in_diretta else None
+
     return _pagina(request, "guarda.html", c,
-                   salti=da_saltare, nostro=nostro,
+                   salti=da_saltare, nostro=nostro, chat=chat,
                    ha_lettore_loro=lettore_ufficiale(
                        url, host_pagina=request.url.hostname or "localhost")
                    is not None,

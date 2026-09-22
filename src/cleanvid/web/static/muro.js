@@ -48,7 +48,8 @@
       localStorage.setItem(CHIAVE, JSON.stringify({
         // il battito resta fuori: e' un timer, non un dato
         celle: celle.map((c) => ({ url: c.url, title: c.title,
-                                   zitto: !!c.zitto, q: c.q || "" })),
+                                   zitto: !!c.zitto, q: c.q || "",
+                                   chat: !!c.chat })),
         disposizione, nCol, fracCol, fracRig,
       }));
     } catch (e) {}
@@ -185,6 +186,8 @@
       + '" aria-label="' + T("muro.ascolta") + '"><i>&#128263;&#65038;</i></button>'
       + '<button class="iconbtn only live" title="' + T("guarda.torna_in_diretta")
       + '" aria-label="' + T("guarda.torna_in_diretta") + '"><i>&#9679;</i></button>'
+      + '<button class="iconbtn only chat" hidden title="' + T("guarda.chat")
+      + '" aria-label="' + T("guarda.chat") + '"><i>&#128172;</i></button>'
       + '<button class="iconbtn only redo" title="' + T("muro.ricarica")
       + '" aria-label="' + T("muro.ricarica") + '"><i>&#8635;</i></button>'
       + '<button class="iconbtn only occhio" title="' + T("muro.nascondi_comandi")
@@ -237,6 +240,19 @@
       try { f.contentWindow.cellApi.alBordo(); } catch (err) {}
     };
     box.querySelector(".del").onclick = (e) => { e.stopPropagation(); togli(c.id); };
+
+    const bChat = box.querySelector(".chat");
+    bChat.onclick = (e) => {
+      e.stopPropagation();
+      try {
+        const a = f.contentWindow.cellApi;
+        const acceso = !a.chatAccesa();
+        a.chat(acceso);
+        bChat.classList.toggle("on", acceso);
+        c.chat = acceso;
+        salva();
+      } catch (err) {}
+    };
 
     const presa = box.querySelector(".presa");
     presa.addEventListener("pointerdown", (e) => iniziaTrascinoCella(e, c, box));
@@ -341,6 +357,12 @@
         c.title = a.titolo() || c.url;
         box.querySelector(".celltitle").textContent = c.title;
         if (!a.inDiretta()) box.querySelector(".live").style.display = "none";
+        // il bottone della chat compare solo dove una chat esiste davvero:
+        // mostrarlo e poi non aprire niente e' peggio che non averlo
+        if (a.haChat()) {
+          bChat.hidden = false;
+          if (c.chat) { a.chat(true); bChat.classList.add("on"); }
+        }
         salva();
       } catch (e) {
         box.querySelector(".celltitle").textContent = c.url;
@@ -492,14 +514,14 @@
   }
 
   /* ---------- aggiungere e togliere ---------- */
-  function aggiungi(url, titolo, zitto, q) {
+  function aggiungi(url, titolo, zitto, q, chat) {
     if (!/^https?:\/\//i.test(url)) return;
     if (celle.length >= (M.massimo || 4)) {
       notify(T("muro.pieno.t"), T("muro.pieno.d"), "warn");
       return;
     }
     const c = { id: Math.random().toString(36).slice(2, 8), url,
-                title: titolo || "", zitto: !!zitto,
+                title: titolo || "", zitto: !!zitto, chat: !!chat,
                 q: q !== undefined ? q : (leggero ? "480" : "") };
     celle.push(c);
     creaCella(c);                   // solo la nuova: le altre non si toccano
@@ -809,7 +831,7 @@
     nCol = vecchio.nCol || 2;
     segnaScelte();
     vecchio.celle.slice(0, M.massimo || 4).forEach((c) =>
-      aggiungi(c.url, c.title, c.zitto, c.q || ""));
+      aggiungi(c.url, c.title, c.zitto, c.q || "", c.chat));
     if (vecchio.fracCol && vecchio.fracCol.length === colonneEffettive()) {
       fracCol = vecchio.fracCol;
       fracRig = vecchio.fracRig || fracRig;

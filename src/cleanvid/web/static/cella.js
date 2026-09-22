@@ -116,6 +116,22 @@
       if (v && v.requestFullscreen) { v.requestFullscreen().catch(() => {}); return true; }
       return false;
     },
+    /* La chat della diretta, quando la piattaforma ne ha una.
+     *
+     * Si accende su richiesta e non da sola: in un muro da quattro, quattro
+     * chat sempre aperte sono quattro connessioni che nessuno sta leggendo.
+     * E l'`src` si scrive alla prima accensione, non prima. */
+    haChat() { return !!document.getElementById("chat"); },
+    chat(mostra) {
+      const c = document.getElementById("chat");
+      if (!c) return false;
+      const dentro = c.querySelector("iframe");
+      if (mostra && !dentro.src) dentro.src = c.dataset.chat;
+      document.body.classList.toggle("conchat", !!mostra);
+      return true;
+    },
+    chatAccesa() { return document.body.classList.contains("conchat"); },
+
     stato() {
       const v = video();
       if (!v) return null;

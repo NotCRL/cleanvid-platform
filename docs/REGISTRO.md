@@ -691,3 +691,52 @@ funziona un menu.
 Cambiata in tutte e quattordici le lingue, insieme alla maiuscola su
 «Qualità», che adesso è un'etichetta che si legge e non più solo un nome
 nascosto.
+
+---
+
+## 2026-09-22 — Il video storto nel riquadro, e la chat delle dirette
+
+### Il video non era centrato
+
+**Cosa succedeva.** Dentro un riquadro del muro il video stava in alto a
+sinistra, con del nero intorno, alla sua misura e non a quella del riquadro.
+
+**La causa.** La pagina della cella era nuova e nessuno le aveva mai dato una
+forma: un `<video>` senza larghezza né altezza prende la misura del file —
+quella del video, non quella del posto in cui sta.
+
+**Il rimedio.** `body.cell` diventa un contenitore che si allunga, e il video
+lo riempie con `object-fit: contain`. *Contain* e non *cover*: un video
+verticale dentro un riquadro largo deve avere le bande ai lati, non essere
+tagliato. Tagliare per riempire vuol dire far sparire un pezzo di immagine
+senza dirlo a nessuno.
+
+### La chat delle dirette
+
+**Cosa c'è adesso.** Su una diretta di Twitch o di YouTube compare la chat
+della piattaforma: di fianco al video nella pagina singola, e nel muro dietro
+un bottone sul riquadro.
+
+**Di fianco e non sopra.** Sopra coprirebbe il video, ed è esattamente quello
+che questo sito toglie.
+
+**Solo sulle dirette.** Il `live_chat` di YouTube su un video registrato apre
+un riquadro con dentro un errore, che è peggio di niente.
+
+**Nel muro si accende su richiesta, e l'indirizzo si scrive solo allora.**
+L'`iframe` nasce vuoto e prende il suo `src` alla prima accensione: quattro
+chat sempre aperte in un muro da quattro sono quattro connessioni che nessuno
+sta leggendo. Il bottone compare solo dove una chat esiste davvero — mostrarlo
+e poi non aprire niente è peggio che non averlo. E la scelta si ricorda, come
+il resto del muro.
+
+**L'inciampo di sempre.** Twitch e YouTube rifiutano l'iframe se il dominio
+dichiarato non combacia con quello da cui si apre la pagina — `parent` per
+l'uno, `embed_domain` per l'altro. È lo stesso di `lettore_ufficiale`, e si
+risolve allo stesso modo: prendendolo dall'indirizzo della richiesta, con
+`localhost` e `127.0.0.1` sempre in lista così la stessa pagina funziona anche
+in casa.
+
+**Verificato.** 102 test, fra cui: niente chat su una registrazione, chat su
+una diretta, l'iframe che parte senza `src`, e i domini dichiarati giusti per
+entrambe le piattaforme. Poi a mano su una diretta Twitch vera.

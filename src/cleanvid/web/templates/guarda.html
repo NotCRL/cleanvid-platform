@@ -12,6 +12,7 @@
 {% endblock %}
 
 {% block contenuto %}
+<div class="{{ 'conchat' if chat else '' }}">
 {% if lettore %}
   <div class=palco>
     <iframe src="{{ lettore.url_lettore }}" title="{{ titolo or piattaforma }}"
@@ -100,6 +101,15 @@
     {{ "★ " ~ t("azione.togli_preferito") if e_preferito else "☆ " ~ t("azione.preferito") }}
   </button>
 </form>
+
+{% if chat %}
+  {# Di fianco e non sopra: sopra coprirebbe il video, ed e' esattamente
+     quello che questo sito toglie. #}
+  <aside class=chat>
+    <iframe src="{{ chat }}" title="{{ t('guarda.chat') }}"></iframe>
+  </aside>
+{% endif %}
+</div>
 
 <section class=sec>
   <h2>{{ t("guarda.indirizzo") }}</h2>
