@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titolo %}cleanvid{% endblock %}
+
+{% block contenuto %}
+<h1>Solo il player.<br><span class=spento>Tutto il resto, via.</span></h1>
+<p class=guida>Incolli l'indirizzo di una pagina e resta il video. Quello che
+apri finisce nella tua cronologia, che è tua e di nessun altro: sei già un
+utente, senza aver fatto niente.</p>
+
+<form class=apri method=post action="/apri">
+  <input type=url name=url required autofocus
+         placeholder="Incolla qui il link del video">
+  <button class=principale>Apri</button>
+</form>
+
+<section class=sezione>
+  <h2>Aperti di recente</h2>
+  {% if recenti %}
+    <ul class=elenco>
+      {% for voce in recenti %}
+        <li>
+          <a href="/guarda?u={{ voce.url | urlencode }}">{{ voce.titolo or voce.url }}</a>
+          <span class=nota>{{ voce.piattaforma }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class=vuoto>Ancora niente. Il primo link che apri compare qui.</p>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block piede %}
+Passo 1: database, utente anonimo, una pagina che apre un video.
+L'estrazione dei flussi arriva al passo successivo.
+{% endblock %}

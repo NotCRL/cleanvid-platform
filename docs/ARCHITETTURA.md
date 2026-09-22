@@ -94,7 +94,8 @@ aperture mette in ginocchio la macchina.
 
 1. **Fondamenta** — `models/`, migrazioni, utente anonimo col cookie firmato,
    una pagina che apre un video. Nessuna funzione nuova: si dimostra solo che
-   la biblioteca per-utente regge.
+   la biblioteca per-utente regge. **Fatto il 22/09/2026**; com'è andata, e i
+   due bug che ci sono voluti, in [`REGISTRO.md`](REGISTRO.md).
 2. **Trasloco di `media/`** — la logica video si sposta dal file unico. Qui
    servono i test: è il pezzo che non deve peggiorare.
 3. **Biblioteca** — cronologia, preferiti, fonti, gruppi, continua a guardare,

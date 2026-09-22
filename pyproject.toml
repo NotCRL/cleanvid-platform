@@ -14,6 +14,7 @@ dependencies = [
     "argon2-cffi>=23.1",       # password: argon2, non bcrypt, non sha
     "itsdangerous>=2.2",       # cookie firmati
     "jinja2>=3.1",
+    "python-multipart>=0.0.20",  # i moduli HTML: senza, i form non arrivano
     "httpx>=0.28",
     "yt-dlp>=2024.12.13",
 ]
@@ -27,6 +28,19 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "ASYNC", "S"]
+ignore = [
+    # `Depends(...)` nei valori predefiniti e' il modo in cui si scrive
+    # FastAPI: non e' una svista, e' l'interfaccia.
+    "B008",
+    # `str, Enum` invece di `StrEnum`: cosi' il valore che finisce nella
+    # colonna Postgres e' la stringa scritta qui, leggibile in un psql, e non
+    # dipende da come l'enum viene serializzato.
+    "UP042",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Gli assert sono il linguaggio dei test: S101 qui vorrebbe dire non scriverli.
+"tests/*" = ["S101"]
 
 [tool.mypy]
 strict = true
@@ -34,3 +48,9 @@ plugins = ["pydantic.mypy"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+# Un solo ciclo per tutta la sessione: il motore del database e le sue
+# connessioni nascono nel ciclo della prima fixture, e asyncpg non accetta di
+# essere usato da un ciclo diverso. Con i valori predefiniti (un ciclo per
+# test) il secondo test fallisce con "attached to a different loop".
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"

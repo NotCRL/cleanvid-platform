@@ -1,0 +1,2 @@
+# La cartella deve esistere anche vuota: main.py ci monta /static, e su una
+# copia appena clonata senza questo file il processo non parte.

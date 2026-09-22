@@ -19,6 +19,17 @@ alembic upgrade head
 make avvia       # http://localhost:8000
 ```
 
+## Prove
+
+```bash
+make prova
+```
+
+I test parlano con l'applicazione vera e cancellano le tabelle a ogni giro,
+quindi usano un database a parte — `make prova` lo crea se non c'è. Non
+puntarli su quello di sviluppo: si perderebbe la propria cronologia ogni
+volta.
+
 ## Dove sta cosa
 
 | Cartella | Cosa c'è |

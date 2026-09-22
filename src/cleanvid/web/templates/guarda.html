@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block titolo %}{{ piattaforma or "video" }} · cleanvid{% endblock %}
+
+{% block contenuto %}
+{% if lettore %}
+  <div class=palco>
+    <iframe src="{{ lettore.url_lettore }}"
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+            allowfullscreen></iframe>
+  </div>
+  <p class=guida>
+    Lettore di {{ lettore.piattaforma }}{% if lettore.diretta_probabile %}, in diretta{% endif %}.
+    Questo indirizzo si può salvare e mandare a qualcuno.
+  </p>
+{% else %}
+  <div class=avviso>
+    <b>Questo sito non ha un lettore incorporabile</b>
+    Al passo 1 si apre solo quello che le piattaforme offrono da sé. Per tutto
+    il resto serve l'estrazione del flusso, che arriva con il trasloco della
+    logica video — il passo successivo.
+  </div>
+{% endif %}
+
+<section class=sezione>
+  <h2>Indirizzo</h2>
+  <ul class=elenco>
+    <li>
+      <a href="{{ url }}" target=_blank rel="noopener noreferrer">{{ url }}</a>
+      <span class=nota>{{ piattaforma }}</span>
+    </li>
+  </ul>
+</section>
+
+<p style="margin-top:22px"><a href="/">← torna alla home</a></p>
+{% endblock %}
+
+{% block piede %}
+È finito nella tua cronologia: lo ritrovi nella home, con il tuo utente.
+{% endblock %}

@@ -20,8 +20,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import (DateTime, Enum, Float, ForeignKey, Index, String, Text,
-                        func)
+from sqlalchemy import DateTime, Enum, Float, ForeignKey, Index, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -55,7 +54,7 @@ class VoceBiblioteca(Base):
     posizione: Mapped[float | None] = mapped_column(Float)
     durata: Mapped[float | None] = mapped_column(Float)
 
-    dati: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
+    dati: Mapped[dict[str, object]] = mapped_column(JSONB, default=dict, nullable=False)
 
     creata: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False)
