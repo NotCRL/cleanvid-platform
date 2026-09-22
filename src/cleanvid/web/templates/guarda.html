@@ -1,159 +1,180 @@
 {% extends "base.html" %}
+{% import "_pezzi.html" as pezzi %}
 {% block titolo %}{{ t("meta.guarda.titolo", titolo=titolo or piattaforma or "video") }}{% endblock %}
 {% block descrizione %}{{ t("meta.guarda.descrizione", titolo=titolo or piattaforma or "video") }}{% endblock %}
 
 {% block robot %}
-{# Fuori dall'indice, e non e' una rinuncia: `guarda?u=...` e' uno spazio di
-   indirizzi infinito, ogni pagina e' sottile e uguale alle altre, e il
-   contenuto dentro e' di qualcun altro. Un motore che ci trova dentro un
-   milione di pagine cosi' non ci premia: ci classifica come sito di scarto e
-   si porta dietro anche la home. #}
+{# Fuori dall'indice: `guarda?u=...` e' uno spazio di indirizzi infinito, ogni
+   pagina e' sottile e uguale alle altre, e il contenuto dentro e' di qualcun
+   altro. Un motore che ci trova dentro un milione di pagine cosi' non ci
+   premia: ci classifica come sito di scarto e si porta dietro anche la home. #}
 <meta name=robots content="noindex,nofollow">
 {% endblock %}
 
 {% block contenuto %}
 {% if lettore or estratto %}
-  {# `#teatro` e' il pezzo che cambia forma fra le tre viste, e la classe la
-     scrive il javascript. Va tutto attorno al lettore e alla chat, perche'
-     in vista cinema si allargano insieme: una chat che resta stretta mentre
-     il video si allarga sembra un errore. #}
-  <div id=teatro class="vista normale{{ ' conchat' if chat else '' }}">
-    <div class=palco>
-      {% if lettore %}
-        <iframe id=incorniciato src="{{ lettore.url_lettore }}"
-                title="{{ titolo or piattaforma }}"
-                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                allowfullscreen></iframe>
-      {% else %}
-        <video id=video controls playsinline
-               {% if estratto.diretta %}autoplay{% endif %}
-               data-flusso="/flusso/{{ estratto.token }}"
-               data-hls="{{ 1 if estratto.hls else 0 }}"
-               data-niente-flusso="{{ t('guarda.niente_flusso') }}"
-               data-riprendi="{{ riprendi or 0 }}"
-               data-pagina="{{ url }}"
-               data-posizione="/{{ c.lingua.codice }}/posizione"
-               data-salti="{{ salti | tojson | forceescape }}"
-               {% if estratto.token_audio %}data-audio="/flusso/{{ estratto.token_audio }}"{% endif %}
-               ></video>
-        {% if estratto.token_audio %}
-          {# la traccia audio sta in un elemento suo: non si vede, e il
-             javascript la tiene incollata al video. Serve nel DOM, non
-             nascosta con `display:none`, perche' un elemento non renderizzato
-             certi browser non lo suonano. #}
-          <audio id=audio preload=auto style="position:absolute;width:0;height:0"></audio>
-        {% endif %}
+{# Una griglia sola per lettore, titolo e colonna di fianco. Passando da
+   cinema a normale cambiano solo le aree della griglia: niente si sposta nel
+   documento, quindi il video non riparte. E' lo stesso vincolo del muro. #}
+<div id=teatro class="scena cinema{{ ' conchat' if chat else '' }}">
+
+  <div class=palco>
+    {% if lettore %}
+      <iframe id=incorniciato src="{{ lettore.url_lettore }}"
+              title="{{ titolo or piattaforma }}"
+              allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+              allowfullscreen></iframe>
+    {% else %}
+      <video id=video controls playsinline
+             {% if estratto.diretta %}autoplay{% endif %}
+             data-flusso="/flusso/{{ estratto.token }}"
+             data-hls="{{ 1 if estratto.hls else 0 }}"
+             data-niente-flusso="{{ t('guarda.niente_flusso') }}"
+             data-riprendi="{{ riprendi or 0 }}"
+             data-pagina="{{ url }}"
+             data-posizione="/{{ c.lingua.codice }}/posizione"
+             data-salti="{{ salti | tojson | forceescape }}"
+             {% if estratto.token_audio %}data-audio="/flusso/{{ estratto.token_audio }}"{% endif %}
+             ></video>
+      {% if estratto.token_audio %}
+        {# la traccia audio sta in un elemento suo, e il javascript la tiene
+           incollata al video. Serve nel DOM, non nascosta con `display:none`,
+           perche' un elemento non renderizzato certi browser non lo suonano. #}
+        <audio id=audio preload=auto style="position:absolute;width:0;height:0"></audio>
       {% endif %}
+    {% endif %}
+  </div>
+
+  <div class=principale>
+    <h1 class=titolo-video>{{ titolo or piattaforma or url }}</h1>
+
+    <div class=sottotitolo>
+      <span class=dati>
+        {% if estratto %}
+          {% if estratto.diretta %}<b class=diretta>● {{ t("guarda.diretta") }}</b>
+          {% else %}{{ t("guarda.registrazione") }}{% endif %}
+          {% if estratto.altezza %} · {{ estratto.altezza }}p{% endif %}
+          {% if estratto.token_audio %} · {{ t("guarda.due_tracce") }}{% elif estratto.hls %} · HLS{% endif %}
+        {% else %}
+          {{ t("guarda.lettore_di", piattaforma=lettore.piattaforma) }}
+        {% endif %}
+        {% if piattaforma %} · {{ piattaforma }}{% endif %}
+      </span>
     </div>
 
+    {# Le azioni, a pillole. Quelle che si usano stanno a sinistra; le viste e
+       la qualita', che si toccano una volta e basta, stanno a destra. #}
+    <div class=azioni>
+      <form method=post action="/{{ c.lingua.codice }}/preferito">
+        <input type=hidden name=url value="{{ url }}">
+        <input type=hidden name=titolo value="{{ titolo }}">
+        <input type=hidden name=piattaforma value="{{ piattaforma }}">
+        <button class="chip{% if e_preferito %} acceso{% endif %}"
+                aria-pressed="{{ 'true' if e_preferito else 'false' }}">
+          <i>{{ "★" if e_preferito else "☆" }}</i>
+          <span>{{ t("azione.togli_preferito") if e_preferito else t("azione.preferito") }}</span>
+        </button>
+      </form>
+
+      {% if estratto %}
+        <button id=pip class=chip type=button hidden title="{{ t('guarda.pip') }} (I)">
+          <i>&#9974;</i><span>{{ t("guarda.pip") }}</span></button>
+        {% if estratto.diretta %}
+          <button id=torna-in-diretta class=chip type=button>
+            <i>&#9679;</i><span>{{ t("guarda.torna_in_diretta") }}</span></button>
+        {% endif %}
+      {% endif %}
+
+      {% if estratto and ha_lettore_loro %}
+        <a class=chip href="/{{ c.lingua.codice }}/guarda?u={{ url | urlencode }}&m=loro"
+           title="{{ t('guarda.loro.spiega') }}">
+          <i>&#8599;</i><span>{{ t("guarda.loro") }}</span></a>
+      {% elif lettore %}
+        <a class=chip href="/{{ c.lingua.codice }}/guarda?u={{ url | urlencode }}"
+           title="{{ t('guarda.nostro.spiega') }}">
+          <i>&#10022;</i><span>{{ t("guarda.nostro") }}</span></a>
+      {% endif %}
+
+      <span class=spinta></span>
+
+      {% if riprendi %}
+        <span id=ripresa class=ripresa>
+          {{ t("guarda.riprendi", tempo=riprendi | mm_ss) }}
+          <button id=ricomincia class=scritta type=button>{{ t("guarda.ricomincia") }}</button>
+        </span>
+      {% endif %}
+
+      {% if estratto %}
+        <form method=get action="/{{ c.lingua.codice }}/guarda" class=qualita>
+          <input type=hidden name=u value="{{ url }}">
+          <select id=qualita name=q onchange="this.form.submit()"
+                  aria-label="{{ t('guarda.qualita') }}" title="{{ t('guarda.qualita') }}">
+            <option value="" {% if not q %}selected{% endif %}>{{ t("guarda.come_viene") }}</option>
+            {% for altezza in qualita_possibili %}
+              <option value="{{ altezza }}" {% if q == altezza %}selected{% endif %}>{{ altezza }}p</option>
+            {% endfor %}
+          </select>
+          <noscript><button class=chip>{{ t("impostazioni.salva") }}</button></noscript>
+        </form>
+      {% endif %}
+
+      <span class="layouts viste">
+        <button type=button data-vista=normale
+                title="{{ t('vista.normale') }} (T)" aria-label="{{ t('vista.normale') }}"
+                >&#9647;</button>
+        <button type=button data-vista=cinema class=on
+                title="{{ t('vista.cinema') }} (T)" aria-label="{{ t('vista.cinema') }}"
+                >&#9644;</button>
+        <button type=button data-vista=pieno
+                title="{{ t('vista.pieno') }} (F)" aria-label="{{ t('vista.pieno') }}"
+                >&#9974;</button>
+      </span>
+    </div>
+
+    <details class=indirizzo>
+      <summary>{{ t("guarda.indirizzo") }}</summary>
+      <a href="{{ url }}" target=_blank rel="noopener noreferrer nofollow">{{ url }}</a>
+    </details>
+  </div>
+
+  <aside class=accanto>
     {% if chat %}
       {# Di fianco e non sopra: sopra coprirebbe il video, ed e' esattamente
          quello che questo sito toglie. #}
-      <aside class=chat>
-        <iframe src="{{ chat }}" title="{{ t('guarda.chat') }}"></iframe>
-      </aside>
+      <h2>{{ t("guarda.chat") }}</h2>
+      <div class=chat><iframe src="{{ chat }}" title="{{ t('guarda.chat') }}"></iframe></div>
+    {% elif accanto %}
+      <h2>{{ t("guarda.dopo") }}</h2>
+      <ul class=seguito>
+        {% for voce in accanto %}
+          <li>
+            <a href="/{{ c.lingua.codice }}/guarda?u={{ voce.url | urlencode }}">
+              <span class=mini style="--seed:{{ (voce | nome_voce) | tinta }}">
+                <img alt="" data-copertina="{{ voce.url | copertina }}">
+                <b>{{ (voce | nome_voce) | iniziali }}</b>
+                {% if voce.posizione and voce.durata %}
+                  <span class=avanzamento><i style="width:{{ [100, [2, (voce.posizione / voce.durata * 100) | round | int] | max] | min }}%"></i></span>
+                {% endif %}
+              </span>
+              <span class=testo>
+                <b>{{ voce | nome_voce }}</b>
+                <span>{{ voce.piattaforma }}{% if voce.posizione and voce.durata %} · {{ voce.posizione | mm_ss }}{% endif %}</span>
+              </span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
     {% endif %}
-  </div>
-
-  <div class=barra>
-    <span class=etichetta>
-      {% if estratto %}
-        {% if estratto.diretta %}<b class=diretta>● {{ t("guarda.diretta") }}</b>
-        {% else %}{{ t("guarda.registrazione") }}{% endif %}
-        {% if estratto.token_audio %} · {{ t("guarda.due_tracce") }}{% elif estratto.hls %} · HLS{% endif %}
-        {% if estratto.altezza %} · {{ estratto.altezza }}p{% endif %}
-      {% else %}
-        {{ t("guarda.lettore_di", piattaforma=lettore.piattaforma) }}
-      {% endif %}
-    </span>
-
-    {% if estratto and estratto.diretta %}
-      <button id=torna-in-diretta class=iconbtn type=button>{{ t("guarda.torna_in_diretta") }}</button>
-    {% endif %}
-    {% if riprendi %}
-      <span id=ripresa class=ripresa>
-        {{ t("guarda.riprendi", tempo=riprendi | mm_ss) }}
-        <button id=ricomincia class=scritta type=button>{{ t("guarda.ricomincia") }}</button>
-      </span>
-    {% endif %}
-
-    {# Le tre viste, con le stesse scorciatoie a cui la gente e' abituata:
-       T per il cinema, F per lo schermo intero. Non si inventano tasti
-       nuovi per una cosa che tutti fanno gia' allo stesso modo. #}
-    <span class="layouts viste">
-      <button type=button data-vista=normale class=on
-              title="{{ t('vista.normale') }}" aria-label="{{ t('vista.normale') }}"
-              >&#9647;</button>
-      <button type=button data-vista=cinema
-              title="{{ t('vista.cinema') }} (T)" aria-label="{{ t('vista.cinema') }}"
-              >&#9644;</button>
-      <button type=button data-vista=pieno
-              title="{{ t('vista.pieno') }} (F)" aria-label="{{ t('vista.pieno') }}"
-              >&#9974;</button>
-    </span>
-
-    {% if estratto %}
-      <button id=pip class=iconbtn type=button hidden
-              title="{{ t('guarda.pip') }}">{{ t("guarda.pip") }}</button>
-    {% endif %}
-
-    {% if estratto and ha_lettore_loro %}
-      <a class=iconbtn href="/{{ c.lingua.codice }}/guarda?u={{ url | urlencode }}&m=loro"
-         title="{{ t('guarda.loro.spiega') }}">{{ t("guarda.loro") }}</a>
-    {% elif lettore %}
-      <a class=iconbtn href="/{{ c.lingua.codice }}/guarda?u={{ url | urlencode }}"
-         title="{{ t('guarda.nostro.spiega') }}">{{ t("guarda.nostro") }}</a>
-    {% endif %}
-
-    {% if estratto %}
-      <form method=get action="/{{ c.lingua.codice }}/guarda" class=qualita>
-        <input type=hidden name=u value="{{ url }}">
-        <label class=etichetta for=qualita>{{ t("guarda.qualita") }}</label>
-        <select id=qualita name=q onchange="this.form.submit()"
-                aria-label="{{ t('guarda.qualita') }}">
-          <option value="" {% if not q %}selected{% endif %}>{{ t("guarda.come_viene") }}</option>
-          {% for altezza in qualita_possibili %}
-            <option value="{{ altezza }}" {% if q == altezza %}selected{% endif %}>{{ altezza }}p</option>
-          {% endfor %}
-        </select>
-        <noscript><button class=iconbtn>{{ t("impostazioni.salva") }}</button></noscript>
-      </form>
-    {% endif %}
-  </div>
-
-  <h1 class=titolo-video>{{ titolo or piattaforma or url }}</h1>
-
-  <form method=post action="/{{ c.lingua.codice }}/preferito" class=cuore>
-    <input type=hidden name=url value="{{ url }}">
-    <input type=hidden name=titolo value="{{ titolo }}">
-    <input type=hidden name=piattaforma value="{{ piattaforma }}">
-    <button class=iconbtn aria-pressed="{{ 'true' if e_preferito else 'false' }}">
-      {{ "★ " ~ t("azione.togli_preferito") if e_preferito else "☆ " ~ t("azione.preferito") }}
-    </button>
-  </form>
+  </aside>
+</div>
 
 {% else %}
   <div class=err>
     <b>{{ t("guarda.niente.titolo") }}</b>
     {{ perche or t("guarda.niente.testo") }}
   </div>
+  <p style="margin-top:22px"><a href="/{{ c.lingua.codice }}/">← {{ t("piede.torna_home") }}</a></p>
 {% endif %}
-
-<section class=sec>
-  <h2>{{ t("guarda.indirizzo") }}</h2>
-  <ul class=elenco>
-    <li>
-      <a href="{{ url }}" target=_blank rel="noopener noreferrer nofollow">{{ url }}</a>
-      <span class=nota>{{ piattaforma }}</span>
-    </li>
-  </ul>
-</section>
-
-<p style="margin-top:22px">
-  <a href="/{{ c.lingua.codice }}/">← {{ t("piede.torna_home") }}</a>
-  &nbsp;·&nbsp;
-  <a href="/{{ c.lingua.codice }}/muro">{{ t("muro.titolo") }}</a>
-</p>
 {% endblock %}
 
 {% block coda %}
@@ -161,7 +182,10 @@
   {% if estratto.hls %}<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>{% endif %}
   <script src="/static/lettore.js"></script>
 {% endif %}
-{% if lettore or estratto %}<script src="/static/viste.js"></script>{% endif %}
+{% if lettore or estratto %}
+  <script src="/static/copertine.js"></script>
+  <script src="/static/viste.js"></script>
+{% endif %}
 {% endblock %}
 
 {% block piede %}{{ t("guarda.in_cronologia") }}{% endblock %}

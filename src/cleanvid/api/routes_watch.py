@@ -173,8 +173,25 @@ async def guarda(
     chat = chat_incorporabile(
         url, request.url.hostname or "localhost") if in_diretta else None
 
+    # La colonna di fianco, quando non c'e' la chat: prima quello lasciato a
+    # meta', poi il resto della cronologia. E' il posto dove si guarda per
+    # decidere cosa viene dopo, e riproporre quello che si sta gia' guardando
+    # sarebbe l'unica cosa che li' non serve.
+    accanto = []
+    if chat is None:
+        sospesi = await biblioteca.da_riprendere(db, c.utente.id, quante=4)
+        recenti = await biblioteca.elenco(db, c.utente.id, Genere.CRONOLOGIA,
+                                          quante=12)
+        visti = {url}
+        for voce in (*sospesi, *recenti):
+            if voce.url in visti:
+                continue
+            visti.add(voce.url)
+            accanto.append(voce)
+        accanto = accanto[:8]
+
     return _pagina(request, "guarda.html", c,
-                   salti=da_saltare, nostro=nostro, chat=chat,
+                   salti=da_saltare, nostro=nostro, chat=chat, accanto=accanto,
                    ha_lettore_loro=ha_lettore_loro,
                    url=url, q=q, qualita_possibili=QUALITA,
                    piattaforma=piattaforma,

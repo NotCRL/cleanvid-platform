@@ -8,6 +8,7 @@ essere impossibile cancellare la voce di un altro conoscendone l'id.
 
 from __future__ import annotations
 
+import pathlib
 import uuid
 
 import pytest
@@ -659,4 +660,54 @@ async def test_nella_pagina_del_video_la_chat_sta_di_fianco(
     pagina = (await visitatore.get("/it/guarda", params={
         "u": "https://www.twitch.tv/unaltro"})).text
     assert "conchat" in pagina
-    assert "<aside class=chat>" in pagina
+    assert "<div class=chat>" in pagina
+    # la chat prende il posto della lista «da riprendere»: di roba da
+    # guardare dopo, durante una diretta, non interessa a nessuno
+    assert "class=seguito" not in pagina
+
+
+# --------------------------------------------------------------------------
+# le viste e la forma della pagina
+# --------------------------------------------------------------------------
+
+async def test_il_cinema_e_il_predefinito(visitatore: AsyncClient) -> None:
+    """Un video si guarda, e la colonna stretta di una pagina di testo non e'
+    la forma giusta per guardarlo."""
+    pagina = (await visitatore.get(
+        "/it/guarda", params={"u": "https://vimeo.com/76979871"})).text
+    assert 'class="scena cinema' in pagina
+
+
+async def test_lo_schermo_intero_e_quello_del_browser(
+        visitatore: AsyncClient) -> None:
+    """Mandare a tutto schermo il contenitore si porta dietro la nostra
+    cornice: e' una pagina ingrandita, non un video a tutto schermo."""
+    codice = pathlib.Path("src/cleanvid/web/static/viste.js").read_text()
+    # si chiede al video, non al riquadro che lo contiene
+    assert "v.requestFullscreen()" in codice
+    assert "teatro.requestFullscreen" not in codice
+    # e su iPhone, dove `requestFullscreen` sul video non c'e'
+    assert "webkitEnterFullscreen" in codice
+
+
+async def test_la_colonna_di_fianco_non_ripropone_questo_video(
+        visitatore: AsyncClient) -> None:
+    """Riproporre quello che si sta gia' guardando e' l'unica cosa che li'
+    non serve."""
+    await visitatore.post("/it/apri", data={"url": "https://vimeo.com/76979871"})
+    await visitatore.post("/it/apri", data={"url": "https://vimeo.com/11111111"})
+    pagina = (await visitatore.get(
+        "/it/guarda", params={"u": "https://vimeo.com/76979871"})).text
+    dopo = pagina.split("class=seguito", 1)[1] if "class=seguito" in pagina else ""
+    assert "vimeo.com%2F11111111" in dopo
+    assert "vimeo.com%2F76979871" not in dopo
+
+
+async def test_il_nome_del_piccolo_schermo_e_quello_vero(
+        visitatore: AsyncClient) -> None:
+    """«Guarda in un angolo» era una perifrasi: il nome della cosa e' quello,
+    e chi lo cerca cerca quello."""
+    pagina = (await visitatore.get(
+        "/it/guarda", params={"u": "https://vimeo.com/76979871"})).text
+    assert "Picture-in-Picture" in pagina
+    assert "angolo" not in pagina

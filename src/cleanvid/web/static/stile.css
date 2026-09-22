@@ -1446,8 +1446,12 @@ details.disco{border-top:1px solid var(--vetro-brd)}
    intero: qui sotto c'e' l'indirizzo, la stella, la cronologia. */
 .palco{position:relative;background:#000;border:1px solid var(--line);
   border-radius:var(--r);overflow:hidden;aspect-ratio:16/9;margin:20px 0 14px}
-.palco iframe,.palco video{width:100%;height:100%;border:0;display:block;
-  background:#000}
+.palco iframe{width:100%;height:100%;border:0;display:block;background:#000}
+/* `contain` e non `cover`: un video verticale dentro un riquadro largo deve
+   avere le bande ai lati, non essere tagliato. Tagliare per riempire vuol
+   dire far sparire un pezzo di immagine senza dirlo a nessuno. */
+.palco video{width:100%;height:100%;border:0;display:block;background:#000;
+  object-fit:contain}
 .barra{display:flex;align-items:center;gap:13px;flex-wrap:wrap;margin:0 0 18px}
 .etichetta{color:var(--dim);font-size:12.5px}
 .etichetta .diretta{color:var(--live);font-weight:600}
@@ -1560,45 +1564,124 @@ body.cell.conchat > #chat iframe{flex:1;width:100%;border:0;min-height:0;
 }
 
 
-/* Le tre viste del lettore singolo.
- *
- * `normale` sta nella colonna della pagina, come tutto il resto. `cinema` si
- * allarga fino ai bordi della finestra - il trucco e' `calc(50% - 50vw)` sui
- * margini, che porta il blocco fuori dalla colonna senza doverlo spostare nel
- * documento, quindi senza ricaricare il video.
- *
- * Lo schermo intero e' quello vero del browser e non una finta a tutta
- * pagina: cosi' sparisce anche la barra del browser, che su un portatile sono
- * due centimetri di schermo. */
 
-.vista{margin:18px 0 12px}
-.vista .palco{margin:0}
 
-.vista.cinema{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);
-  width:100vw;max-width:100vw;background:#000;padding:0}
-.vista.cinema .palco{border-radius:0;border-left:0;border-right:0;
-  max-height:calc(100vh - 190px);margin:0 auto}
-.vista.cinema.conchat{padding-right:0}
 
-/* La chat si allarga insieme al video: una chat che resta stretta mentre il
-   video si allarga sembra un errore. */
-.vista.conchat{display:grid;gap:12px;
-  grid-template-columns:minmax(0,1fr) minmax(0,320px);align-items:stretch}
-.vista.cinema.conchat{grid-template-columns:minmax(0,1fr) minmax(0,clamp(260px,22vw,380px))}
-.vista.cinema .chat{border-radius:0;border-top:0;border-bottom:0;border-right:0}
-@media (max-width:760px){
-  .vista.conchat{grid-template-columns:1fr}
-  .vista.cinema{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw)}
+/* ===========================================================================
+   La pagina del video
+   ===========================================================================
+   Una griglia sola per lettore, titolo e colonna di fianco. Fra cinema e
+   normale cambiano solo le aree: **niente si sposta nel documento**, quindi
+   l'iframe non si ricarica e il video non riparte. E' lo stesso vincolo del
+   muro, in un altro posto.
+
+   Il cinema e' il predefinito perche' un video si guarda, e la colonna
+   stretta di una pagina di testo non e' la forma giusta per guardarlo. */
+
+.scena{display:grid;gap:16px 24px;align-items:start;margin:14px 0 8px;
+  grid-template-columns:minmax(0,1fr) minmax(0,var(--fianco,352px))}
+.scena.cinema{grid-template-areas:"palco palco" "principale accanto"}
+.scena.normale{grid-template-areas:"palco accanto" "principale accanto"}
+.scena > .palco{grid-area:palco;margin:0}
+.scena > .principale{grid-area:principale;min-width:0}
+.scena > .accanto{grid-area:accanto;min-width:0}
+
+/* Il cinema esce dalla colonna della pagina senza uscire dal documento:
+   `calc(50% - 50vw)` e' la larghezza che manca per arrivare ai bordi. */
+.scena.cinema > .palco{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);
+  width:100vw;max-width:100vw;border-radius:0;border-left:0;border-right:0;
+  /* `aspect-ratio` e `max-height` insieme litigano: vince il rapporto e il
+     video sfora sotto la piega. Qui l'altezza e' 16:9 finche' ci sta, e la
+     finestra quando non ci sta piu'. */
+  aspect-ratio:auto;height:min(56.25vw,calc(100vh - 205px))}
+.scena.cinema.conchat > .palco{height:min(56.25vw,calc(100vh - 165px))}
+
+/* Se non c'e' niente da mettere di fianco, la griglia torna a una colonna:
+   una colonna vuota larga trecento pixel e' un buco, non un layout. */
+.scena:not(.conchat):has(> .accanto:empty){grid-template-columns:minmax(0,1fr)}
+.scena:not(.conchat):has(> .accanto:empty).cinema{grid-template-areas:"palco" "principale"}
+.scena:not(.conchat):has(> .accanto:empty).normale{grid-template-areas:"palco" "principale"}
+
+/* --- il titolo e le azioni --- */
+.titolo-video{font-size:clamp(18px,2.3vw,23px);line-height:1.32;margin:0 0 6px;
+  font-weight:650;letter-spacing:-.015em}
+.sottotitolo{color:var(--dim);font-size:13px;margin:0 0 14px}
+.sottotitolo .diretta{color:var(--live);font-weight:600}
+
+.azioni{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding-bottom:14px;border-bottom:1px solid var(--line)}
+.azioni form{margin:0;display:inline-flex;align-items:center;gap:8px}
+.azioni .spinta{flex:1 1 auto}
+
+/* Le pillole: il modo in cui si presentano le azioni su un video, ormai
+   dappertutto. Rotonde perche' si distinguano dai campi, e con l'icona a
+   sinistra perche' si riconoscano prima di leggerle. */
+.chip{display:inline-flex;align-items:center;gap:7px;padding:8px 15px 8px 13px;
+  border-radius:999px;border:1px solid var(--line-2);background:var(--surface-3);
+  color:var(--text-2);font:inherit;font-size:13.5px;font-weight:500;
+  cursor:pointer;text-decoration:none;white-space:nowrap;
+  transition:background .12s,border-color .12s,color .12s}
+.chip:hover{background:var(--surface-4);border-color:var(--line-3);color:var(--text-max)}
+.chip i{font-style:normal;font-size:14px;line-height:1}
+.chip.acceso{background:var(--gold-bg);border-color:var(--gold-line);color:var(--gold-text)}
+.chip.acceso:hover{background:var(--gold-bg-2);border-color:var(--gold-line-2)}
+@media (max-width:560px){ .chip span{display:none} .chip{padding:8px 12px} }
+
+.azioni .qualita{margin:0}
+.azioni .layouts.viste{display:inline-flex;gap:2px}
+.ripresa{color:var(--dim);font-size:12.5px}
+button.scritta{background:none;border:0;color:var(--accent);font:inherit;
+  font-size:12.5px;cursor:pointer;text-decoration:underline;padding:0 0 0 6px}
+
+.indirizzo{margin:14px 0 0;font-size:13px}
+.indirizzo summary{cursor:pointer;color:var(--dim);list-style:none}
+.indirizzo summary::-webkit-details-marker{display:none}
+.indirizzo summary::before{content:"+";color:var(--accent);margin-right:8px;
+  font-weight:700}
+.indirizzo[open] summary::before{content:"\2212"}
+.indirizzo a{display:block;margin:8px 0 0 20px;word-break:break-all;
+  color:var(--text-3);font-size:12.5px}
+
+/* --- la colonna di fianco --- */
+.accanto > h2{font-size:11.5px;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--dim);font-weight:600;margin:0 0 11px}
+.accanto .chat{height:clamp(360px,64vh,760px);border:1px solid var(--line);
+  border-radius:var(--r);overflow:hidden;background:var(--field);display:flex}
+.accanto .chat iframe{flex:1;width:100%;border:0}
+.scena.cinema .accanto .chat{height:clamp(320px,52vh,620px)}
+
+/* La lista «dopo»: copertina piccola a sinistra, titolo a destra. E' la
+   forma che tutti riconoscono, e ci sta molto piu' roba che con le schede
+   grandi della home. */
+.seguito{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;
+  gap:2px}
+.seguito a{display:flex;gap:11px;padding:7px;margin:0 -7px;border-radius:10px;
+  text-decoration:none;color:inherit}
+.seguito a:hover{background:var(--surface-2)}
+.seguito .mini{position:relative;flex:0 0 132px;aspect-ratio:16/9;
+  border-radius:8px;overflow:hidden;background:var(--surface-3);
+  background:hsl(var(--seed,0) var(--poster-s) var(--poster-l2))}
+.seguito .mini img{position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;opacity:0;transition:opacity .25s}
+.seguito .mini img.pronta{opacity:1}
+.seguito .mini img.pronta ~ b{display:none}
+.seguito .mini b{position:absolute;inset:0;display:flex;align-items:center;
+  justify-content:center;font-size:17px;font-weight:700;color:var(--mono);
+  letter-spacing:.02em}
+.seguito .mini .avanzamento{position:absolute;left:0;right:0;bottom:0;height:3px;
+  background:#00000066;z-index:2}
+.seguito .mini .avanzamento i{display:block;height:100%;background:var(--accent)}
+.seguito .testo{min-width:0;display:flex;flex-direction:column;gap:3px;
+  padding-top:1px}
+.seguito .testo b{font-size:13px;font-weight:550;line-height:1.33;
+  color:var(--text-2);display:-webkit-box;-webkit-line-clamp:2;
+  -webkit-box-orient:vertical;overflow:hidden}
+.seguito a:hover .testo b{color:var(--text-max)}
+.seguito .testo > span{font-size:11.5px;color:var(--faint)}
+
+@media (max-width:900px){
+  .scena,.scena.cinema,.scena.normale{grid-template-columns:minmax(0,1fr);
+    grid-template-areas:"palco" "principale" "accanto"}
+  .scena.cinema > .palco{max-height:none}
+  .seguito .mini{flex-basis:150px}
 }
-
-/* A schermo intero il palco prende tutto e la chat sparisce: li' dentro
-   serve il video, e una colonna di testo di fianco toglie solo spazio. */
-.vista:fullscreen{margin:0;display:block;background:#000}
-.vista:fullscreen .palco{height:100vh;max-height:none;border:0;border-radius:0;
-  aspect-ratio:auto}
-.vista:fullscreen .chat{display:none}
-
-.layouts.viste{margin-left:auto}
-.titolo-video{font-size:clamp(17px,2.2vw,22px);line-height:1.3;margin:4px 0 10px;
-  font-weight:600;letter-spacing:-.01em}
-.cuore{margin:0 0 4px}
