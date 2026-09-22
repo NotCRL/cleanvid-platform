@@ -141,11 +141,23 @@ def riscrivi_playlist(token: str, base: str, testo: str) -> Ripulita:
     Si lavora a stati e non a espressioni regolari sull'intero testo, perche'
     un `#EXTINF` e la riga dell'indirizzo che lo segue vanno tolti insieme: se
     ne resta uno, il player conta male la durata e il video va a scatti.
+
+    **`EXT-X-MEDIA-SEQUENCE` si riscrive.** E' il numero del primo segmento
+    della lista, e serve al player per capire quali segmenti sono nuovi fra un
+    aggiornamento e l'altro. Togliendo i primi N segmenti senza toccarlo, il
+    player crede che il primo segmento sia ancora quello di prima: si ritrova
+    con una numerazione che non torna, riscarica roba che ha gia', ne salta
+    altra, e in diretta si pianta. E' il tipo di errore che non da' nessun
+    messaggio - il video semplicemente si ferma.
     """
     fuori: list[str] = []
     restano = 0.0       # secondi di pubblicita' ancora da saltare
     sospeso: float | None = None   # un #EXTINF che aspetta il suo indirizzo
     tolti = 0
+    tolti_in_testa = 0             # quanti prima del primo segmento tenuto
+    visto_un_segmento = False
+    riga_sequenza = -1             # dove sta il MEDIA-SEQUENCE, per riscriverlo
+    sequenza = 0
 
     for riga in testo.splitlines():
         pulita = riga.strip()
@@ -167,6 +179,14 @@ def riscrivi_playlist(token: str, base: str, testo: str) -> Ripulita:
                     continue
                 fuori.append(riga)
                 continue
+            if su.startswith("#EXT-X-MEDIA-SEQUENCE"):
+                try:
+                    sequenza = int(pulita.split(":", 1)[1])
+                except (IndexError, ValueError):
+                    sequenza = 0
+                riga_sequenza = len(fuori)
+                fuori.append(riga)
+                continue
             if su.startswith("#EXT-X-DISCONTINUITY") and restano > 0:
                 continue          # discontinuita' interna al blocco di spot
 
@@ -181,15 +201,22 @@ def riscrivi_playlist(token: str, base: str, testo: str) -> Ripulita:
                 restano -= sospeso
                 sospeso = None
                 tolti += 1
+                if not visto_un_segmento:
+                    tolti_in_testa += 1
                 if restano <= 0:
                     restano = 0.0
                     # una discontinuita' dice al player "qui il flusso cambia":
                     # senza, il decoder inciampa sul salto
                     fuori.append("#EXT-X-DISCONTINUITY")
                 continue
+            visto_un_segmento = True
             fuori.append(link_segmento(token, urllib.parse.urljoin(base, pulita)))
         else:
             fuori.append(riga)
+
+    # il primo segmento della lista adesso e' un altro: il suo numero va detto
+    if riga_sequenza >= 0 and tolti_in_testa:
+        fuori[riga_sequenza] = f"#EXT-X-MEDIA-SEQUENCE:{sequenza + tolti_in_testa}"
 
     return Ripulita(
         testo="\n".join(fuori) + "\n",

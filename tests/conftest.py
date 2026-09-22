@@ -109,6 +109,14 @@ async def sito_finto(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[None]:
             "#EXTM3U\n#EXTINF:4.0,\npezzo0.ts\n",
             media_type="application/vnd.apple.mpegurl")
 
+    async def solospot(request: Request) -> Response:
+        # una diretta che in questo momento serve solo pubblicita': e' il
+        # preroll, e tolti gli spot non resta un segmento
+        return PlainTextResponse(
+            "#EXTM3U\n#EXT-X-MEDIA-SEQUENCE:10\n#EXT-X-CUE-OUT:8.0\n"
+            "#EXTINF:4.0,\nspot0.ts\n#EXTINF:4.0,\nspot1.ts\n",
+            media_type="application/vnd.apple.mpegurl")
+
     async def bugiardo(request: Request) -> Response:
         # etichettato come playlist ma non lo e': e' il caso di googlevideo
         return Response(b"non sono una playlist",
@@ -122,6 +130,7 @@ async def sito_finto(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[None]:
     finto = Starlette(routes=[
         Route("/video.mp4", video),
         Route("/lista.m3u8", lista),
+        Route("/solospot.m3u8", solospot),
         Route("/bugiardo.ts", bugiardo),
         Route("/protetto.mp4", protetto),
     ])

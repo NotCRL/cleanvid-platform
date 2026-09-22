@@ -937,3 +937,58 @@ async def test_senza_javascript_la_stella_funziona_lo_stesso(
         "/it/preferito", data={"url": "https://vimeo.com/76979871"},
         follow_redirects=False)
     assert r.status_code == 303
+
+
+def test_il_pannello_delle_preferenze_sta_sopra_a_quello_che_viene_dopo() -> None:
+    """Si apriva dietro al blocco dell'indirizzo: visibile a meta' e non
+    cliccabile. Un pannello che si apre dentro una riga deve stare sopra alla
+    riga sotto, sempre."""
+    foglio = pathlib.Path("src/cleanvid/web/static/stile.css").read_text()
+    assert ".azioni{position:relative;z-index:5" in foglio
+    assert ".indirizzo{position:relative;z-index:1" in foglio
+    assert ".preferenze[open]{z-index:40}" in foglio
+
+
+# --------------------------------------------------------------------------
+# il guardiano del lettore
+# --------------------------------------------------------------------------
+
+def test_il_lettore_ha_un_guardiano() -> None:
+    """Un flusso si ferma per mille motivi che non sono colpa di nessuno, e
+    il browser quando succede non fa niente: resta fermo.
+
+    Il guardiano guarda se il tempo avanza e, se non avanza, prova a
+    rimettere in moto con una scala di rimedi dal piu' leggero al piu' pesante.
+    """
+    codice = pathlib.Path("src/cleanvid/web/static/lettore.js").read_text()
+    assert "const FERMO_MS = 6000;" in codice
+    assert "function rianima()" in codice
+    # la scala: spinta, riapertura del flusso, e in fondo la riestrazione
+    assert "video.currentTime + 0.1" in codice
+    assert "video.load();" in codice
+    assert "function riestrai()" in codice
+
+
+def test_un_indirizzo_scaduto_fa_riestrarre_e_non_riprovare() -> None:
+    """404 o 403 su un flusso vuol dire che l'indirizzo e' morto: li' non
+    c'e' niente da riprovare, il flusso va estratto di nuovo."""
+    codice = pathlib.Path("src/cleanvid/web/static/lettore.js").read_text()
+    assert "codice === 404 || codice === 403" in codice
+    # e una volta sola: ricaricare all'infinito nasconde il problema vero
+    assert 'sessionStorage.getItem("cleanvid.riestratto")' in codice
+
+
+def test_le_due_tracce_si_fermano_insieme() -> None:
+    """Se una si ferma per mancanza di dati e l'altra continua, quando
+    tornano si ritrovano a secondi di distanza: si sente come un doppiaggio
+    sbagliato, e il recupero costa un salto brutto."""
+    codice = pathlib.Path("src/cleanvid/web/static/lettore.js").read_text()
+    assert 'audio.addEventListener("waiting", aspetta)' in codice
+    assert 'video.addEventListener("waiting", aspetta)' in codice
+    assert 'audio.addEventListener("canplay", riparti)' in codice
+
+
+def test_la_diretta_non_si_tiene_in_memoria_tutta() -> None:
+    """Su una diretta lunga sono centinaia di megabyte, e la scheda muore."""
+    codice = pathlib.Path("src/cleanvid/web/static/lettore.js").read_text()
+    assert "backBufferLength: 60" in codice

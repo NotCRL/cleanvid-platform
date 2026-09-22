@@ -170,3 +170,38 @@ async def test_le_intestazioni_richieste_dal_sito_arrivano(
     scoperto = await deposito.registra(
         {"tipo": "diretto", "url": "http://sito/protetto.mp4", "intestazioni": {}})
     assert (await visitatore.get(f"/flusso/{scoperto}")).status_code == 403
+
+
+async def test_durante_un_preroll_si_serve_l_ultima_buona(
+        visitatore: AsyncClient, sito_finto: None) -> None:
+    """Tolti gli spot puo' non restare niente: e' il preroll.
+
+    Una playlist senza un solo segmento certi lettori la prendono per un
+    errore e si fermano - ed e' esattamente il momento in cui sembra che il
+    sito sia rotto. Si serve l'ultima che aveva roba vera: per il lettore e'
+    una diretta che non ha ancora niente di nuovo, cioe' una cosa normale.
+    """
+    token = await deposito.registra(
+        {"tipo": "diretto", "url": "http://sito/lista.m3u8", "intestazioni": {}})
+
+    # prima passata: c'e' roba vera, e si mette da parte
+    buona = (await visitatore.get(f"/flusso/{token}")).text
+    assert "/segmento?" in buona
+    assert await deposito.ultima_playlist(token, "http://sito/lista.m3u8") is not None
+
+    # ora il sito serve solo spot: si deve rivedere quella di prima
+    solo_spot = (await visitatore.get(f"/flusso/{token}",
+                                      params={"finto": "solo-spot"})).text
+    assert solo_spot == buona or "/segmento?" in solo_spot
+
+
+async def test_senza_una_buona_da_parte_si_dice_come_sta(
+        visitatore: AsyncClient, sito_finto: None) -> None:
+    """Al primo colpo non c'e' niente da parte: si risponde quello che c'e',
+    invece di inventare."""
+    token = await deposito.registra(
+        {"tipo": "diretto", "url": "http://sito/solospot.m3u8",
+         "intestazioni": {}})
+    r = await visitatore.get(f"/flusso/{token}")
+    assert r.status_code == 200
+    assert "/segmento?" not in r.text

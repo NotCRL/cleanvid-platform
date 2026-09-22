@@ -1638,7 +1638,11 @@ body.cell.chat-sotto.conchat > #chat{flex:0 0 clamp(120px,34%,260px);
 .sottotitolo{color:var(--dim);font-size:13px;margin:0 0 14px}
 .sottotitolo .diretta{color:var(--live);font-weight:600}
 
-.azioni{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+/* La riga delle azioni sta sopra a quello che viene dopo: da qui si apre il
+   pannello delle preferenze, e senza questo finiva dietro al blocco
+   dell'indirizzo - visibile a meta' e non cliccabile. Un pannello che si apre
+   dentro una riga deve stare sopra alla riga sotto, sempre. */
+.azioni{position:relative;z-index:5;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
   padding-bottom:14px;border-bottom:1px solid var(--line)}
 .azioni form{margin:0;display:inline-flex;align-items:center;gap:8px}
 .azioni .spinta{flex:1 1 auto}
@@ -1663,7 +1667,7 @@ body.cell.chat-sotto.conchat > #chat{flex:0 0 clamp(120px,34%,260px);
 button.scritta{background:none;border:0;color:var(--accent);font:inherit;
   font-size:12.5px;cursor:pointer;text-decoration:underline;padding:0 0 0 6px}
 
-.indirizzo{margin:14px 0 0;font-size:13px}
+.indirizzo{position:relative;z-index:1;margin:14px 0 0;font-size:13px}
 .indirizzo summary{cursor:pointer;color:var(--dim);list-style:none}
 .indirizzo summary::-webkit-details-marker{display:none}
 .indirizzo summary::before{content:"+";color:var(--accent);margin-right:8px;
@@ -1721,12 +1725,13 @@ button.scritta{background:none;border:0;color:var(--accent);font:inherit;
    scritto in javascript. Cosi' si apre e si chiude senza codice, si chiude
    con Escape da solo, e chi arriva con la tastiera ci entra come in ogni
    altro elemento della pagina. */
-.preferenze{position:relative;display:inline-block}
+.preferenze{position:relative;display:inline-block;z-index:6}
+.preferenze[open]{z-index:40}
 .preferenze > summary{list-style:none;display:inline-flex}
 .preferenze > summary::-webkit-details-marker{display:none}
 .preferenze[open] > summary{background:var(--surface-4);color:var(--text-max);
   border-color:var(--line-3)}
-.preferenze .pannello{position:absolute;right:0;top:calc(100% + 8px);z-index:30;
+.preferenze .pannello{position:absolute;right:0;top:calc(100% + 8px);z-index:41;
   min-width:230px;padding:13px 15px;border-radius:var(--r);
   border:1px solid var(--line-2);background:var(--chrome-2);
   backdrop-filter:var(--sfoca);-webkit-backdrop-filter:var(--sfoca);

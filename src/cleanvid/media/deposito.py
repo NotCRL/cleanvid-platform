@@ -42,6 +42,7 @@ _cliente: redis.Redis | None = None
 CHIAVE_FLUSSO = "flusso:"       # token -> cosa proxare
 CHIAVE_ESTRAZIONE = "estr:"     # (url, qualita) -> il risultato dell'estrazione
 CHIAVE_ANNUNCI = "ads:"         # token -> quanti segmenti pubblicitari tolti
+CHIAVE_ULTIMA = "lista:"        # l'ultima playlist con dentro roba vera
 
 # Un flusso registrato vive piu' della sua cache di estrazione: chi sta
 # guardando non deve vedersi staccare il video quando la cache scade.
@@ -166,3 +167,39 @@ async def segna_annunci(token: str, quanti: int) -> None:
 
 async def annunci_tolti(token: str) -> int:
     return int(await cliente().get(CHIAVE_ANNUNCI + token) or 0)
+
+
+# --------------------------------------------------------------------------
+# l'ultima playlist buona
+# --------------------------------------------------------------------------
+#
+# Durante una pubblicita' cucita dentro una diretta puo' succedere che, tolti
+# gli spot, non resti NIENTE: e' il preroll, il pezzo di reclame che va prima
+# che la diretta cominci davvero. Li' una playlist senza un solo segmento non
+# e' una risposta utile - certi lettori la prendono per un errore e si
+# fermano, ed e' esattamente il momento in cui sembra che il sito sia rotto.
+#
+# Si tiene da parte l'ultima che aveva roba vera, e si serve quella: per il
+# lettore e' una diretta che non ha ancora niente di nuovo, cioe' una cosa
+# normalissima che sa gestire. I segmenti non li riscarica, perche' li conosce
+# gia' dal loro numero.
+#
+# Vita breve: se la pubblicita' dura piu' di un minuto, ripetere all'infinito
+# roba vecchia sarebbe peggio che dire la verita'.
+VITA_ULTIMA_S = 60
+
+
+def _chiave_lista(token: str, url: str) -> str:
+    impronta = hashlib.sha256(url.encode()).hexdigest()[:16]
+    return f"{CHIAVE_ULTIMA}{token}:{impronta}"
+
+
+async def ricorda_playlist(token: str, url: str, testo: str) -> None:
+    await cliente().set(_chiave_lista(token, url), testo, ex=VITA_ULTIMA_S)
+
+
+async def ultima_playlist(token: str, url: str) -> str | None:
+    trovata = await cliente().get(_chiave_lista(token, url))
+    # il cliente e' aperto con `decode_responses`, quindi quello che torna e'
+    # gia' testo; il controllo e' per chi legge, non per il programma
+    return trovata if isinstance(trovata, str) else None

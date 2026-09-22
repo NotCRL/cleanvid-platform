@@ -1135,3 +1135,86 @@ altrimenti l'alone sparirebbe di scatto.
 Si spegne in pausa e a fine video, e si riaccende ripartendo.
 
 **Verificato.** 125 test.
+
+---
+
+## 2026-09-22 — Il lettore si bloccava. Tre cause, tutte vere
+
+Segnalato come «il player è pieno di bug e si blocca di continuo». Cercandole
+ne sono venute fuori tre, e sono tre cose diverse.
+
+### 1. Non c'era nessuna difesa
+
+Il lettore sapeva far partire un video e non sapeva farlo **ripartire**. Un
+flusso si ferma per mille motivi che non sono colpa di nessuno — un segmento
+che tarda, la rete che cambia, un indirizzo che scade dopo qualche ora — e il
+browser, quando succede, non fa niente: resta fermo.
+
+Ora c'è un guardiano che guarda se il tempo avanza. Se non avanza per sei
+secondi, prova a rimettere in moto con una scala di rimedi, dal più leggero
+al più pesante:
+
+| | |
+|---|---|
+| 1 | una spinta di un decimo di secondo — il decoder si impunta su un fotogramma e quasi sempre basta |
+| 2-4 | si riapre il flusso e si torna dov'eravamo |
+| oltre | si ricarica la pagina, che rifà l'estrazione |
+
+La riestrazione **una volta sola per pagina**: se anche la seconda non regge,
+ricaricare all'infinito non aiuta nessuno e nasconde il problema vero.
+
+Un `404` o `403` su un flusso non passa nemmeno per la scala: vuol dire che
+l'indirizzo è morto, e lì non c'è niente da riprovare.
+
+**Le due tracce ora si fermano insieme.** Se una resta senza dati e l'altra
+continua, quando tornano si ritrovano a secondi di distanza: si sente come un
+doppiaggio sbagliato, e il recupero costa un salto brutto. Meglio mezzo
+secondo di attesa.
+
+**E la diretta non si tiene più in memoria tutta**: `backBufferLength: 60`.
+Su una diretta lunga erano centinaia di megabyte, e la scheda muore.
+
+### 2. La numerazione dei segmenti non veniva aggiornata
+
+**Questa è probabilmente la causa dei blocchi su Twitch.**
+
+`#EXT-X-MEDIA-SEQUENCE` è il numero del primo segmento della lista, e serve al
+player per capire quali segmenti sono nuovi fra un aggiornamento e l'altro.
+Togliendo i primi N segmenti — cioè quello che facciamo a ogni pubblicità —
+**senza toccarlo**, il player crede che il primo sia ancora quello di prima:
+si ritrova con una numerazione che non torna, riscarica roba che ha già, ne
+salta altra, e in diretta si pianta.
+
+Non dà nessun messaggio. Il video si ferma e basta.
+
+### 3. Durante un preroll servivamo una playlist vuota
+
+Misurato dal vivo su una diretta Twitch, mentre scrivevo questo:
+
+```
+giro 1: sequenza 0 -> 3 | segmenti 0 | spot tolti 3 | solo spot: True
+giro 2: sequenza 0 -> 5 | segmenti 0 | spot tolti 5 | solo spot: True
+```
+
+Tolti gli spot non restava **niente**: è il preroll, la reclame che passa
+prima che la diretta cominci davvero. E una playlist senza un solo segmento
+certi lettori la prendono per un errore e si fermano — nel momento esatto in
+cui sembra che il sito sia rotto.
+
+Ora si tiene da parte l'ultima playlist che aveva roba vera e si serve quella:
+per il lettore è una diretta che non ha ancora niente di nuovo, cioè una cosa
+normalissima che sa gestire. I segmenti non li riscarica, perché li riconosce
+dal numero. Vita breve, un minuto: se la pubblicità dura di più, ripetere
+roba vecchia all'infinito sarebbe peggio che dire la verità.
+
+---
+
+## 2026-09-22 — Il pannello delle preferenze finiva dietro all'indirizzo
+
+Si apriva sotto al blocco dell'indirizzo: visibile a metà e non cliccabile.
+La riga delle azioni non aveva un contesto di impilamento, quindi il pannello
+— per quanto alto fosse il suo `z-index` — finiva dietro a un blocco che nel
+documento veniva dopo. Ora `.azioni` sta sopra, e `.indirizzo` sotto.
+
+Un pannello che si apre dentro una riga deve stare sopra alla riga sotto,
+sempre.

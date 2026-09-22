@@ -1,50 +1,67 @@
-/* Il lettore: un file solo, due tracce da tenere allineate, o un flusso HLS.
+/* Il lettore: due tracce da tenere insieme, HLS, e un guardiano.
  *
- * La parte che merita di essere letta e' l'allineamento fra video e audio.
- * Quasi nessun sito serve piu' un file unico: danno un video muto e un audio
- * a parte. Cucirli sul server costa un processo per spettatore; il browser
- * invece sa suonarli tutti e due, uno per elemento, e l'unico lavoro che
- * resta e' impedire che si separino.
+ * La parte che ha richiesto piu' lavoro non e' far partire un video: e' farlo
+ * ripartire. Un flusso si ferma per mille motivi che non sono colpa di
+ * nessuno - un segmento che tarda, la rete che cambia, un indirizzo che
+ * scade dopo qualche ora - e un lettore che si ferma e basta e' un lettore
+ * rotto, anche se il codice e' giusto.
  *
- * Le due soglie qui sotto sono state trovate guardando uno schermo, non a
- * tavolino, e sono la ragione per cui questo non singhiozza:
- *
- *  - sotto mezzo secondo di scarto NON si salta. Si cambia impercettibilmente
- *    la velocita' dell'audio finche' rientra. Un salto si sente molto piu'
- *    di un ritardo che si chiude da solo.
- *  - non piu' di un salto al secondo. Senza questo, un video che fatica a
- *    partire entra in un ciclo di salti e non ne esce.
+ * Quindi qui dentro ci sono due cose: quello che fa suonare il video, e
+ * quello che lo rimette in piedi quando si pianta. La seconda e' piu' lunga
+ * della prima.
  */
-(function () {
+(() => {
   "use strict";
 
-  const SCARTO_MASSIMO = 0.5;     // oltre questo, saltare costa meno che inseguire
-  const CORREZIONE = 0.06;        // 6%: sopra si sente, sotto non recupera mai
-  const PAUSA_FRA_SALTI = 1000;   // ms
+  const video = document.getElementById("video");
+  if (!video) return;
+  const dati = video.dataset;
+  const audio = document.getElementById("audio");
 
-  function allinea(video, audio) {
+  // --------------------------------------------------------------------
+  // 1. due tracce tenute insieme
+  // --------------------------------------------------------------------
+  /* Quasi nessun sito serve piu' un file unico: danno un video muto e un
+   * audio a parte. Cucirli sul server costa un processo per spettatore; il
+   * browser invece sa suonarli tutti e due, e l'unico lavoro che resta e'
+   * impedire che si separino.
+   *
+   * Le soglie sono state trovate guardando uno schermo, non a tavolino:
+   *  - sotto mezzo secondo di scarto NON si salta: si cambia
+   *    impercettibilmente la velocita' dell'audio finche' rientra. Un salto
+   *    si sente molto piu' di un ritardo che si chiude da solo;
+   *  - non piu' di un salto al secondo, o un video che fatica a partire entra
+   *    in un ciclo di salti e non ne esce.
+   */
+  const SCARTO_MASSIMO = 0.5;
+  const CORREZIONE = 0.06;          // 6%: sopra si sente, sotto non recupera
+  const PAUSA_FRA_SALTI = 1000;
+
+  let vuoleSuonare = false;         // cosa ha chiesto chi guarda, non cosa fa
+
+  function allinea() {
     let ultimoSalto = 0;
 
-    // l'audio segue il video e mai il contrario: il video e' quello che si
-    // vede, e un fotogramma che torna indietro si nota subito
-    video.addEventListener("play", () => audio.play().catch(() => {}));
-    video.addEventListener("pause", () => audio.pause());
+    video.addEventListener("play", () => {
+      vuoleSuonare = true;
+      audio.play().catch(() => {});
+    });
+    video.addEventListener("pause", () => {
+      // solo se e' una pausa vera: quella per mancanza di dati la gestisce
+      // il guardiano, e fermare l'audio li' farebbe perdere l'allineamento
+      if (!video.seeking) vuoleSuonare = !video.paused;
+      audio.pause();
+    });
     video.addEventListener("seeking", () => { audio.currentTime = video.currentTime; });
     video.addEventListener("ratechange", () => { audio.playbackRate = video.playbackRate; });
-    // Il volume si copia, il muto NO. Il video qui e' muto per forza -
-    // l'audio esce dall'altro elemento - quindi copiare il suo `muted`
-    // vorrebbe dire rimutare la traccia audio ogni volta che qualcosa tocca
-    // il volume, compreso il muro quando accende il suono di un riquadro.
-    // E' il bug per cui nel muro l'audio non si sentiva.
-    video.addEventListener("volumechange", () => {
-      audio.volume = video.volume;
-    });
+    // il volume si copia, il muto NO: il video qui e' muto per forza, e
+    // copiarlo rimuterebbe la traccia audio a ogni tocco del volume
+    video.addEventListener("volumechange", () => { audio.volume = video.volume; });
 
     video.addEventListener("timeupdate", () => {
       if (audio.readyState < 2) return;
       const scarto = video.currentTime - audio.currentTime;
       const adesso = Date.now();
-
       if (Math.abs(scarto) > SCARTO_MASSIMO) {
         if (adesso - ultimoSalto < PAUSA_FRA_SALTI) return;
         ultimoSalto = adesso;
@@ -52,88 +69,204 @@
         audio.playbackRate = video.playbackRate;
         return;
       }
-      // scarto piccolo: si recupera cambiando velocita', senza che si senta
       const spinta = Math.max(-CORREZIONE, Math.min(CORREZIONE, scarto));
       audio.playbackRate = video.playbackRate * (1 + spinta);
     });
 
-    // il video e' muto per forza: l'audio esce dall'altro elemento, e due
-    // tracce audio insieme sarebbero un'eco
-    video.muted = true;
+    /* Se una delle due si ferma per mancanza di dati si ferma anche l'altra.
+     * Senza, quella che ha i dati continua da sola e quando l'altra torna si
+     * ritrovano a secondi di distanza: si sente come un doppiaggio sbagliato,
+     * e il recupero costa un salto brutto. Meglio mezzo secondo di attesa. */
+    const aspetta = () => { if (vuoleSuonare) { video.pause(); audio.pause(); } };
+    const riparti = () => {
+      if (!vuoleSuonare) return;
+      if (video.readyState >= 3 && audio.readyState >= 3) {
+        audio.currentTime = video.currentTime;
+        video.play().catch(() => {});
+        audio.play().catch(() => {});
+      }
+    };
+    audio.addEventListener("waiting", aspetta);
+    video.addEventListener("waiting", aspetta);
+    audio.addEventListener("canplay", riparti);
+    video.addEventListener("canplay", riparti);
+
+    video.muted = true;             // il suono esce dall'altro elemento
   }
 
-  function montaHls(video, indirizzo) {
+  // --------------------------------------------------------------------
+  // 2. HLS
+  // --------------------------------------------------------------------
+  function montaHls(indirizzo) {
     // Safari e iOS suonano l'HLS da soli e meglio di qualunque libreria:
-    // usare hls.js anche li' vorrebbe dire rinunciare al decoder hardware.
+    // usarne una anche li' vuol dire rinunciare al decoder hardware
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = indirizzo;
       return;
     }
     if (typeof Hls === "undefined" || !Hls.isSupported()) {
-      video.insertAdjacentHTML("afterend",
-        "<p class=avviso>Questo browser non sa suonare questo flusso.</p>");
+      avvisa(dati.nienteFlusso || "");
       return;
     }
     const hls = new Hls({
       // in diretta si parte dal bordo, non da dove comincia il buffer:
       // altrimenti si guarda con mezzo minuto di ritardo senza sapere perche'
       liveSyncDurationCount: 3,
+      // non si tiene in memoria tutto quello che e' gia' passato: su una
+      // diretta lunga sono centinaia di megabyte, e la scheda muore
+      backBufferLength: 60,
+      maxBufferLength: 30,
+      // piu' tentativi dei predefiniti: i nostri segmenti passano da un
+      // proxy, e un proxy ha un inciampo in piu' della rete diretta
+      fragLoadingMaxRetry: 6,
+      levelLoadingMaxRetry: 4,
+      manifestLoadingMaxRetry: 4,
     });
     hls.loadSource(indirizzo);
     hls.attachMedia(video);
+    video.hlsjs = hls;
+
+    let guastiMedia = 0;
     hls.on(Hls.Events.ERROR, (_, guaio) => {
       if (!guaio.fatal) return;
-      // un errore di rete in diretta e' normale (un segmento che non c'e'
-      // ancora): si riprova invece di arrendersi
-      if (guaio.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
-      else if (guaio.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
-      else hls.destroy();
+      if (guaio.type === Hls.ErrorTypes.NETWORK_ERROR) {
+        // un indirizzo scaduto risponde 404 o 403: li' non c'e' niente da
+        // riprovare, il flusso va estratto di nuovo
+        const codice = guaio.response && guaio.response.code;
+        if (codice === 404 || codice === 403) { riestrai(); return; }
+        hls.startLoad();
+        return;
+      }
+      if (guaio.type === Hls.ErrorTypes.MEDIA_ERROR) {
+        guastiMedia += 1;
+        if (guastiMedia === 1) hls.recoverMediaError();
+        // la seconda volta si cambia anche il codec audio: e' il rimedio che
+        // la libreria stessa suggerisce quando il primo non basta
+        else if (guastiMedia === 2) { hls.swapAudioCodec(); hls.recoverMediaError(); }
+        else riestrai();
+        return;
+      }
+      riestrai();
     });
-    video.hls = hls;
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
-    const video = document.getElementById("video");
-    if (!video) return;
-    const dati = video.dataset;
+  // --------------------------------------------------------------------
+  // 3. il guardiano
+  // --------------------------------------------------------------------
+  /* Un flusso si ferma per mille motivi che non sono colpa di nessuno. Il
+   * browser, quando succede, non fa niente: resta fermo. Questo guarda se il
+   * tempo avanza, e se non avanza prova a rimettere in moto - con una scala
+   * di rimedi, dal piu' leggero al piu' pesante.
+   */
+  const FERMO_MS = 6000;            // quanto si aspetta prima di intervenire
+  const TENTATIVI_MASSIMI = 4;
 
-    if (dati.hls === "1") montaHls(video, dati.flusso);
-    else video.src = dati.flusso;
+  let ultimoTempo = -1;
+  let ultimoMovimento = Date.now();
+  let tentativi = 0;
 
-    const audio = document.getElementById("audio");
-    if (audio) {
-      audio.src = dati.audio;
-      allinea(video, audio);
+  function riestrai() {
+    /* Ultima spiaggia: si ricarica la pagina, che rifa' l'estrazione. La
+     * posizione non si perde - e' gia' sul server, e la ripresa la rimette.
+     *
+     * Una volta sola per pagina: se anche la seconda estrazione non regge,
+     * ricaricare all'infinito non aiuta nessuno e nasconde il problema vero. */
+    try {
+      if (sessionStorage.getItem("cleanvid.riestratto") === dati.pagina) {
+        avvisa(dati.nienteFlusso || "");
+        return;
+      }
+      sessionStorage.setItem("cleanvid.riestratto", dati.pagina || "1");
+    } catch (e) {}
+    location.reload();
+  }
+
+  function rianima() {
+    tentativi += 1;
+    if (tentativi > TENTATIVI_MASSIMI) { riestrai(); return; }
+
+    const hls = video.hlsjs;
+    if (hls) { hls.startLoad(); video.play().catch(() => {}); return; }
+
+    // file diretto: prima una spinta, che quasi sempre basta - il decoder si
+    // impunta su un fotogramma e un decimo di secondo lo sblocca
+    if (tentativi === 1) {
+      video.currentTime = video.currentTime + 0.1;
+      video.play().catch(() => {});
+      return;
     }
+    // poi si riapre il flusso e si torna dov'eravamo
+    const dove = video.currentTime;
+    const sep = dati.flusso.includes("?") ? "&" : "?";
+    video.src = dati.flusso + sep + "r=" + tentativi;
+    video.load();
+    const torna = () => {
+      video.currentTime = dove;
+      video.play().catch(() => {});
+      video.removeEventListener("loadedmetadata", torna);
+    };
+    video.addEventListener("loadedmetadata", torna);
+  }
 
-    const torna = document.getElementById("torna-in-diretta");
-    if (torna) {
-      torna.addEventListener("click", () => {
-        // in diretta "la fine" si muove: si va dove arriva il buffer adesso
-        const fine = video.seekable.length
-          ? video.seekable.end(video.seekable.length - 1) : 0;
-        if (fine) video.currentTime = fine - 1;
-        video.play().catch(() => {});
-      });
+  setInterval(() => {
+    if (video.paused || video.ended || document.hidden) {
+      ultimoMovimento = Date.now();
+      return;
     }
-  });
-})();
+    if (video.currentTime !== ultimoTempo) {
+      ultimoTempo = video.currentTime;
+      ultimoMovimento = Date.now();
+      tentativi = 0;                // e' ripartito da solo: si ricomincia
+      return;
+    }
+    if (Date.now() - ultimoMovimento < FERMO_MS) return;
+    ultimoMovimento = Date.now();
+    rianima();
+  }, 1000);
 
-/* Riprendere da dove si era rimasti, e ricordarsi dove si e' arrivati.
- *
- * La posizione va sul server e non nel browser di chi guarda: il punto deve
- * valere su tutti gli schermi. Si lascia a meta' sul computer e si riprende
- * dal tablet, che di cleanvid e' il telecomando.
- */
-(function () {
-  "use strict";
+  /* Un errore del `<video>` non e' recuperabile da solo: la sorgente e'
+     caduta, e l'unica cosa sensata e' riprovare la scala dei rimedi. */
+  video.addEventListener("error", () => { if (!video.hlsjs) rianima(); });
 
-  const OGNI = 15000;   // secondi fra un salvataggio e l'altro
+  function avvisa(testo) {
+    if (!testo || document.getElementById("guasto-lettore")) return;
+    const riga = document.createElement("p");
+    riga.id = "guasto-lettore";
+    riga.className = "err";
+    riga.textContent = testo;
+    (video.parentElement || document.body).insertAdjacentElement("afterend", riga);
+  }
 
-  document.addEventListener("DOMContentLoaded", () => {
-    const video = document.getElementById("video");
-    if (!video || !video.dataset.posizione) return;
-    const dati = video.dataset;
+  // --------------------------------------------------------------------
+  // 4. avvio
+  // --------------------------------------------------------------------
+  if (dati.hls === "1") montaHls(dati.flusso);
+  else video.src = dati.flusso;
+
+  if (audio) {
+    audio.src = dati.audio;
+    allinea();
+  }
+
+  const torna = document.getElementById("torna-in-diretta");
+  if (torna) {
+    torna.addEventListener("click", () => {
+      // in diretta «la fine» si muove: si va dove arriva il buffer adesso
+      const fine = video.seekable.length
+        ? video.seekable.end(video.seekable.length - 1) : 0;
+      if (fine) video.currentTime = fine - 1;
+      video.play().catch(() => {});
+    });
+  }
+
+  // --------------------------------------------------------------------
+  // 5. riprendere, e ricordarsi dove si e' arrivati
+  // --------------------------------------------------------------------
+  /* La posizione va sul server e non nel browser di chi guarda: il punto deve
+   * valere su tutti gli schermi. Si lascia a meta' sul computer e si riprende
+   * dal tablet, che di cleanvid e' il telecomando. */
+  if (dati.posizione) {
+    const OGNI = 15000;
 
     const da = parseFloat(dati.riprendi || "0");
     if (da > 0) {
@@ -159,7 +292,7 @@
 
     let ultimo = 0;
     const salva = (chiudendo) => {
-      if (!video.duration || !isFinite(video.duration)) return;  // diretta
+      if (!video.duration || !isFinite(video.duration)) return;   // diretta
       const corpo = new FormData();
       corpo.append("url", dati.pagina);
       corpo.append("secondi", video.currentTime.toFixed(1));
@@ -182,71 +315,50 @@
       salva(false);
     });
     video.addEventListener("pause", () => salva(false));
-    // `pagehide` e non `unload`: su iOS `unload` non scatta quasi mai, e su
-    // tutti gli altri e' quello che il browser promette di far partire
+    // `pagehide` e non `unload`: su iOS `unload` non scatta quasi mai
     window.addEventListener("pagehide", () => salva(true));
-  });
-})();
+  }
 
-/* Saltare i pezzi che nessuno vuole guardare, e il video che resta a galla.
- *
- * I segmenti arrivano da SponsorBlock, segnalati a mano da chi guarda: lo
- * sponsor letto a voce, l'autopromozione, il «iscriviti al canale».
- *
- * **Si saltano, non si tagliano.** Tagliarli vorrebbe dire rimontare il
- * flusso, e in un flusso rimontato la barra del tempo dice una cosa e il
- * video un'altra. Saltare e' spostare `currentTime`, e chi guarda vede solo
- * che il video prosegue.
- */
-(function () {
-  "use strict";
+  // --------------------------------------------------------------------
+  // 6. saltare gli sponsor, e il piccolo schermo
+  // --------------------------------------------------------------------
+  /* I segmenti arrivano da SponsorBlock, segnalati a mano da chi guarda: lo
+   * sponsor letto a voce, l'autopromozione, il «iscriviti al canale».
+   * Si saltano, non si tagliano: in un flusso rimontato la barra del tempo
+   * dice una cosa e il video un'altra. */
+  const MARGINE = 0.3;              // si salta poco prima: il taglio si sente
 
-  const MARGINE = 0.3;   // si salta poco prima: il taglio secco si sente
+  let salti = [];
+  try { salti = JSON.parse(dati.salti || "[]"); } catch (e) {}
 
-  function saltaSponsor(video, salti) {
-    if (!salti.length) return;
-    let ultimo = -1;
-
+  if (salti.length) {
+    let ultimoSaltato = -1;
     video.addEventListener("timeupdate", () => {
       const t = video.currentTime;
       for (let i = 0; i < salti.length; i++) {
         const [da, a] = salti[i];
-        // gia' saltato questo: se chi guarda e' tornato indietro apposta
-        // dentro il pezzo, non glielo si porta via una seconda volta
-        if (i === ultimo) continue;
+        // se chi guarda e' tornato indietro apposta dentro il pezzo, non
+        // glielo si porta via una seconda volta
+        if (i === ultimoSaltato) continue;
         if (t >= da - MARGINE && t < a - 0.5) {
-          ultimo = i;
+          ultimoSaltato = i;
           video.currentTime = a;
           return;
         }
       }
     });
-    // tornare indietro a mano azzera la memoria: da li' in poi si salta di nuovo
-    video.addEventListener("seeked", () => { ultimo = -1; });
+    video.addEventListener("seeked", () => { ultimoSaltato = -1; });
   }
 
-  /* Il video in un angolo mentre si fa altro. Il bottone resta nascosto dove
-     non si puo' fare: mostrarlo e poi non funzionare e' peggio che non averlo. */
-  function piccoloSchermo(video) {
-    const b = document.getElementById("pip");
-    if (!b) return;
-    if (!document.pictureInPictureEnabled || video.disablePictureInPicture) return;
-    b.hidden = false;
-    b.onclick = () => {
+  const pip = document.getElementById("pip");
+  if (pip && document.pictureInPictureEnabled && !video.disablePictureInPicture) {
+    pip.hidden = false;
+    pip.addEventListener("click", () => {
       if (document.pictureInPictureElement) {
         document.exitPictureInPicture().catch(() => {});
         return;
       }
       video.requestPictureInPicture().catch(() => {});
-    };
+    });
   }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const video = document.getElementById("video");
-    if (!video) return;
-    piccoloSchermo(video);
-    let salti = [];
-    try { salti = JSON.parse(video.dataset.salti || "[]"); } catch (e) {}
-    saltaSponsor(video, salti);
-  });
 })();

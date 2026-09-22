@@ -149,3 +149,59 @@ def test_il_master_costruito_ha_audio_e_tutte_le_qualita() -> None:
     # perche' un CODECS senza audio fa rifiutare il master a Safari
     assert "mp4a.40.2" in corpo
     assert 'GROUP-ID="aud"' in corpo
+
+
+# --------------------------------------------------------------------------
+# la numerazione dei segmenti
+# --------------------------------------------------------------------------
+
+DIRETTA_CON_SPOT = """#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-TARGETDURATION:4
+#EXT-X-MEDIA-SEQUENCE:1200
+#EXT-X-CUE-OUT:8.000
+#EXTINF:4.000,
+spot0.ts
+#EXTINF:4.000,
+spot1.ts
+#EXT-X-CUE-IN
+#EXTINF:4.000,
+vero0.ts
+#EXTINF:4.000,
+vero1.ts
+"""
+
+
+def test_la_numerazione_si_aggiorna_togliendo_i_primi_segmenti() -> None:
+    """E' il numero del primo segmento della lista, e serve al player per
+    capire quali segmenti sono nuovi fra un aggiornamento e l'altro.
+
+    Togliendo i primi due senza toccarlo, il player crede che il primo sia
+    ancora quello di prima: riscarica roba che ha gia', ne salta altra, e in
+    diretta si pianta. Senza nessun messaggio: il video si ferma e basta.
+    """
+    esito = riscrivi_playlist("tok", "https://usher.tale/x.m3u8", DIRETTA_CON_SPOT)
+    assert esito.tolti == 2
+    assert "#EXT-X-MEDIA-SEQUENCE:1202" in esito.testo
+    assert "#EXT-X-MEDIA-SEQUENCE:1200" not in esito.testo
+
+
+def test_la_numerazione_non_si_tocca_se_non_si_toglie_niente_in_testa() -> None:
+    """Gli spot in mezzo o in fondo non spostano il primo segmento."""
+    in_fondo = """#EXTM3U
+#EXT-X-MEDIA-SEQUENCE:900
+#EXTINF:4.000,
+vero0.ts
+#EXT-X-CUE-OUT:4.000
+#EXTINF:4.000,
+spot0.ts
+"""
+    esito = riscrivi_playlist("tok", "https://usher.tale/x.m3u8", in_fondo)
+    assert esito.tolti == 1
+    assert "#EXT-X-MEDIA-SEQUENCE:900" in esito.testo
+
+
+def test_una_playlist_senza_numerazione_non_ne_inventa_una() -> None:
+    """I video registrati non ce l'hanno: aggiungerla cambierebbe il senso."""
+    esito = riscrivi_playlist("tok", "https://cdn.tale/x.m3u8", CON_SPOT)
+    assert "MEDIA-SEQUENCE" not in esito.testo

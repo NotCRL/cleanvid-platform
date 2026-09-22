@@ -49,6 +49,20 @@ async def _passa(url: str, intestazioni: dict[str, str], token: str,
         testo = (await proxy.tutto(sorgente)).decode("utf-8", "replace")
         ripulita = riscrivi_playlist(token, str(sorgente.risposta.url), testo)
         await deposito.segna_annunci(token, ripulita.tolti)
+
+        if ripulita.solo_annunci:
+            # preroll: tolti gli spot non e' rimasto niente. Una playlist
+            # senza un solo segmento certi lettori la prendono per un errore e
+            # si fermano - ed e' il momento in cui sembra che il sito sia
+            # rotto. Si serve l'ultima che aveva roba vera: per il lettore e'
+            # una diretta che non ha ancora niente di nuovo, cioe' una cosa
+            # normale che sa gestire.
+            vecchia = await deposito.ultima_playlist(token, url)
+            if vecchia is not None:
+                return _playlist(vecchia)
+        else:
+            await deposito.ricorda_playlist(token, url, ripulita.testo)
+
         return _playlist(ripulita.testo)
 
     return StreamingResponse(
