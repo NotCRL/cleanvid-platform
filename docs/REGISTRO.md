@@ -367,3 +367,66 @@ qualcosa da metterci.
 l'id di una voce non riesce a cancellarla, mentre il proprietario sì. Poi a
 mano sul server: due video aperti, una stella accesa, `1:35 / 10:00` sotto
 quello lasciato a metà, e la copertina servita come `image/webp` da 25 KB.
+
+---
+
+## 2026-09-22 — Lo stile del file unico, portato intero
+
+**Cosa cambia.** Il nuovo progetto ha l'aspetto del vecchio: lo stesso marchio
+col segno, lo stesso verde acido come accento, le stesse schede con copertina
+e iniziali colorate, gli stessi scaffali che scorrono in orizzontale. E i due
+temi, chiaro e scuro, con l'interruttore in alto a destra.
+
+**Come è fatto.** Le 1.366 righe di CSS del file unico sono diventate
+`web/static/stile.css`, prese intere. I modelli delle pagine sono stati
+riscritti per usare il markup a cui quello stile parla — `vcard`, `vgo`,
+`poster`, `mono`, `rack`, `shelf` — invece di nomi nuovi.
+
+**Perché intero e non «ispirato a».** Un servizio che si presenta diverso da
+sé stesso a seconda di dove gira non è un servizio, sono due. E riscrivere il
+markup con nomi nuovi avrebbe voluto dire riscrivere anche millequattrocento
+righe di CSS già provate, per ottenere qualcosa di leggermente diverso.
+
+Nel foglio ci sono regole per pezzi che qui non esistono ancora — il muro, il
+pannello della modalità ascolto. Non sono avanzi: sono il posto già
+apparecchiato per quando quei pezzi arriveranno.
+
+**Quello che non si poteva portare così com'era.** `.stage`, `.bar` e `.note`
+del file unico sono scritte per la pagina a schermo intero, che ha un'altra
+forma: qui il lettore vive dentro la pagina, con sotto l'indirizzo e la
+stella. Per queste, e per i pezzi che nel file unico non c'erano — la testata
+col cambio tema, la proposta di lingua, l'elenco delle lingue, le domande
+frequenti — c'è un blocco in fondo al foglio, con l'intestazione che dice da
+dove arriva. Usa gli stessi nomi di colore: aggiungere una seconda tavolozza
+vorrebbe dire averne due che dopo un mese non combaciano più.
+
+**Le copertine non bloccano più la pagina.** Prima `/copertina` aspettava di
+averla trovata: con venti voci in elenco e una che richiede yt-dlp, è una home
+che non si apre. Ora il server risponde subito di no, fa partire la ricerca in
+disparte, e il javascript riprova quattro volte con attese crescenti. Nel
+frattempo si vede il riquadro colorato con le iniziali, che è già una
+risposta. Anche il caricamento pigro è portato dal file unico: con trenta
+schede in pagina, partire tutte insieme sono trenta richieste prima che si
+veda qualcosa.
+
+**Un bug portato dietro e corretto.** Una voce senza titolo mostrava
+l'indirizzo intero, e le iniziali del riquadro venivano da lì: «hv» per un
+link di Vimeo, cioè le prime lettere di «https» e «vimeo». Ora, senza titolo,
+si mostra il sito — `vimeo.com`, iniziali `vc`. È il `label_of` del file
+unico, che questa parte non aveva ancora.
+
+**Il testo in fondo alla pagina** è cambiato in tutte e quattordici le lingue:
+*«Gira sul tuo computer: i link che apri e quelli che salvi restano qui, non
+passano da nessun servizio esterno.»*
+
+**Attenzione, ed è il motivo per cui lo scrivo qui.** Quella frase è vera
+adesso, che il servizio gira in locale. **Il giorno in cui questo va online su
+un dominio pubblico diventa falsa**, ed è una frase sulla privacy: è il tipo
+di affermazione che non conviene avere sbagliata. Prima di pubblicare, la
+chiave `piede.aperto` va cambiata in tutte e quattordici le lingue.
+
+**Verificato.** 75 test, fra cui: la pagina non ha stile in linea, il tema si
+applica prima del disegno, le schede hanno il markup a cui lo stile parla, e
+la copertina arriva con `data-copertina` e non con `src`. Poi a mano:
+`stile.css` servito, 78 KB, tema e copertine caricati, iniziali e tinte
+stabili.

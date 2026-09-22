@@ -2,7 +2,8 @@
 <html lang="{{ c.lingua.codice }}"{% if c.lingua.rtl %} dir=rtl{% endif %}>
 <meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name=theme-color content="#0a0a0c">
+<meta name=theme-color content="#0a0a0a" media="(prefers-color-scheme:dark)">
+<meta name=theme-color content="#f4f4f1" media="(prefers-color-scheme:light)">
 <title>{% block titolo %}{{ t("meta.home.titolo") }}{% endblock %}</title>
 <meta name=description content="{% block descrizione %}{{ t("meta.home.descrizione") }}{% endblock %}">
 
@@ -24,156 +25,27 @@
 <meta property="og:url" content="{{ c.canonico }}">
 <meta name="twitter:card" content="summary">
 
-<style>
-:root{
-  --sfondo:#0a0a0c; --scheda:#131317; --linea:#26262e;
-  --testo:#ececed; --spento:#8f8f9b; --tenue:#5f5f6b; --accento:#7aa2f7;
-  --raggio:12px;
-}
-*{box-sizing:border-box}
-html,body{margin:0;min-height:100%}
-body{background:var(--sfondo);color:var(--testo);
-  font:15px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  -webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
-a{color:var(--accento)}
-:focus-visible{outline:2px solid var(--accento);outline-offset:2px;border-radius:6px}
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="cleanvid">
 
-.pagina{width:100%;max-width:960px;margin:0 auto;padding:0 20px 56px}
-.testata{display:flex;align-items:center;justify-content:space-between;
-  padding:18px 0;gap:14px}
-.marchio{font-weight:650;letter-spacing:-.01em;text-decoration:none;color:var(--testo)}
-.marchio span{color:var(--accento)}
-.strumenti{display:flex;align-items:center;gap:12px}
-.chi{color:var(--tenue);font-size:12.5px}
-.ingranaggio{color:var(--spento);text-decoration:none;font-size:13px;
-  border:1px solid var(--linea);border-radius:8px;padding:5px 10px;line-height:1}
-.ingranaggio:hover{color:#fff;border-color:#3a3a46}
+<link rel=stylesheet href="/static/stile.css">
+{# Senza `defer`, e prima di tutto il resto: il tema va applicato prima che si
+   disegni qualcosa, o si vede la pagina cambiare colore sotto gli occhi. #}
+<script src="/static/tema.js"></script>
 
-h1{font-size:clamp(26px,4.4vw,42px);line-height:1.1;letter-spacing:-.025em;
-  margin:28px 0 12px;font-weight:700}
-h1 .spento{color:var(--tenue)}
-.guida{color:var(--spento);font-size:15px;max-width:52ch;margin:0 0 26px}
-
-form.apri{display:flex;gap:10px;flex-wrap:wrap;max-width:620px}
-input[type=url]{flex:1 1 260px;min-width:0;padding:13px 16px;border-radius:var(--raggio);
-  border:1px solid #2e2e38;background:#101014;color:var(--testo);font:inherit;font-size:15px}
-input[type=url]::placeholder{color:var(--tenue)}
-input[type=url]:focus{outline:none;border-color:var(--accento);background:#0d0d11}
-button.principale{padding:13px 22px;border-radius:var(--raggio);border:1px solid #3a4a6b;
-  background:#1d2842;color:#cfe0ff;font:inherit;font-size:15px;font-weight:550;cursor:pointer}
-button.principale:hover{background:#243256;color:#fff}
-
-.sezione{margin-top:38px}
-.sezione h2{font-size:11.5px;text-transform:uppercase;letter-spacing:.1em;
-  color:var(--spento);font-weight:600;margin:0 0 12px;padding-bottom:10px;
-  border-bottom:1px solid var(--linea)}
-.elenco{list-style:none;margin:0;padding:0}
-.elenco li{display:flex;gap:10px;align-items:center;padding:9px 8px;margin:0 -8px;
-  border-radius:8px}
-.elenco li:hover{background:#1b1b21}
-.elenco a{color:#dcdce0;text-decoration:none;flex:1;min-width:0;font-size:14px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.elenco a:hover{color:#fff}
-.elenco .nota{color:var(--tenue);font-size:11.5px;white-space:nowrap}
-.vuoto{color:var(--tenue);font-size:13px}
-
-.palco{background:#000;border:1px solid var(--linea);border-radius:var(--raggio);
-  overflow:hidden;aspect-ratio:16/9;margin:18px 0;position:relative}
-.palco iframe{width:100%;height:100%;border:0;display:block}
-.palco video{width:100%;height:100%;display:block;background:#000}
-.barra{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:-4px 0 18px}
-.etichetta{color:var(--spento);font-size:12.5px}
-.etichetta .diretta{color:#ff6b6b;font-weight:600}
-button.secondario,select{padding:7px 12px;border-radius:9px;border:1px solid #2e2e38;
-  background:#17171d;color:#d6d6dc;font:inherit;font-size:13px;cursor:pointer}
-button.secondario:hover,select:hover{background:#1f1f27;color:#fff}
-.qualita{margin-left:auto}
-.avviso{background:#241416;border:1px solid #4d2329;border-radius:var(--raggio);
-  padding:16px 18px;color:#ffc2c2;font-size:14px;line-height:1.55}
-.avviso b{display:block;margin-bottom:6px;color:#ffd9d9}
-
-.passi{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  margin:0;padding:0;list-style:none;counter-reset:passo}
-.passi li{background:var(--scheda);border:1px solid var(--linea);
-  border-radius:var(--raggio);padding:18px}
-.passi h3{margin:0 0 6px;font-size:15px;font-weight:600}
-.passi h3::before{counter-increment:passo;content:counter(passo);
-  display:inline-grid;place-items:center;width:22px;height:22px;margin-right:9px;
-  border-radius:50%;background:#1d2842;color:#9dbcff;font-size:12px;vertical-align:1px}
-.passi p{margin:0;color:var(--spento);font-size:13.5px;line-height:1.5}
-
-.domande{margin:0}
-.domande details{border-bottom:1px solid var(--linea);padding:14px 0}
-.domande summary{cursor:pointer;font-weight:550;font-size:14.5px;list-style:none}
-.domande summary::-webkit-details-marker{display:none}
-.domande summary::before{content:"+";color:var(--accento);margin-right:10px;
-  font-weight:600}
-.domande details[open] summary::before{content:"−"}
-.domande p{margin:10px 0 0 22px;color:var(--spento);font-size:14px;max-width:62ch}
-
-.proposta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-  background:#12161f;border:1px solid #23304a;border-radius:var(--raggio);
-  padding:12px 16px;margin:16px 0 0;font-size:13.5px;color:#c6d4ee}
-.proposta a{font-weight:550}
-.proposta form{margin:0}
-.proposta button{background:none;border:0;color:var(--tenue);font:inherit;
-  font-size:13px;cursor:pointer;text-decoration:underline}
-
-.lingue{display:grid;gap:6px 18px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-  list-style:none;margin:12px 0 0;padding:0}
-.lingue a{text-decoration:none;color:#c9c9d2;font-size:13.5px}
-.lingue a:hover{color:#fff}
-.lingue .adesso{color:var(--accento);font-weight:600}
-
-.campo{display:block;margin:0 0 18px}
-.campo span{display:block;font-size:13px;color:var(--spento);margin-bottom:7px}
-.fatto{color:#7ee0a8;font-size:13px;margin:0 0 16px}
-
-.copertine{list-style:none;margin:0;padding:0;display:grid;gap:14px;
-  grid-template-columns:repeat(auto-fill,minmax(168px,1fr))}
-.copertina{position:relative;border-radius:10px;overflow:hidden;
-  background:var(--scheda);border:1px solid var(--linea)}
-.copertina .apri{display:block;text-decoration:none;color:inherit}
-.copertina img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;
-  background:#08080b}
-.copertina .nome{display:block;padding:9px 10px 0;font-size:13px;font-weight:550;
-  line-height:1.3;color:#e2e2e7;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-  overflow:hidden}
-.copertina .sotto{display:block;padding:4px 10px 10px;font-size:11px;
-  color:var(--tenue)}
-.copertina:hover{border-color:#3a3a46}
-.copertina:hover .nome{color:#fff}
-.avanzamento{position:absolute;left:0;right:0;top:calc(100% - 100%);height:3px;
-  background:#00000066}
-.copertina .avanzamento{position:static;display:block;margin:0 10px 10px;
-  border-radius:2px;background:#2a2a34}
-.avanzamento i{display:block;height:3px;border-radius:2px;background:var(--accento)}
-.copertina .azioni{position:absolute;top:6px;right:6px;display:flex;gap:4px;
-  opacity:0;transition:opacity .12s}
-.copertina:hover .azioni,.copertina:focus-within .azioni{opacity:1}
-.copertina .azioni form{margin:0}
-.copertina .azioni button{width:26px;height:26px;padding:0;border-radius:7px;
-  border:1px solid #00000055;background:#0b0b0ecc;color:#e7e7ec;font-size:13px;
-  line-height:1;cursor:pointer;backdrop-filter:blur(4px)}
-.copertina .azioni button:hover{background:#17171ddd;color:#fff}
-.cuore{margin:0 0 6px}
-.ripresa{color:var(--spento);font-size:12.5px}
-button.scritta{background:none;border:0;color:var(--accento);font:inherit;
-  font-size:12.5px;cursor:pointer;text-decoration:underline;padding:0 0 0 6px}
-.piede{margin-top:44px;padding-top:18px;border-top:1px solid var(--linea);
-  color:var(--tenue);font-size:12px}
-.piede a{color:var(--spento)}
-@media (max-width:640px){ .pagina{padding:0 16px 40px} }
-</style>
-
-<div class=pagina>
+<main class=page>
   <header class=testata>
-    <a class=marchio href="/{{ c.lingua.codice }}/">clean<span>vid</span></a>
+    <a class=marchio href="/{{ c.lingua.codice }}/" aria-label="cleanvid">
+      <span class=marchio-nome>{{ ICONE.marchio | safe }}<b>cleanvid</b><i>/</i></span>
+    </a>
     <div class=strumenti>
       {% if utente %}<span class=chi>{{ utente.nome_visibile }}</span>{% endif %}
-      <a class=ingranaggio href="/{{ c.lingua.codice }}/impostazioni"
-         title="{{ t('impostazioni.titolo') }}">⚙ {{ c.lingua.codice|upper }}</a>
+      <button class="iconbtn only temabtn" type=button onclick="cambiaTema()"
+              aria-label="{{ t('impostazioni.tema') }}"
+              title="{{ t('impostazioni.tema') }}">{{ ICONE.tema | safe }}</button>
+      <a class="iconbtn only" href="/{{ c.lingua.codice }}/impostazioni"
+         aria-label="{{ t('impostazioni.titolo') }}"
+         title="{{ t('impostazioni.titolo') }}">{{ ICONE.mondo | safe }}</a>
     </div>
   </header>
 
@@ -189,10 +61,10 @@ button.scritta{background:none;border:0;color:var(--accento);font:inherit;
 
   {% block contenuto %}{% endblock %}
 
-  <footer class=piede>
+  <footer class=foot>
     <p>{% block piede %}{{ t("piede.aperto") }}{% endblock %}</p>
     <p><a href="/{{ c.lingua.codice }}/impostazioni">{{ t("piede.lingua") }}: {{ c.lingua.nome }}</a></p>
   </footer>
-</div>
+</main>
 {% block coda %}{% endblock %}
 </html>

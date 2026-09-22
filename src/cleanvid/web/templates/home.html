@@ -2,32 +2,32 @@
 {% import "_pezzi.html" as pezzi %}
 
 {% block contenuto %}
-<h1>{{ t("home.titolo") }}<br><span class=spento>{{ t("home.titolo.spento") }}</span></h1>
-<p class=guida>{{ t("home.guida") }}</p>
-
-<form class=apri method=post action="/{{ c.lingua.codice }}/apri">
-  <input type=url name=url required autofocus
-         placeholder="{{ t('home.campo') }}"
-         aria-label="{{ t('home.campo') }}">
-  <button class=principale>{{ t("home.apri") }}</button>
-</form>
+<header class="hero{% if recenti or riprendi or preferiti_voci %} console{% endif %}">
+  <h1>{{ t("home.titolo") }}<br><span class=dim>{{ t("home.titolo.spento") }}</span></h1>
+  <p class=lead>{{ t("home.guida") }}</p>
+  <form class="apri hero-form" method=post action="/{{ c.lingua.codice }}/apri">
+    <input type=url name=url required autofocus
+           placeholder="{{ t('home.campo') }}" aria-label="{{ t('home.campo') }}">
+    <button class=principale>{{ t("home.apri") }}</button>
+  </form>
+</header>
 
 {# Gli scaffali, nell'ordine in cui servono davvero: prima quello che hai
    lasciato a meta', poi quello che hai scelto di tenere, poi quello che hai
    soltanto aperto. La cronologia e' l'ultima perche' e' la meno interessante:
    c'e' dentro tutto, anche quello che non volevi. #}
-{{ pezzi.scaffale(t("home.riprendi"), riprendi, c, t, preferiti) }}
-{{ pezzi.scaffale(t("home.preferiti"), preferiti_voci, c, t, preferiti,
+{{ pezzi.scaffale("orologio", t("home.riprendi"), riprendi, c, t, preferiti) }}
+{{ pezzi.scaffale("stella", t("home.preferiti"), preferiti_voci, c, t, preferiti,
                   vuoto=t("home.vuoto.preferiti")) }}
-{{ pezzi.scaffale(t("home.fonti"), fonti, c, t, preferiti) }}
-{{ pezzi.scaffale(t("home.gruppi"), gruppi, c, t, none, azioni=false) }}
-{{ pezzi.scaffale(t("home.recenti"), recenti, c, t, preferiti,
+{{ pezzi.scaffale("disco", t("home.fonti"), fonti, c, t, preferiti) }}
+{{ pezzi.scaffale("griglia", t("home.gruppi"), gruppi, c, t, none, azioni=false) }}
+{{ pezzi.scaffale("orologio", t("home.recenti"), recenti, c, t, preferiti,
                   vuoto=t("home.vuoto")) }}
 
-{# Le due sezioni qui sotto sono il contenuto vero della pagina: quello che
-   un motore di ricerca puo' leggere e capire. Senza, la home sarebbe un
-   campo di testo e basta, e non ci sarebbe niente per cui trovarci. #}
-<section class=sezione>
+{# Le due sezioni qui sotto sono il contenuto vero della pagina: quello che un
+   motore di ricerca puo' leggere e capire. Senza, la home sarebbe un campo di
+   testo e basta, e non ci sarebbe niente per cui trovarci. #}
+<section class=sec>
   <h2>{{ t("home.come.titolo") }}</h2>
   <ol class=passi>
     {% for n in [1, 2, 3] %}
@@ -39,7 +39,7 @@
   </ol>
 </section>
 
-<section class="sezione domande">
+<section class="sec domande">
   <h2>{{ t("home.faq.titolo") }}</h2>
   {% for n in [1, 2, 3, 4, 5] %}
     <details{% if n == 1 %} open{% endif %}>
@@ -49,11 +49,10 @@
   {% endfor %}
 </section>
 
-<section class=sezione>
+<section class=sec>
   <h2>{{ t("piede.lingua") }}</h2>
-  {# L'elenco completo delle lingue, in chiaro nell'HTML: e' anche il modo in
-     cui un crawler scopre le altre versioni senza dover fidarsi solo della
-     mappa del sito. #}
+  {# L'elenco completo in chiaro nell'HTML: e' anche il modo in cui un crawler
+     scopre le altre versioni senza fidarsi solo della mappa del sito. #}
   <ul class=lingue>
     {% for l in c.lingue %}
       <li><a href="{{ c.altrove(l.codice) }}" hreflang="{{ l.codice }}"
@@ -65,5 +64,6 @@
 {% endblock %}
 
 {% block coda %}
+<script src="/static/copertine.js"></script>
 <script type="application/ld+json">{{ dati_strutturati | tojson }}</script>
 {% endblock %}

@@ -232,3 +232,75 @@ def test_il_tempo_si_legge_come_lo_legge_una_persona() -> None:
     assert mm_ss(None) == "0:00"
     assert mm_ss(67) == "1:07"
     assert mm_ss(3661) == "1:01:01"
+
+
+# --------------------------------------------------------------------------
+# lo stile portato dal file unico
+# --------------------------------------------------------------------------
+
+def test_il_nome_di_una_voce_senza_titolo_e_il_sito() -> None:
+    """Senza questo le iniziali del riquadro venivano dall'indirizzo: «hv»
+    per un link di Vimeo, cioe' le prime lettere di «https» e «vimeo»."""
+    from cleanvid.web.pagine import iniziali, nome_voce
+
+    class Finta:
+        titolo = ""
+        url = "https://www.vimeo.com/76979871"
+
+    assert nome_voce(Finta()) == "vimeo.com"
+    assert iniziali(nome_voce(Finta())) == "vc"
+
+    class ConTitolo(Finta):
+        titolo = "Despacito ft. Daddy Yankee"
+
+    assert nome_voce(ConTitolo()) == "Despacito ft. Daddy Yankee"
+    # «Df» e non «Dd»: «ft.» conta come parola. E' il comportamento del file
+    # unico, portato qui tale e quale; se un giorno dara' fastidio si
+    # salteranno le paroline, ma allora sara' una decisione, non una svista.
+    assert iniziali(nome_voce(ConTitolo())) == "Df"
+
+
+def test_la_tinta_di_una_voce_non_cambia_mai() -> None:
+    """E' meta' del motivo per cui un elenco si riconosce con la coda
+    dell'occhio: lo stesso canale ha sempre lo stesso riquadro."""
+    from cleanvid.web.pagine import tinta
+
+    assert tinta("Sky News") == tinta("Sky News")
+    assert tinta("Sky News") != tinta("Rai News")
+    assert 0 <= tinta("") < 360
+
+
+async def test_la_pagina_usa_il_foglio_di_stile_del_progetto(
+        visitatore: AsyncClient) -> None:
+    """Niente stile in linea: e' un file solo, che il browser tiene in cache."""
+    pagina = (await visitatore.get("/it/")).text
+    assert '<link rel=stylesheet href="/static/stile.css">' in pagina
+    assert "<style>" not in pagina
+
+
+async def test_il_tema_si_applica_prima_del_disegno(
+        visitatore: AsyncClient) -> None:
+    """Con `defer` si vedrebbe la pagina cambiare colore a ogni caricamento."""
+    pagina = (await visitatore.get("/it/")).text
+    testa = pagina.split("<main", 1)[0]
+    assert '<script src="/static/tema.js"></script>' in testa
+    assert "defer" not in testa
+
+
+async def test_le_schede_hanno_il_markup_a_cui_parla_lo_stile(
+        visitatore: AsyncClient) -> None:
+    await visitatore.post("/it/apri", data={"url": "https://vimeo.com/76979871"})
+    pagina = (await visitatore.get("/it/")).text
+    for pezzo in ("class=shelf", 'class="rack scorre"', "class=vcard",
+                  "class=vgo", "class=poster", "class=mono", "class=vtitle"):
+        assert pezzo in pagina, pezzo
+
+
+async def test_la_copertina_non_blocca_la_pagina(visitatore: AsyncClient) -> None:
+    """Il server dice subito no e la cerca in disparte: cercarla puo' costare
+    venticinque secondi di yt-dlp, e con venti voci sarebbe una home ferma."""
+    await visitatore.post("/it/apri", data={"url": "https://vimeo.com/76979871"})
+    pagina = (await visitatore.get("/it/")).text
+    # `data-copertina` e non `src`: la mette il javascript quando c'e'
+    assert "data-copertina=" in pagina
+    assert 'src="/copertina' not in pagina

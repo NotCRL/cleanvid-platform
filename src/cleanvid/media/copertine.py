@@ -185,16 +185,62 @@ async def scarica(indirizzo: str, da_dove: str) -> tuple[bytes, str] | None:
     return (dati, _tipo_di(dati)) if len(dati) > 512 else None
 
 
+def pronta(url: str) -> tuple[bytes, str] | None:
+    """La copertina se e' gia' su disco, senza toccare la rete.
+
+    Esiste separata da `copertina()` perche' la pagina non deve aspettare:
+    cercare una copertina puo' costare venticinque secondi di yt-dlp, e con
+    venti voci in elenco vorrebbe dire una home che non si apre. Chi chiede
+    una copertina non pronta riceve subito un no, la ricerca parte in
+    disparte, e il browser riprova fra un po'.
+    """
+    via = _su_disco(url)
+    if not via.exists():
+        return None
+    dati = via.read_bytes()
+    return dati, _tipo_di(dati)
+
+
+_in_corso: set[str] = set()
+
+
+def scalda(url: str) -> None:
+    """Fa partire la ricerca in disparte, una sola volta per indirizzo.
+
+    Senza il registro di quelle in corso, quattro tentativi del browser sulla
+    stessa copertina farebbero partire quattro ricerche - e quella di yt-dlp
+    costa un processo l'una.
+    """
+    if url in _in_corso:
+        return
+    _in_corso.add(url)
+
+    async def lavora() -> None:
+        try:
+            await copertina(url)
+        finally:
+            _in_corso.discard(url)
+
+    # il riferimento si tiene, altrimenti il raccoglitore di rifiuti puo'
+    # portarsi via il compito a meta' - e capirne il motivo costa un giorno
+    compito = asyncio.create_task(lavora())
+    _compiti.add(compito)
+    compito.add_done_callback(_compiti.discard)
+
+
+_compiti: set[asyncio.Task[None]] = set()
+
+
 async def copertina(url: str) -> tuple[bytes, str] | None:
     """La copertina di questa pagina, dalla cache o cercandola adesso."""
-    via = _su_disco(url)
-    if via.exists():
-        dati = via.read_bytes()
-        return dati, _tipo_di(dati)
+    gia = pronta(url)
+    if gia is not None:
+        return gia
 
     if await deposito.cliente().get(CHIAVE_BUCO + _su_disco(url).name):
         return None   # cercata da poco e non trovata: non si riprova subito
 
+    via = _su_disco(url)
     async with semaforo():
         # secondo controllo dentro il semaforo: mentre si aspettava, la stessa
         # copertina puo' essere arrivata per un'altra richiesta

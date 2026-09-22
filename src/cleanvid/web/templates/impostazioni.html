@@ -4,13 +4,13 @@
 
 {% block contenuto %}
 <h1>{{ t("impostazioni.titolo") }}</h1>
-<p class=guida>{{ t("impostazioni.guida") }}</p>
+<p class=lead>{{ t("impostazioni.guida") }}</p>
 
 {% if salvato %}<p class=fatto>{{ t("impostazioni.salvato") }}</p>{% endif %}
 
-<section class=sezione>
+<section class=sec>
   <h2>{{ t("impostazioni.lingua") }}</h2>
-  <p class=guida>{{ t("impostazioni.lingua.guida") }}</p>
+  <p class=lead>{{ t("impostazioni.lingua.guida") }}</p>
 
   {# Un `form` e non del javascript: cosi' la scelta funziona anche senza, e
      soprattutto ogni lingua resta un link vero nell'elenco qui sotto, che un
@@ -38,7 +38,7 @@
   </ul>
 </section>
 
-<section class=sezione>
+<section class=sec>
   <h2>{{ t("impostazioni.il_tuo_utente") }}</h2>
   <ul class=elenco>
     <li><a>{{ t("impostazioni.nome_visibile") }}</a>

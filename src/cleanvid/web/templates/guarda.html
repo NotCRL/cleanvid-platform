@@ -18,7 +18,7 @@
             allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
             allowfullscreen></iframe>
   </div>
-  <p class=guida>
+  <p class=lead>
     {{ t("guarda.lettore_di", piattaforma=lettore.piattaforma) }}
     {{ t("guarda.condivisibile") }}
   </p>
@@ -52,7 +52,7 @@
       {% if estratto.altezza %} · {{ estratto.altezza }}p{% endif %}
     </span>
     {% if estratto.diretta %}
-      <button id=torna-in-diretta class=secondario>{{ t("guarda.torna_in_diretta") }}</button>
+      <button id=torna-in-diretta class=iconbtn>{{ t("guarda.torna_in_diretta") }}</button>
     {% endif %}
     {% if riprendi %}
       <span id=ripresa class=ripresa>
@@ -68,13 +68,13 @@
           <option value="{{ altezza }}" {% if q == altezza %}selected{% endif %}>{{ altezza }}p</option>
         {% endfor %}
       </select>
-      <noscript><button class=secondario>{{ t("impostazioni.salva") }}</button></noscript>
+      <noscript><button class=iconbtn>{{ t("impostazioni.salva") }}</button></noscript>
     </form>
   </div>
-  <p class=guida>{{ estratto.titolo }}</p>
+  <p class=lead>{{ estratto.titolo }}</p>
 
 {% else %}
-  <div class=avviso>
+  <div class=err>
     <b>{{ t("guarda.niente.titolo") }}</b>
     {{ perche or t("guarda.niente.testo") }}
   </div>
@@ -84,12 +84,12 @@
   <input type=hidden name=url value="{{ url }}">
   <input type=hidden name=titolo value="{{ titolo }}">
   <input type=hidden name=piattaforma value="{{ piattaforma }}">
-  <button class=secondario aria-pressed="{{ 'true' if e_preferito else 'false' }}">
+  <button class=iconbtn aria-pressed="{{ 'true' if e_preferito else 'false' }}">
     {{ "★ " ~ t("azione.togli_preferito") if e_preferito else "☆ " ~ t("azione.preferito") }}
   </button>
 </form>
 
-<section class=sezione>
+<section class=sec>
   <h2>{{ t("guarda.indirizzo") }}</h2>
   <ul class=elenco>
     <li>

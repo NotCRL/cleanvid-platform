@@ -1,22 +1,24 @@
 {# I pezzi che si ripetono. Stanno qui e non copiati in tre pagine perche' la
-   copia numero tre e' quella che nessuno si ricorda di aggiornare. #}
+   copia numero tre e' quella che nessuno si ricorda di aggiornare.
 
-{% macro scaffale(titolo, voci, c, t, preferiti=None, vuoto="", azioni=True) %}
+   Il markup e' quello del cleanvid a file unico - `vcard`, `poster`, `rack` -
+   perche' e' quello a cui lo stile parla. Riscriverlo con nomi nuovi avrebbe
+   voluto dire riscrivere anche millequattrocento righe di CSS gia' provate. #}
+
+{% macro scaffale(icona, titolo, voci, c, t, preferiti=None, vuoto="", azioni=True) %}
 {# Uno scaffale vuoto e senza niente da dire non si mostra: un'intestazione
    sopra il nulla fa sembrare rotto un sito che funziona. Quelli che hanno un
    messaggio (i preferiti, la cronologia) si mostrano lo stesso, perche' li'
    il vuoto va spiegato. #}
 {% if voci or vuoto %}
-<section class=sezione>
-  <h2>{{ titolo }}</h2>
+<section class=shelf>
+  <h3>{{ ICONE[icona] | safe }}{{ titolo }}</h3>
   {% if voci %}
-    <ul class=copertine>
-      {% for voce in voci %}
-        {{ scheda(voce, c, t, preferiti, azioni) }}
-      {% endfor %}
-    </ul>
-  {% elif vuoto %}
-    <p class=vuoto>{{ vuoto }}</p>
+    <div class="rack scorre">
+      {% for voce in voci %}{{ scheda(voce, c, t, preferiti, azioni) }}{% endfor %}
+    </div>
+  {% else %}
+    <p class=empty>{{ vuoto }}</p>
   {% endif %}
 </section>
 {% endif %}
@@ -24,44 +26,52 @@
 
 
 {% macro scheda(voce, c, t, preferiti=None, azioni=True) %}
-{% set nome = voce.titolo or voce.url %}
+{% set nome = voce | nome_voce %}
 {% set e_preferito = preferiti is not none and voce.url in preferiti %}
-<li class=copertina>
-  <a class=apri href="/{{ c.lingua.codice }}/guarda?u={{ voce.url | urlencode }}"
-     title="{{ nome }}">
-    {# `loading=lazy`: con trenta copertine in pagina, caricarle tutte subito
-       significa trenta richieste prima che si veda qualcosa. E `onerror` che
-       toglie l'immagine, perche' l'icona di immagine rotta e' peggio di un
-       riquadro vuoto disegnato apposta. #}
-    <img src="{{ voce.url | copertina }}" alt="" loading=lazy decoding=async
-         onerror="this.remove()">
-    <span class=nome>{{ nome }}</span>
-    <span class=sotto>
-      {{ voce.piattaforma }}
+{% set gruppo = voce.genere.value == "gruppo" %}
+<article class=vcard>
+  <a class=vgo title="{{ nome }}"
+     href="{% if gruppo %}/{{ c.lingua.codice }}/{% else %}/{{ c.lingua.codice }}/guarda?u={{ voce.url | urlencode }}{% endif %}">
+    <span class=poster style="--seed:{{ nome | tinta }}">
+      {# `data-copertina` e non `src`: la copertina arriva quando e' pronta,
+         e finche' non c'e' si vede il riquadro con le iniziali invece di
+         un'icona di immagine rotta. Il javascript riprova qualche volta. #}
+      <img alt="" data-copertina="{{ voce.url | copertina }}">
+      <b class=mono>{{ nome | iniziali }}</b>
+      {% if voce.piattaforma %}<span class=plat>{{ voce.piattaforma }}</span>{% endif %}
       {% if voce.posizione and voce.durata %}
-        · {{ voce.posizione | mm_ss }} / {{ voce.durata | mm_ss }}
+        <span class=visto><i style="width:{{ [100, [2, (voce.posizione / voce.durata * 100) | round | int] | max] | min }}%"></i></span>
       {% endif %}
     </span>
-    {% if voce.posizione and voce.durata %}
-      <span class=avanzamento><i style="width:{{ (voce.posizione / voce.durata * 100) | round | int }}%"></i></span>
-    {% endif %}
+    <span class=vtitle>{{ nome }}</span>
+    <span class=vmeta>
+      {%- if gruppo -%}
+        {{ voce.dati.celle | length }} video
+      {%- else -%}
+        {{ voce.piattaforma }}
+        {%- if voce.posizione and voce.durata %} · {{ voce.posizione | mm_ss }} / {{ voce.durata | mm_ss }}{% endif -%}
+      {%- endif -%}
+    </span>
   </a>
 
   {% if azioni %}
-    <div class=azioni>
+    <span class=vacts>
       <form method=post action="/{{ c.lingua.codice }}/preferito">
         <input type=hidden name=url value="{{ voce.url }}">
         <input type=hidden name=titolo value="{{ voce.titolo }}">
         <input type=hidden name=piattaforma value="{{ voce.piattaforma }}">
-        <button title="{{ t('azione.togli_preferito') if e_preferito else t('azione.preferito') }}"
+        <button class="act{% if e_preferito %} acceso{% endif %}" type=submit
                 aria-pressed="{{ 'true' if e_preferito else 'false' }}"
-                >{{ "★" if e_preferito else "☆" }}</button>
+                title="{{ t('azione.togli_preferito') if e_preferito else t('azione.preferito') }}"
+                aria-label="{{ t('azione.togli_preferito') if e_preferito else t('azione.preferito') }}"
+                >{{ ICONE.stella | safe }}</button>
       </form>
       <form method=post action="/{{ c.lingua.codice }}/voce/{{ voce.id }}/elimina"
             onsubmit="return confirm('{{ t('azione.conferma') }}')">
-        <button title="{{ t('azione.elimina') }}">×</button>
+        <button class=act type=submit title="{{ t('azione.elimina') }}"
+                aria-label="{{ t('azione.elimina') }}">{{ ICONE.cestino | safe }}</button>
       </form>
-    </div>
+    </span>
   {% endif %}
-</li>
+</article>
 {% endmacro %}
