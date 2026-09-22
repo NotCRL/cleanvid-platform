@@ -57,7 +57,10 @@ ICONE: dict[str, str] = {
                 "r='8.5'/><path d='M12 7.5V12l3 1.8'/></svg>",
     "griglia": "<svg class=ic viewBox='0 0 24 24'><path d='M4.5 4.5h6v6h-6z"
                "M13.5 4.5h6v6h-6zM4.5 13.5h6v6h-6zM13.5 13.5h6v6h-6z'/></svg>",
-    "tema": "<svg class=ic viewBox='0 0 24 24'><path d='M12 4.2a7.8 7.8 0 0 0 0"
+    # i due pezzi vanno uniti con uno spazio: senza, `0 0 0 0` e `15.6`
+    # diventano `0 015.6` e il browser rifiuta tutto il tracciato. L'icona
+    # spariva e in console restava «Expected number».
+    "tema": "<svg class=ic viewBox='0 0 24 24'><path d='M12 4.2a7.8 7.8 0 0 0 0 "
             "15.6 7.8 7.8 0 0 1 0-15.6zM12 4.2v15.6'/></svg>",
     "mondo": "<svg class=ic viewBox='0 0 24 24'><circle cx='12' cy='12' r='8.5'/>"
              "<path d='M3.5 12h17M12 3.5c2.2 2.4 3.3 5.3 3.3 8.5S14.2 18.1 12 "

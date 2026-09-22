@@ -1001,3 +1001,36 @@ def test_una_lista_senza_segmenti_non_e_un_guasto() -> None:
     codice = pathlib.Path("src/cleanvid/web/static/lettore.js").read_text()
     assert "Hls.ErrorDetails.LEVEL_EMPTY_ERROR" in codice
     assert "setTimeout(() => hls.startLoad(), 2000)" in codice
+
+
+async def test_su_una_diretta_di_twitch_l_attesa_si_spiega(
+        visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """I loro spot sono cuciti nel flusso e noi li buttiamo via: finche'
+    dura l'interruzione non c'e' niente da mandare, e il lettore aspetta.
+
+    E' il comportamento giusto - meglio aspettare che guardare la reclame -
+    ma uno schermo nero senza spiegazioni sembra un guasto nostro.
+    """
+    async def diretta(url: str, qualita: str = "") -> Estratto:
+        return Estratto(token="tv", titolo="Prova", diretta=True, hls=True)
+
+    monkeypatch.setattr(routes_watch, "risolvi", diretta)
+    pagina = (await visitatore.get(
+        "/it/guarda", params={"u": "https://www.twitch.tv/unaltro"})).text
+    assert 'data-diretta="1"' in pagina
+    assert 'data-piattaforma="Twitch"' in pagina
+    assert "data-attesa-annuncio=" in pagina
+
+
+def test_l_attesa_non_ha_la_faccia_di_un_errore() -> None:
+    """Non c'e' niente di rotto, c'e' da aspettare qualche secondo. Un
+    messaggio rosso su una cosa che si risolve da sola fa credere a un
+    guasto."""
+    foglio = pathlib.Path("src/cleanvid/web/static/stile.css").read_text()
+    blocco = foglio.split(".attesa{")[1][:220]
+    assert "--accent-soft" in blocco          # e non --err-bg
+    codice = pathlib.Path("src/cleanvid/web/static/lettore.js").read_text()
+    # e su una diretta di Twitch non si fa nemmeno la scala dei rimedi: non
+    # c'e' niente da rimettere a posto
+    assert "function forseAnnuncio()" in codice
+    assert "aspettaAnnuncio(false)" in codice

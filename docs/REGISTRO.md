@@ -1259,3 +1259,49 @@ riprova, che è quello che sta succedendo davvero: fra poco torna roba vera.
 
 **Verificato.** 139 test, fra cui una playlist Twitch vera copiata così com'è,
 una con dentro `Amazon`, e una di un altro sito che non deve essere toccata.
+
+---
+
+## 2026-09-22 — «Non parte il video»: cosa succedeva davvero
+
+Provato con un browser vero in headless, su due canali Twitch in diretta nello
+stesso momento. Il risultato è stato utile e in parte inatteso.
+
+**Il lettore funziona.** Su entrambi i canali il video parte: si vede dal
+bagliore, che si accende solo quando c'è un fotogramma disegnato *e* il video
+sta andando. Nessun errore dei nostri script in console.
+
+**Quello che non funzionava era il silenzio.** Su un canale c'era una
+pubblicità in corso: i loro spot sono cuciti dentro il flusso e noi li
+buttiamo via, quindi finché dura l'interruzione **non c'è niente da mandare** e
+il lettore aspetta. È il comportamento giusto — meglio aspettare che guardare
+la reclame — ma uno schermo nero senza spiegazioni sembra un guasto nostro.
+
+Ora lo si dice, con una riga che si toglie da sola appena torna il video:
+
+> *Pubblicità in corso: la stiamo togliendo. Il video riparte appena finisce.*
+
+Non ha la faccia di un errore, perché non lo è: fondo verde tenue e un puntino
+che respira, non un riquadro rosso. Un messaggio d'errore su una cosa che si
+risolve da sola fa credere a un guasto.
+
+**E su una diretta di Twitch il guardiano non fa più la scala dei rimedi.**
+Spinta, riapertura, riestrazione: non c'è niente di rotto da rimettere a
+posto. Si continua a chiedere la playlist e si aspetta, che è l'unica cosa
+sensata.
+
+**Due difetti trovati dalla console mentre ero lì.**
+
+L'icona del tema era rotta: nel codice il tracciato `d` era spezzato su due
+righe e i pezzi venivano uniti senza spazio, quindi `0 0 0 0` e `15.6`
+diventavano `0 015.6`. Il browser rifiutava l'intero tracciato e l'icona
+spariva, lasciando in console «Expected number».
+
+E `apple-mobile-web-app-capable` da solo è deprecato: adesso c'è anche
+`mobile-web-app-capable`, che è il nome standard. Servono tutti e due —
+Safari conosce ancora solo il primo.
+
+**Cosa resta vero.** Durante una pubblicità lunga il video non c'è. Non è
+aggirabile da qui: gli spot arrivano dentro gli stessi byte del video, e
+l'unico modo di non aspettarli sarebbe chiedere a Twitch un flusso diverso —
+cosa che richiede rifare la loro procedura di autorizzazione, non un ritocco.

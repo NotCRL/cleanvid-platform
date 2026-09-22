@@ -39,6 +39,9 @@
              data-pagina="{{ url }}"
              data-posizione="/{{ c.lingua.codice }}/posizione"
              data-salti="{{ salti | tojson | forceescape }}"
+             data-diretta="{{ 1 if estratto.diretta else 0 }}"
+             data-piattaforma="{{ piattaforma }}"
+             data-attesa-annuncio="{{ t('guarda.attesa_annuncio') }}"
              {% if estratto.token_audio %}data-audio="/flusso/{{ estratto.token_audio }}"{% endif %}
              ></video>
       {% if estratto.token_audio %}

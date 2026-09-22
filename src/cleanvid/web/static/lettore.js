@@ -189,8 +189,41 @@
     location.reload();
   }
 
+  /* Su una diretta di Twitch, «fermo» quasi sempre vuol dire «pubblicita'».
+   *
+   * I loro spot sono cuciti dentro il flusso e noi li buttiamo via: finche'
+   * dura l'interruzione non c'e' NIENTE da mandare, e il lettore aspetta. E'
+   * il comportamento giusto - meglio aspettare che guardare la reclame - ma
+   * uno schermo nero senza spiegazioni sembra un guasto nostro.
+   *
+   * Quindi lo si dice. Non un errore: una riga che si toglie da sola appena
+   * torna il video. */
+  function forseAnnuncio() {
+    return dati.diretta === "1" &&
+           (dati.piattaforma || "").toLowerCase() === "twitch";
+  }
+
+  function aspettaAnnuncio(mostra) {
+    const gia = document.getElementById("attesa-annuncio");
+    if (!mostra) { if (gia) gia.remove(); return; }
+    if (gia || !dati.attesaAnnuncio) return;
+    const riga = document.createElement("p");
+    riga.id = "attesa-annuncio";
+    riga.className = "attesa";
+    riga.textContent = dati.attesaAnnuncio;
+    (video.parentElement || document.body).insertAdjacentElement("afterend", riga);
+  }
+
   function rianima() {
     tentativi += 1;
+    if (forseAnnuncio()) {
+      // niente scala di rimedi: non c'e' niente di rotto da rimettere a
+      // posto, c'e' da aspettare. Si continua a chiedere, e si dice perche'.
+      aspettaAnnuncio(true);
+      const hls = video.hlsjs;
+      if (hls) hls.startLoad();
+      return;
+    }
     if (tentativi > TENTATIVI_MASSIMI) { riestrai(); return; }
 
     const hls = video.hlsjs;
@@ -225,6 +258,7 @@
       ultimoTempo = video.currentTime;
       ultimoMovimento = Date.now();
       tentativi = 0;                // e' ripartito da solo: si ricomincia
+      aspettaAnnuncio(false);       // e se c'era l'avviso, se ne va
       return;
     }
     if (Date.now() - ultimoMovimento < FERMO_MS) return;

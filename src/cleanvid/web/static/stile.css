@@ -1875,3 +1875,20 @@ body.vista-solo{overflow:hidden}
 @media (prefers-reduced-motion:reduce){
   .scena.cinema.con-bagliore > #bagliore{transition:none}
 }
+
+
+/* L'avviso «sto aspettando che finisca la pubblicita'».
+ *
+ * Non ha la faccia di un errore, perche' non lo e': non c'e' niente di rotto,
+ * c'e' da aspettare qualche secondo. Un messaggio rosso su una cosa che si
+ * risolve da sola fa credere a un guasto. */
+.attesa{display:flex;align-items:center;gap:10px;margin:10px 0 0;
+  padding:11px 15px;border-radius:var(--r);font-size:13.5px;
+  background:var(--accent-soft);border:1px solid var(--accent-line-2);
+  color:var(--accent-soft-text)}
+.attesa::before{content:"";width:9px;height:9px;flex:none;border-radius:50%;
+  background:var(--accent);animation:respira 1.4s ease-in-out infinite}
+@keyframes respira{0%,100%{opacity:.25}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  .attesa::before{animation:none;opacity:.7}
+}
