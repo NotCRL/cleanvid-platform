@@ -811,3 +811,17 @@ def test_la_chat_si_allunga_quanto_la_riga() -> None:
     assert ".scena.conchat.solo > .accanto{align-self:stretch" in foglio
     assert ".scena.conchat.chat-fianco > .accanto," in foglio
     assert ".scena{display:grid;gap:16px 24px;align-items:start" in foglio
+
+
+def test_il_pulsante_di_ritorno_del_muro_fa_qualcosa() -> None:
+    """In «solo i video» e' l'unica cosa visibile sullo schermo.
+
+    Era nel modello ma senza javascript: un bottone in vista che non fa
+    niente e' peggio di un bottone che non c'e', perche' chi lo preme pensa
+    di aver sbagliato lui.
+    """
+    modello = pathlib.Path("src/cleanvid/web/templates/muro.html").read_text()
+    codice = pathlib.Path("src/cleanvid/web/static/muro.js").read_text()
+    assert 'id=pilota' in modello
+    assert 'getElementById("pilota")' in codice
+    assert "soloVideo(false)" in codice

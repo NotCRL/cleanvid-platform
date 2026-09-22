@@ -635,6 +635,65 @@
   document.getElementById("nudo").onclick = () =>
     soloVideo(!muro.classList.contains("nudo"));
 
+  /* ---------- il pulsante di ritorno ------------------------------------
+     In «solo i video» questo e' l'unica cosa visibile sullo schermo: un clic
+     rimette i comandi. Si puo' trascinare dove si preferisce, perche' dove
+     sta bene dipende da come sono disposti i video, e un posto fisso finisce
+     sempre sopra quello che si sta guardando.
+
+     Clic e trascinamento sullo stesso elemento vanno distinti a mano: si
+     guarda di quanto si e' mosso il dito. Sotto i tre pixel e' un clic -
+     nessuno tiene la mano ferma al pixel. */
+  (() => {
+    const pilota = document.getElementById("pilota");
+    if (!pilota) return;
+    try {
+      const dove = JSON.parse(localStorage.getItem(CHIAVE + ".pilota") || "null");
+      if (dove && typeof dove.x === "number") {
+        pilota.style.left = dove.x + "px";
+        pilota.style.top = dove.y + "px";
+        pilota.style.right = "auto";
+        pilota.style.bottom = "auto";
+      }
+    } catch (e) {}
+
+    pilota.addEventListener("pointerdown", (ev) => {
+      ev.preventDefault();
+      const r = pilota.getBoundingClientRect();
+      const dx = ev.clientX - r.left, dy = ev.clientY - r.top;
+      let trascinato = false;
+      try { pilota.setPointerCapture(ev.pointerId); } catch (e) {}
+      pilota.classList.add("trascinato");
+
+      const muovi = (e) => {
+        if (Math.abs(e.clientX - r.left - dx) > 3 ||
+            Math.abs(e.clientY - r.top - dy) > 3) trascinato = true;
+        // dentro lo schermo: un bottone trascinato fuori non si recupera piu'
+        const x = Math.min(Math.max(0, e.clientX - dx), innerWidth - 44);
+        const y = Math.min(Math.max(0, e.clientY - dy), innerHeight - 44);
+        pilota.style.left = x + "px";
+        pilota.style.top = y + "px";
+        pilota.style.right = "auto";
+        pilota.style.bottom = "auto";
+      };
+      const ferma = () => {
+        pilota.removeEventListener("pointermove", muovi);
+        pilota.removeEventListener("pointerup", ferma);
+        pilota.removeEventListener("pointercancel", ferma);
+        pilota.classList.remove("trascinato");
+        if (!trascinato) { soloVideo(false); return; }
+        const fine = pilota.getBoundingClientRect();
+        try {
+          localStorage.setItem(CHIAVE + ".pilota",
+            JSON.stringify({ x: fine.left, y: fine.top }));
+        } catch (e) {}
+      };
+      pilota.addEventListener("pointermove", muovi);
+      pilota.addEventListener("pointerup", ferma);
+      pilota.addEventListener("pointercancel", ferma);
+    });
+  })();
+
   /* ---------- dove sta la chat ----------------------------------------
      Il predefinito e' a destra, ed e' una decisione: sotto mangia l'altezza,
      e in un muro da quattro l'altezza e' la cosa che manca. Chi la vuole
