@@ -1034,3 +1034,57 @@ scansiona.
 
 **Verificato.** 119 test, fra cui uno che fallisce se il lettore in cinema
 perde il suo `aspect-ratio`.
+
+---
+
+## 2026-09-22 — Il bagliore dietro al lettore
+
+**Cosa c'è.** In cinema, dietro al lettore c'è un alone che prende i colori
+dal video e li allarga ai lati. Si accende e si spegne dal pannello delle
+preferenze, e la scelta si ricorda.
+
+**Come è fatto, e perché così.** Si disegna il fotogramma dentro una tela di
+**32×18 pixel**, e l'ingrandimento e la sfocatura li fa il CSS.
+
+Non è un trucco per risparmiare: è *il* modo. Sfocare un'immagine grande costa
+a ogni fotogramma, mentre ingrandire trentadue pixel è quello che una scheda
+video fa senza accorgersene — e a occhio il risultato è lo stesso, perché dopo
+cinquanta pixel di sfocatura i dettagli non ci sono comunque più.
+
+**Quattro o cinque fotogrammi al secondo.** Il bagliore deve accompagnare il
+video, non inseguirlo. Più spesso si vedrebbe sfarfallare, e si pagherebbe un
+lavoro in più per un effetto peggiore.
+
+**Sta nella stessa area della griglia del lettore**, quindi gli finisce
+esattamente dietro senza posizionarlo a mano. E siccome in cinema il lettore
+può essere più stretto della sua colonna, il bagliore esce ai lati — che è il
+punto.
+
+**`overflow: visible clip`.** La sfocatura sborda di una cinquantina di pixel,
+e su un blocco largo quanto la finestra creerebbe una barra di scorrimento
+orizzontale. `clip` la taglia senza diventare un contenitore che scorre, e
+l'asse verticale resta `visible`: con `hidden` il pannello delle preferenze si
+ritroverebbe tagliato quando si apre.
+
+**Tre cose che spengono il battito:**
+
+- la scheda non è in vista — disegnare per una pagina che nessuno guarda è
+  lavoro buttato, e su un portatile è batteria;
+- il video è in pausa o non è ancora arrivato niente;
+- il browser rifiuta di disegnare quel video su una tela. A noi non serve
+  rileggerne i pixel, solo mostrarla, quindi di norma va bene lo stesso; ma se
+  si rifiuta del tutto si smette, invece di riprovare quattro volte al secondo
+  per sempre.
+
+**Chi ha chiesto meno movimento non se lo trova acceso** di nostra iniziativa —
+ma se lo accende lui, resta acceso.
+
+**Col lettore della piattaforma non c'è**, e non è una dimenticanza: dentro
+quell'iframe i fotogrammi non ci sono, è un altro documento, e non c'è niente
+da disegnare.
+
+**Il pannello delle preferenze ora compare anche senza chat**, perché ha
+qualcosa da offrire: il bagliore vale su ogni video col lettore nostro. Mostra
+quello che si applica, e quando non si applica niente non c'è affatto.
+
+**Verificato.** 121 test.

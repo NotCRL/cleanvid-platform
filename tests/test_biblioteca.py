@@ -760,12 +760,42 @@ async def test_su_una_diretta_c_e_il_pannello_delle_preferenze(
     assert "data-chatdove=sotto" in pagina
 
 
-async def test_senza_chat_niente_pannello(visitatore: AsyncClient) -> None:
-    """Un pannello di preferenze con dentro una sola voce che non si applica
-    e' un bottone che non serve a niente."""
+async def test_senza_chat_il_pannello_ha_comunque_il_bagliore(
+        visitatore: AsyncClient) -> None:
+    """Il pannello c'e' finche' ha qualcosa da offrire.
+
+    Il bagliore vale su ogni video col lettore nostro; la posizione della
+    chat solo sulle dirette. Il pannello mostra quello che si applica, e
+    quando non si applica niente non c'e' affatto.
+    """
     pagina = (await visitatore.get(
         "/it/guarda", params={"u": "https://vimeo.com/76979871"})).text
-    assert "class=preferenze" not in pagina
+    assert "class=preferenze" in pagina
+    assert "data-bagliore=acceso" in pagina
+    assert "data-chatdove" not in pagina
+
+
+async def test_col_lettore_della_piattaforma_niente_bagliore(
+        visitatore: AsyncClient) -> None:
+    """Dentro l'iframe di un'altra piattaforma i fotogrammi non ci sono: e'
+    un altro documento, e non c'e' niente da disegnare."""
+    pagina = (await visitatore.get("/it/guarda", params={
+        "u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk", "m": "loro"})).text
+    assert "id=bagliore" not in pagina
+    assert "bagliore.js" not in pagina
+
+
+def test_il_bagliore_disegna_una_tela_minuscola() -> None:
+    """Sfocare un'immagine grande costa a ogni fotogramma; ingrandire
+    trentadue pixel e' quello che una scheda video fa senza accorgersene.
+
+    E dopo cinquanta pixel di sfocatura i dettagli non ci sono comunque piu',
+    quindi a occhio il risultato e' lo stesso.
+    """
+    codice = pathlib.Path("src/cleanvid/web/static/bagliore.js").read_text()
+    assert "const LARGO = 32, ALTO = 18;" in codice
+    # e si ferma quando la scheda non si vede: su un portatile e' batteria
+    assert "visibilitychange" in codice
 
 
 def test_solo_il_lettore_resta_dentro_la_pagina() -> None:

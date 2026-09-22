@@ -18,6 +18,11 @@
    documento, quindi il video non riparte. E' lo stesso vincolo del muro. #}
 <div id=teatro class="scena cinema chat-fianco{{ ' conchat' if chat else '' }}">
 
+  {# La tela del bagliore: sta nella stessa area della griglia del lettore,
+     quindi gli finisce esattamente dietro. Trentadue per diciotto pixel: il
+     resto lo fanno l'ingrandimento e la sfocatura del CSS. #}
+  {% if estratto %}<canvas id=bagliore aria-hidden=true></canvas>{% endif %}
+
   <div class=palco>
     {% if lettore %}
       <iframe id=incorniciato src="{{ lettore.url_lettore }}"
@@ -118,7 +123,7 @@
         </form>
       {% endif %}
 
-      {% if chat %}
+      {% if chat or estratto %}
         {# Le preferenze di questa pagina stanno in questa pagina: una cosa
            che si vuole provare a occhio non si va a cambiare altrove e poi si
            torna indietro. Nelle impostazioni del sito restano le cose che
@@ -127,13 +132,24 @@
           <summary class=chip title="{{ t('guarda.preferenze') }}">
             <i>&#9881;</i><span>{{ t("guarda.preferenze") }}</span></summary>
           <div class=pannello>
-            <span class=voce>{{ t("guarda.chat") }}</span>
-            <span class="layouts secondario">
-              <button type=button data-chatdove=fianco class=on
-                      >{{ t("guarda.chat_fianco") }}</button>
-              <button type=button data-chatdove=sotto
-                      >{{ t("guarda.chat_sotto") }}</button>
-            </span>
+            {% if estratto %}
+              <span class=voce>{{ t("guarda.bagliore") }}</span>
+              <span class="layouts secondario">
+                <button type=button data-bagliore=acceso class=on
+                        >{{ t("guarda.acceso") }}</button>
+                <button type=button data-bagliore=spento
+                        >{{ t("guarda.spento") }}</button>
+              </span>
+            {% endif %}
+            {% if chat %}
+              <span class=voce>{{ t("guarda.chat") }}</span>
+              <span class="layouts secondario">
+                <button type=button data-chatdove=fianco class=on
+                        >{{ t("guarda.chat_fianco") }}</button>
+                <button type=button data-chatdove=sotto
+                        >{{ t("guarda.chat_sotto") }}</button>
+              </span>
+            {% endif %}
           </div>
         </details>
       {% endif %}
@@ -215,6 +231,7 @@
 {% if lettore or estratto %}
   <script src="/static/copertine.js"></script>
   <script src="/static/viste.js"></script>
+  {% if estratto %}<script src="/static/bagliore.js"></script>{% endif %}
 {% endif %}
 {% endblock %}
 

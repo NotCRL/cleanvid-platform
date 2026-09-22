@@ -1818,3 +1818,41 @@ body.vista-solo{overflow:hidden}
   display:flex;flex-direction:column}
 .scena.conchat.chat-fianco .chat,
 .scena.conchat.solo .chat{flex:1;height:auto;min-height:0}
+
+
+/* Il bagliore dietro al lettore, in cinema.
+ *
+ * La tela sta nella stessa area della griglia del lettore, quindi ci sta
+ * esattamente dietro senza bisogno di posizionarla a mano. Il lettore va
+ * sopra, e siccome il lettore in cinema puo' essere piu' stretto della sua
+ * colonna, il bagliore esce ai lati - che e' il punto.
+ *
+ * `overflow: visible clip`: la sfocatura sborda di una cinquantina di pixel e
+ * su un blocco largo quanto la finestra creerebbe una barra di scorrimento
+ * orizzontale. `clip` la taglia senza diventare un contenitore che scorre,
+ * e l'asse verticale resta `visible` - se no il pannello delle preferenze si
+ * ritroverebbe tagliato quando si apre. */
+#bagliore{display:none}
+.scena.cinema.con-bagliore{overflow:visible clip}
+.scena.cinema.con-bagliore > #bagliore{display:block;grid-area:palco;
+  width:100%;height:100%;z-index:0;pointer-events:none;
+  filter:blur(56px) saturate(2.1) brightness(1.15);opacity:.62;
+  transform:scale(1.03);
+  /* il passaggio da un fotogramma all'altro non deve vedersi come uno scatto */
+  transition:opacity .5s}
+.scena.cinema > .palco{position:relative;z-index:1}
+
+/* Sul tema chiaro serve meno: il bagliore deve accendere il fondo, non
+   sbiancarlo. */
+:root[data-theme="light"] .scena.cinema.con-bagliore > #bagliore{opacity:.4;
+  filter:blur(56px) saturate(1.7) brightness(1.05)}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme="dark"]) .scena.cinema.con-bagliore > #bagliore{
+    opacity:.4;filter:blur(56px) saturate(1.7) brightness(1.05)}
+}
+
+/* Chi ha chiesto meno movimento non se lo trova acceso di sua iniziativa: lo
+   decide il javascript, ma anche qui si toglie l'animazione. */
+@media (prefers-reduced-motion:reduce){
+  .scena.cinema.con-bagliore > #bagliore{transition:none}
+}
