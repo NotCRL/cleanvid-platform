@@ -72,7 +72,9 @@
     <form method=get action="/{{ c.lingua.codice }}/guarda" class=qualita>
       <input type=hidden name=u value="{{ url }}">
       {% if nostro %}<input type=hidden name=m value=diretto>{% endif %}
-      <select name=q onchange="this.form.submit()" aria-label="{{ t('guarda.qualita') }}">
+      <label class=etichetta for=qualita>{{ t("guarda.qualita") }}</label>
+      <select id=qualita name=q onchange="this.form.submit()"
+              aria-label="{{ t('guarda.qualita') }}">
         <option value="" {% if not q %}selected{% endif %}>{{ t("guarda.come_viene") }}</option>
         {% for altezza in qualita_possibili %}
           <option value="{{ altezza }}" {% if q == altezza %}selected{% endif %}>{{ altezza }}p</option>

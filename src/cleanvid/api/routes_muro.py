@@ -98,15 +98,34 @@ async def cella(
     if not u.startswith(("http://", "https://")):
         return RedirectResponse(f"/{c.lingua.codice}/muro", status_code=303)
 
-    lettore = lettore_ufficiale(u, host_pagina=request.url.hostname or "localhost",
-                                per_cella=True)
+    # NEL MURO L'ORDINE E' ROVESCIATO rispetto alla pagina singola: prima si
+    # prova a estrarre, e il lettore della piattaforma e' il ripiego.
+    #
+    # Fuori dal muro vince il lettore loro perche' parte subito e non scade.
+    # Dentro un riquadro pero' porta con se' tutta la sua interfaccia -
+    # compreso il suo volume - e il muro ne disegna gia' una: due barre e due
+    # volumi per riquadro, e chi guarda non sa quale toccare.
+    #
+    # E c'e' una ragione piu' grossa: al lettore di un altro sito possiamo
+    # solo mandare messaggi e sperare. Al nostro <video> parliamo diretto, e
+    # «l'audio su un riquadro solo» - che e' il cuore del muro - funziona
+    # davvero invece che quasi sempre.
     estratto: Estratto | None = None
     perche = ""
-    if lettore is None:
-        try:
-            estratto = await risolvi(u, q)
-        except NonEstraibile as e:
-            perche = str(e)
+    try:
+        estratto = await risolvi(u, q)
+    except NonEstraibile as e:
+        perche = str(e)
+
+    lettore = None
+    if estratto is None:
+        # non si e' potuto estrarre: meglio il lettore loro che un riquadro
+        # vuoto. I suoi comandi si spengono con `controls=0`, cosi' almeno il
+        # volume resta uno solo.
+        lettore = lettore_ufficiale(
+            u, host_pagina=request.url.hostname or "localhost", per_cella=True)
+        if lettore is not None:
+            perche = ""
 
     return modelli.TemplateResponse(request, "cella.html", {
         "c": c, "t": c.t, "url": u, "q": q,

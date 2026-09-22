@@ -82,11 +82,17 @@ def lettore_ufficiale(url: str, host_pagina: str = "localhost",
             continue
         indirizzo = modello.format(trovato.group(1), host=host_pagina)
         if per_cella:
-            # ogni piattaforma lo scrive a modo suo, e chi non lo capisce lo
-            # ignora - il che e' comunque meglio che quattro audio insieme
-            indirizzo += ("&mute=1" if "youtube" in indirizzo
-                          else "&muted=true" if "twitch" in indirizzo
-                          else "&muted=1")
+            # Muto, perche' di quattro video che partono insieme se ne ascolta
+            # uno. E senza i comandi della piattaforma: dentro un riquadro il
+            # muro ne disegna gia' di suoi, e due barre di comandi una sopra
+            # l'altra non si capisce quale tocchi.
+            # Ogni piattaforma lo scrive a modo suo, e chi non capisce ignora.
+            if "youtube" in indirizzo:
+                indirizzo += "&mute=1&controls=0&modestbranding=1"
+            elif "twitch" in indirizzo:
+                indirizzo += "&muted=true&controls=false"
+            else:
+                indirizzo += "&muted=1&controls=0"
         if "{host}" in modello:
             # Twitch accetta piu' parent: cosi' la pagina funziona sia da
             # localhost sia dall'indirizzo di rete, senza rigenerare nulla

@@ -14,9 +14,9 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cleanvid.api import biblioteca, routes_watch
+from cleanvid.api import biblioteca, routes_muro, routes_watch
 from cleanvid.main import app
-from cleanvid.media.estrazione import Estratto
+from cleanvid.media.estrazione import Estratto, NonEstraibile
 from cleanvid.models import Genere, Utente, VoceBiblioteca
 from cleanvid.web.pagine import mm_ss
 
@@ -321,15 +321,56 @@ async def test_il_muro_si_apre(visitatore: AsyncClient) -> None:
     assert 'content="noindex,nofollow"' in pagina
 
 
-async def test_una_cella_e_solo_il_lettore(visitatore: AsyncClient) -> None:
+async def test_una_cella_e_solo_il_lettore(
+        visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
     """Niente testata, niente piede: dentro un riquadro darebbero fastidio
     e ruberebbero spazio al video."""
+    async def finge(url: str, qualita: str = "") -> Estratto:
+        return Estratto(token="tv", titolo="Prova")
+
+    monkeypatch.setattr(routes_muro, "risolvi", finge)
     pagina = (await visitatore.get(
         "/it/cella", params={"u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
-    assert "id=incorniciato" in pagina
     assert "/static/cella.js" in pagina
     assert "class=testata" not in pagina
     assert "class=foot" not in pagina
+
+
+async def test_nel_muro_vince_il_lettore_nostro(
+        visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fuori dal muro vince quello della piattaforma; dentro no.
+
+    Dentro un riquadro il lettore loro porta la sua interfaccia, compreso il
+    suo volume, e il muro ne disegna gia' una: due barre per riquadro. E al
+    nostro <video> parliamo diretto, quindi «l'audio su un riquadro solo»
+    funziona davvero invece che quasi sempre.
+    """
+    async def finge(url: str, qualita: str = "") -> Estratto:
+        return Estratto(token="tv", token_audio="ta", titolo="Prova")
+
+    monkeypatch.setattr(routes_muro, "risolvi", finge)
+    pagina = (await visitatore.get(
+        "/it/cella", params={"u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
+    assert 'data-flusso="/flusso/tv"' in pagina
+    assert "youtube.com/embed" not in pagina
+    # nessun comando nativo: quelli li disegna il muro, e due volumi per
+    # riquadro non si capisce quale tocchi
+    assert "controls" not in pagina
+
+
+async def test_se_l_estrazione_fallisce_la_cella_ripiega(
+        visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Meglio il lettore loro che un riquadro vuoto — ma senza i suoi comandi."""
+    async def non_va(url: str, qualita: str = "") -> object:
+        raise NonEstraibile("niente da fare")
+
+    monkeypatch.setattr(routes_muro, "risolvi", non_va)
+    pagina = (await visitatore.get(
+        "/it/cella", params={"u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
+    assert "youtube.com/embed" in pagina
+    assert "mute=1" in pagina        # di quattro video se ne ascolta uno
+    assert "controls=0" in pagina    # il volume resta uno solo
+    assert "enablejsapi=1" in pagina  # o i comandi non arrivano, in silenzio
 
 
 async def test_una_cella_non_finisce_in_cronologia(visitatore: AsyncClient) -> None:
@@ -419,23 +460,19 @@ async def test_i_testi_del_muro_arrivano_al_javascript(
     assert "home.faq.1.r" not in testi_js
 
 
-async def test_una_cella_parte_muta(visitatore: AsyncClient) -> None:
+async def test_una_cella_parte_muta(
+        visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
     """Quattro video che partono insieme con l'audio non si ascoltano.
 
     Chi decide quale suona e' il muro, dopo, a video gia' avviato.
     """
-    pagina = (await visitatore.get(
-        "/it/cella", params={"u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
-    assert "mute=1" in pagina
+    async def finge(url: str, qualita: str = "") -> Estratto:
+        return Estratto(token="tv", titolo="Prova")
 
-
-async def test_il_lettore_di_youtube_ascolta_i_comandi(
-        visitatore: AsyncClient) -> None:
-    """Senza `enablejsapi=1` YouTube ignora i comandi in silenzio, e nel muro
-    l'audio non si accende. Nessun errore, da nessuna parte."""
+    monkeypatch.setattr(routes_muro, "risolvi", finge)
     pagina = (await visitatore.get(
-        "/it/cella", params={"u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
-    assert "enablejsapi=1" in pagina
+        "/it/cella", params={"u": "https://vimeo.com/76979871"})).text
+    assert "<video" in pagina and " muted" in pagina
 
 
 async def test_fuori_dal_muro_il_video_non_parte_muto(

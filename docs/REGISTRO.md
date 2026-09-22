@@ -637,3 +637,57 @@ ascolto, che non passa e il perché sta in `ARCHITETTURA.md`.
 quattro misure, il manifesto in giapponese, il passaggio fra i due lettori, e
 SponsorBlock contro il servizio vero — `kJQP7kiw5Fk` restituisce due segmenti,
 `[0, 21.8]` e `[249.4, 281.5]`.
+
+---
+
+## 2026-09-22 — Nel muro vince il lettore nostro (e i due volumi spariscono)
+
+**Cosa succedeva.** Nel muro c'erano ancora due regolatori di volume per
+riquadro, e l'audio non si sentiva. La correzione di prima aveva tolto i
+comandi nativi del `<video>`, ma il secondo volume non veniva da lì: veniva
+dal **lettore di YouTube**, che nel riquadro ci finiva intero, con tutta la
+sua interfaccia.
+
+**La correzione vera è un cambio d'ordine.** Fuori dal muro si prova prima il
+lettore della piattaforma, perché parte subito e non scade. **Dentro il muro
+l'ordine è rovesciato**: prima si estrae, e il lettore loro è il ripiego.
+
+Due ragioni, e la seconda conta più della prima:
+
+1. Il lettore di un'altra piattaforma porta con sé la propria interfaccia,
+   compreso il proprio volume, e il muro ne disegna già una. Due barre e due
+   volumi per riquadro, e chi guarda non sa quale toccare.
+2. **Al lettore di un altro sito possiamo solo mandare messaggi e sperare.** Al
+   nostro `<video>` parliamo diretto. «L'audio su un riquadro solo» è il cuore
+   del muro, e attraverso un iframe di terzi funzionava quasi sempre — che in
+   pratica vuol dire: non funzionava.
+
+Quando l'estrazione non riesce si ripiega sul lettore loro — meglio di un
+riquadro vuoto — ma con `controls=0`, così almeno il volume resta uno solo.
+
+**Il prezzo, detto:** aprire un riquadro nel muro ora costa un'estrazione, cioè
+qualche secondo la prima volta. Le volte dopo è immediato, perché la cache ha
+per chiave `(url, qualità)` e non l'utente.
+
+---
+
+## 2026-09-22 — «come viene» non era italiano, ma «qualità» non era la parola
+
+Nel menu della qualità la prima voce diceva *«come viene»*: colloquiale e
+sbagliato, giustamente segnalato.
+
+**Al suo posto però non va «qualità»,** e vale la pena scrivere perché. Le
+altre voci del menu — 1080p, 720p, 480p — sono *valori* di qualità. La prima è
+il valore «decidi tu», che in italiano si dice **«Automatica»**. Mettere
+«qualità» come voce vorrebbe dire un menu che offre «qualità, 1080p, 720p»:
+una parola che non è dello stesso tipo delle altre.
+
+«Qualità» è il **nome** del menu, e come nome resta: nel titolo che compare
+passandoci sopra, nell'etichetta per i lettori di schermo, e ora anche in
+chiaro accanto al menu nella pagina del video, dove lo spazio c'è. Nel muro
+no, perché lì lo spazio non c'è e un menu mostra il valore scelto — che è come
+funziona un menu.
+
+Cambiata in tutte e quattordici le lingue, insieme alla maiuscola su
+«Qualità», che adesso è un'etichetta che si legge e non più solo un nome
+nascosto.
