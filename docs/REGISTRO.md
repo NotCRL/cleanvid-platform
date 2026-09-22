@@ -813,3 +813,42 @@ del fallimento se lo rimette a modo suo. Torna a due secondi.
 
 **Verificato.** 104 test. Poi a mano: il predefinito estrae, `m=loro` apre
 l'altro, le tre viste ci sono su entrambi, e il ripiego funziona.
+
+---
+
+## 2026-09-22 — La chat del riquadro andava sotto invece che di fianco
+
+**Cosa succedeva.** Nel muro la chat di una diretta si apriva **sotto** il
+video invece che di fianco, nonostante le regole scritte per la cella
+dicessero il contrario.
+
+**La causa: una classe con lo stesso nome in due posti.** `conchat` ce l'hanno
+sia la cella del muro sia la pagina del video. Nel foglio era rimasta una
+regola generica `.conchat { display: grid; … }` scritta per la prima versione
+della pagina del video — quella che oggi usa `.scena` — e dentro c'era
+`@media (max-width:760px) { .conchat { grid-template-columns: 1fr } }`.
+
+Un riquadro del muro è quasi sempre più stretto di 760px. Quindi la cella
+prendeva una griglia a una colonna e impilava.
+
+**Il rimedio.** Via la regola generica. Una classe generica usata da due posti
+diversi è esattamente il modo di rompere uno aggiustando l'altro, e un test
+adesso fallisce se qualcuno la riscrive.
+
+**La chat sta a destra, e non è un caso.** Sotto mangia l'altezza, e in un
+muro da quattro l'altezza è la cosa che manca. Di fianco il video si stringe
+di poco, la chat si legge lo stesso, e — quello che conta di più — **non si
+sposta niente quando la si apre**.
+
+### Un pannello per le preferenze del muro
+
+Nel cassetto «altro» c'è ora una riga **Chat: a destra / sotto**. La scelta
+vale per tutti i riquadri, anche quelli aperti dopo, e si ricorda.
+
+È il primo di questo tipo, e il posto è quello giusto: le preferenze che
+riguardano *come guardi* stanno dove stai guardando, non in una pagina di
+impostazioni da raggiungere e poi tornare indietro. Nelle impostazioni del
+sito restano le cose che valgono ovunque — la lingua, il tema.
+
+**Verificato.** 110 test, fra cui uno che fallisce se torna una regola
+generica su `.conchat`.

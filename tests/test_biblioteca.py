@@ -715,3 +715,26 @@ async def test_il_nome_del_piccolo_schermo_e_quello_vero(
         "/it/guarda", params={"u": "https://vimeo.com/76979871"})).text
     assert "Picture-in-Picture" in pagina
     assert "angolo" not in pagina
+
+
+async def test_la_chat_del_riquadro_nasce_a_destra(visitatore: AsyncClient) -> None:
+    """Sotto mangia l'altezza, e in un muro da quattro l'altezza e' la cosa
+    che manca."""
+    pagina = (await visitatore.get("/it/muro")).text
+    assert 'data-chatdove=destra class=on' in pagina
+    assert "data-chatdove=sotto" in pagina
+
+
+def test_la_cella_non_eredita_la_griglia_della_pagina_del_video() -> None:
+    """Una classe generica usata da due posti diversi e' il modo di rompere
+    uno aggiustando l'altro.
+
+    `conchat` ce l'hanno sia la cella del muro sia la pagina del video. Una
+    regola scritta per la seconda impilava la chat sotto il video nella prima,
+    perche' un riquadro e' quasi sempre piu' stretto di 760px.
+    """
+    foglio = pathlib.Path("src/cleanvid/web/static/stile.css").read_text()
+    for riga in foglio.splitlines():
+        pulita = riga.strip()
+        if pulita.startswith(".conchat"):
+            raise AssertionError(f"regola generica su .conchat: {pulita}")

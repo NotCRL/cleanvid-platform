@@ -131,6 +131,13 @@
       return true;
     },
     chatAccesa() { return document.body.classList.contains("conchat"); },
+    /* Dove sta la chat: «destra» o «sotto». Di fianco e' il predefinito
+       perche' sotto mangia l'altezza, e in un muro da quattro l'altezza e'
+       la cosa che manca. */
+    chatDove(dove) {
+      document.body.classList.toggle("chat-sotto", dove === "sotto");
+      return true;
+    },
 
     stato() {
       const v = video();

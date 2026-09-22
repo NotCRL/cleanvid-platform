@@ -40,6 +40,7 @@
   let disposizione = "griglia";
   let nCol = 2;
   let leggero = false;
+  let chatDove = "destra";          // «destra» o «sotto»
   let fracCol = [], fracRig = [];
 
   /* ---------- memoria ---------- */
@@ -361,6 +362,7 @@
         // mostrarlo e poi non aprire niente e' peggio che non averlo
         if (a.haChat()) {
           bChat.hidden = false;
+          a.chatDove(chatDove);      // il riquadro nuovo nasce come gli altri
           if (c.chat) { a.chat(true); bChat.classList.add("on"); }
         }
         salva();
@@ -632,6 +634,29 @@
   }
   document.getElementById("nudo").onclick = () =>
     soloVideo(!muro.classList.contains("nudo"));
+
+  /* ---------- dove sta la chat ----------------------------------------
+     Il predefinito e' a destra, ed e' una decisione: sotto mangia l'altezza,
+     e in un muro da quattro l'altezza e' la cosa che manca. Chi la vuole
+     sotto lo dice qui, una volta, e la scelta lo segue. */
+  function impostaChatDove(dove, ricorda) {
+    chatDove = dove === "sotto" ? "sotto" : "destra";
+    document.querySelectorAll("[data-chatdove]").forEach((b) =>
+      b.classList.toggle("on", b.dataset.chatdove === chatDove));
+    grid.querySelectorAll(".cell").forEach((b) => {
+      try { b.querySelector("iframe").contentWindow.cellApi.chatDove(chatDove); }
+      catch (e) {}
+    });
+    if (ricorda) {
+      try { localStorage.setItem(CHIAVE + ".chatdove", chatDove); } catch (e) {}
+    }
+  }
+  document.querySelectorAll("[data-chatdove]").forEach((b) => {
+    b.onclick = () => impostaChatDove(b.dataset.chatdove, true);
+  });
+  try {
+    impostaChatDove(localStorage.getItem(CHIAVE + ".chatdove") || "destra", false);
+  } catch (e) { impostaChatDove("destra", false); }
 
   /* ---------- i gruppi ---------- */
   async function aggiornaGruppi(selezionato) {

@@ -96,6 +96,15 @@
           {% endfor %}
         </span>
       </div>
+      <div class=extra-riga>
+        <span class=extra-et>{{ t("muro.chat_dove") }}</span>
+        <span class="layouts secondario">
+          <button type=button data-chatdove=destra class=on
+                  title="{{ t('muro.chat_destra') }}">{{ t("muro.chat_destra") }}</button>
+          <button type=button data-chatdove=sotto
+                  title="{{ t('muro.chat_sotto') }}">{{ t("muro.chat_sotto") }}</button>
+        </span>
+      </div>
       <button id=reset class=iconbtn type=button title="{{ t('muro.misure_uguali') }}">
         <i>&#8634;</i><span class=etichetta>{{ t("muro.misure_uguali") }}</span></button>
       <button id=nudo class=iconbtn type=button title="{{ t('muro.solo_video') }}">
