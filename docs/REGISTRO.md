@@ -994,3 +994,43 @@ che resta uguale finché qualcuno non ne cambia uno solo.
 
 **Verificato.** 119 test, fra cui uno che fallisce se la chat si riprende
 un'altezza sua invece di seguire la riga.
+
+---
+
+## 2026-09-22 — Le bande nere ai lati del video, in cinema
+
+**Cosa succedeva.** In cinema, dentro al lettore comparivano due bande nere ai
+lati del video.
+
+**La causa.** L'altezza del riquadro era un numero legato alla finestra
+(`min(58vw, 100vh - 128px)`) mentre la larghezza era *tutta quella
+disponibile*. Su uno schermo basso e largo — cioè quasi tutti — il riquadro
+diventava più largo di 16:9, e `object-fit: contain` faceva diligentemente il
+suo lavoro: il video intero, centrato, con il vuoto ai lati.
+
+Il comportamento era corretto. Il problema è **dove** stava quel vuoto: dentro
+al lettore, dove sembra un difetto del video.
+
+**Il rimedio: il rapporto è fisso e a variare è la larghezza.** Il lettore è
+sempre 16:9 e prende tutto lo spazio che ha, ma non più di quanto gliene
+servirebbe per sforare in altezza:
+
+```css
+aspect-ratio:16/9;
+width:min(100%, calc((100vh - 120px) * 16 / 9));
+```
+
+Quando la finestra è bassa il blocco si stringe e resta centrato. Lo spazio
+che avanza ai lati è **pagina, non lettore** — e si vede che è un'altra cosa.
+
+**Perché non bastava alzare l'altezza.** Alzandola il riquadro sarebbe
+diventato più alto *e* sarebbe sforato sotto la piega, senza smettere di
+essere più largo di 16:9 su uno schermo largo. Il numero da cambiare non era
+l'altezza: era quale dei due lati comanda.
+
+**Di contorno.** In cinema senza chat il testo sotto il lettore torna in una
+colonna da 1060px: una riga di testo lunga un monitor non si legge, si
+scansiona.
+
+**Verificato.** 119 test, fra cui uno che fallisce se il lettore in cinema
+perde il suo `aspect-ratio`.

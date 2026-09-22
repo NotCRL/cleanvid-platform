@@ -843,10 +843,19 @@ def test_con_la_chat_di_fianco_il_titolo_passa_sotto() -> None:
             '"principale accanto"}') in foglio
 
 
-def test_l_altezza_in_cinema_la_decide_il_lettore() -> None:
-    """Un solo numero da regolare invece di due da tenere uguali a mano."""
+def test_in_cinema_il_lettore_resta_sedici_noni() -> None:
+    """Con l'altezza legata alla finestra e la larghezza tutta disponibile,
+    su uno schermo basso e largo il riquadro diventava piu' largo di 16:9 e
+    dentro comparivano due bande nere ai lati del video.
+
+    `object-fit: contain` faceva il suo lavoro, ma quelle bande sono dentro al
+    lettore e sembrano un difetto. Ora il rapporto e' fisso e a variare e' la
+    larghezza.
+    """
     foglio = pathlib.Path("src/cleanvid/web/static/stile.css").read_text()
-    blocco = foglio.split(".scena.cinema.conchat.chat-fianco > .palco")[1][:160]
-    assert "height:min(58vw" in blocco
-    # la chat non ha un'altezza sua: segue la riga
+    blocco = foglio.split(".scena.cinema > .palco")[1][:240]
+    assert "aspect-ratio:16/9" in blocco
+    assert "width:min(100%," in blocco      # si stringe invece di allargarsi
+    assert "height:auto" in blocco
+    # e la chat non ha un'altezza sua: segue la riga
     assert ".scena.cinema.conchat.chat-fianco .chat{height:" not in foglio
