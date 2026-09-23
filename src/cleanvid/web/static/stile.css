@@ -1907,3 +1907,16 @@ body.vista-solo{overflow:hidden}
   font-size:14.5px;line-height:1.7}
 .puntato li{margin:0 0 9px}
 .puntato li::marker{color:var(--accent)}
+
+
+/* I due moduli di «entra»: affiancati dove c'e' spazio, uno sopra l'altro
+   dove non ce n'e'. Affiancati perche' la scelta fra «ho gia' un conto» e
+   «non ce l'ho» si fa guardando, non scorrendo. */
+.due-moduli{display:grid;gap:12px 32px;align-items:start;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.due-moduli input[type=email],
+.due-moduli input[type=password]{width:100%;padding:11px 14px;
+  border-radius:var(--r-sm,9px);border:1px solid var(--line-2);
+  background:var(--field);color:var(--text);font:inherit;font-size:15px}
+.due-moduli input:focus{outline:none;border-color:var(--accent)}
+.due-moduli button{margin-top:4px}

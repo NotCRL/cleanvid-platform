@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block titolo %}{{ t("meta.entra.titolo") }}{% endblock %}
+{% block descrizione %}{{ t("meta.entra.descrizione") }}{% endblock %}
+{% block robot %}<meta name=robots content="noindex,nofollow">{% endblock %}
+
+{% block contenuto %}
+<h1>{{ t("entra.titolo") }}</h1>
+<p class=lead>{{ t("entra.sommario") }}</p>
+
+{% if guaio %}
+  <div class=err>{{ t("entra.guaio." ~ guaio) }}</div>
+{% endif %}
+
+{% if utente.e_registrato %}
+  <section class=sec>
+    <h2>{{ t("impostazioni.il_tuo_utente") }}</h2>
+    <ul class=elenco>
+      <li><a>{{ t("entra.email") }}</a><span class=nota>{{ utente.email }}</span></li>
+    </ul>
+    <form method=post action="/{{ c.lingua.codice }}/esci" style="margin-top:14px">
+      <button class=chip><i>&#8617;</i><span>{{ t("entra.esci") }}</span></button>
+    </form>
+  </section>
+
+{% else %}
+  {# Due moduli nella stessa pagina: chi ha gia' un conto entra, chi non ce
+     l'ha se lo fa. Separarli in due pagine vorrebbe dire far scegliere una
+     strada prima di sapere quale serve. #}
+  <div class=due-moduli>
+    <section class=sec>
+      <h2>{{ t("entra.registrati.titolo") }}</h2>
+      <p class=testo>{{ t("entra.registrati.testo") }}</p>
+      <form method=post action="/{{ c.lingua.codice }}/registrati">
+        <label class=campo>
+          <span>{{ t("entra.email") }}</span>
+          <input type=email name=email required autocomplete=email>
+        </label>
+        <label class=campo>
+          <span>{{ t("entra.password") }} ({{ t("entra.almeno", quante=minimo) }})</span>
+          <input type=password name=password required minlength="{{ minimo }}"
+                 autocomplete=new-password>
+        </label>
+        <button class=principale>{{ t("entra.registrati.bottone") }}</button>
+      </form>
+    </section>
+
+    <section class=sec>
+      <h2>{{ t("entra.accedi.titolo") }}</h2>
+      <p class=testo>{{ t("entra.accedi.testo") }}</p>
+      <form method=post action="/{{ c.lingua.codice }}/accedi">
+        <label class=campo>
+          <span>{{ t("entra.email") }}</span>
+          <input type=email name=email required autocomplete=email>
+        </label>
+        <label class=campo>
+          <span>{{ t("entra.password") }}</span>
+          <input type=password name=password required autocomplete=current-password>
+        </label>
+        <button class=chip>{{ t("entra.accedi.bottone") }}</button>
+      </form>
+    </section>
+  </div>
+{% endif %}
+
+<p style="margin-top:26px"><a href="/{{ c.lingua.codice }}/">← {{ t("piede.torna_home") }}</a></p>
+{% endblock %}

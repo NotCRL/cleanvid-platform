@@ -1638,3 +1638,82 @@ e ricomincia da quella sbagliata.
 **Verificato.** 162 test, di cui 6 nuovi. Uno di questi è costato un giro: la
 pagina va confrontata con il testo **sfuggito**, perché in HTML un apostrofo
 diventa `&#39;` — e in italiano l'apostrofo c'è quasi in ogni frase.
+
+---
+
+## 2026-09-23 — Passo 4: la registrazione
+
+Il passo per cui `models/user.py` era stato scritto come è stato scritto, il
+primo giorno. Adesso si vede se quella decisione reggeva.
+
+**Reggeva.** `/{lingua}/entra`: registrarsi **non crea un utente nuovo**,
+attacca email e password alla riga che c'è già. Chi ha usato il sito per
+mezz'ora e poi si registra non perde niente — perché non c'è niente da
+spostare.
+
+### Entrare invece cambia riga, e la sessione anonima resta dov'è
+
+Questa è la scelta meno ovvia del passo.
+
+Travasare la cronologia anonima dentro il conto appena fatto l'accesso
+sarebbe comodo, e per il primo accesso sarebbe anche giusto. Ma su un
+**computer prestato** vorrebbe dire ereditare quello che ha guardato chi lo ha
+usato prima — e le sorprese, quando riguardano la roba delle persone, si
+evitano anche a costo di essere meno comodi.
+
+Quindi: **registrarsi** è la stessa riga (niente da travasare), **entrare** è
+un'altra riga (niente si travasa). Predicibile, e non ha casi strani.
+
+### Come si custodiscono le password
+
+**Argon2**, non bcrypt e non sha. bcrypt taglia la password a 72 byte senza
+dirlo; sha, anche col sale, si prova a miliardi al secondo su una scheda
+video. Argon2 è fatto apposta per costare **memoria**, che è la cosa che una
+scheda video non ha in abbondanza.
+
+**Otto caratteri minimi e nessuna regola di complessità.** Le regole del tipo
+«una maiuscola, un numero, un simbolo» producono `Password1!` e basta: sono un
+teatro che non aggiunge niente e che fa scrivere le password sui foglietti.
+Una password lunga batte una password complicata.
+
+**L'impronta si riscrive quando invecchia.** Argon2 alza i suoi parametri nel
+tempo, e l'unico momento in cui si può rifare il calcolo è quando si ha in
+mano la password in chiaro — cioè durante un accesso riuscito.
+
+### Due cose che si fanno per non dire troppo
+
+**La verifica si esegue anche quando l'email non esiste**, contro un'impronta
+finta. Senza, il tempo di risposta direbbe a chiunque **quali indirizzi sono
+registrati**: più corto se non c'è, più lungo se c'è.
+
+**«Email o password non corrispondono»** è lo stesso messaggio nei due casi,
+di proposito. Dire «questa email non esiste» è un modo per scoprire chi è
+iscritto.
+
+### La difesa contro chi prova a indovinare
+
+Otto tentativi sbagliati per indirizzo, in un quarto d'ora. **Per indirizzo e
+non per chi chiede**: chi prova a forzare cambia rete in un secondo, mentre
+l'indirizzo che vuole aprire resta quello.
+
+Il prezzo, dichiarato: qualcuno può far bloccare l'accesso a un altro
+conoscendone l'email. Per questo la finestra è corta e non c'è nessuno da
+sbloccare a mano — si aspetta, e basta.
+
+### L'unicità dell'email la dice il database
+
+Non si controlla prima e poi si scrive: fra il controllo e la scrittura ci sta
+un'altra registrazione. Si prova a scrivere, e se il vincolo salta si dice
+«questa email ha già un accesso». E le maiuscole non fanno una email diversa.
+
+**Verificato.** 179 test, di cui 17 nuovi. Il più importante:
+`test_registrarsi_non_fa_perdere_niente` — si usa il sito da anonimi, si apre
+un video, ci si registra, e quel video deve essere ancora lì. Se fallisce, la
+promessa scritta nella pagina è falsa.
+
+Poi a mano: video aperto da anonimo, registrazione, e da un altro browser
+l'accesso che riporta la scheda. Nel database, `$argon2id$v=19$m=65536`.
+
+**Un inciampo mio, per il prossimo che verifica a mano:** `curl -X POST -L`
+continua a mandare POST anche dopo il rimbalzo, e finisce in 405. Con `-d` e
+senza `-X`, curl passa a GET come farebbe un browser.

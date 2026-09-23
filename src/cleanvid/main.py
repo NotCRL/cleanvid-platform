@@ -64,6 +64,7 @@ def crea_app() -> FastAPI:
     # guarda perche' il sito non compare su Google.
     from .api import (
         routes_biblioteca,
+        routes_conto,
         routes_copertina,
         routes_flusso,
         routes_muro,
@@ -76,6 +77,7 @@ def crea_app() -> FastAPI:
     app.include_router(routes_copertina.router)
     app.include_router(routes_seo.router)
     app.include_router(routes_biblioteca.router)
+    app.include_router(routes_conto.router)
     app.include_router(routes_muro.router)
     app.include_router(routes_watch.router)
     # in arrivo: stanze e websocket delle stanze
