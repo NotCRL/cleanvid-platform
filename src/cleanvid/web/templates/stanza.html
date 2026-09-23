@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block titolo %}{{ stanza.titolo }} — cleanvid{% endblock %}
+{% block robot %}<meta name=robots content="noindex,nofollow">{% endblock %}
+
+{% block contenuto %}
+{# Tutto quello che serve al javascript sta in un posto solo: le soglie
+   arrivano dal server perche' vivono in rooms/protocol.py, e averle scritte
+   due volte vorrebbe dire regolarne una e dimenticare l'altra. #}
+<div id=stanza hidden
+     data-filo="/{{ c.lingua.codice }}/stanza/{{ stanza.codice }}/filo"
+     data-qui="/{{ c.lingua.codice }}/stanza/{{ stanza.codice }}"
+     data-comanda="{{ 1 if e_padrone else 0 }}"
+     data-url="{{ stanza.url_corrente or '' }}"
+     data-titolo="{{ stanza.titolo_corrente or '' }}"
+     data-scarto-salto="{{ soglie.salto }}"
+     data-scarto-ok="{{ soglie.ok }}"
+     data-correzione-max="{{ soglie.correzione }}"
+     data-battito-ogni="{{ soglie.battito }}"></div>
+
+<header class=testa-stanza>
+  <h1>{{ stanza.titolo }}</h1>
+  <p class=lead>
+    <span id=spia class=spia></span>
+    {{ t("stanze.codice") }} <b>{{ stanza.codice }}</b>
+    · <span id=quanti>{{ quanti }}</span> {{ t("stanze.persone") }}
+    {% if e_padrone %}· <b>{{ t("stanze.comandi_tu") }}</b>{% endif %}
+  </p>
+</header>
+
+{% if fonte %}
+  {# Il lettore e' lo stesso della pagina singola: la stanza non ha un suo
+     lettore, ha lo stesso con qualcuno che gli dice dove stare. #}
+  <div class=palco>
+    {% if fonte.incorniciata %}
+      <iframe id=incorniciato src="{{ fonte.indirizzo }}"
+              allow="autoplay; fullscreen; encrypted-media"
+              allowfullscreen></iframe>
+    {% else %}
+      <video id=video controls playsinline
+             data-flusso="{{ fonte.indirizzo }}"
+             data-hls="{{ 1 if fonte.e_hls else 0 }}"
+             data-niente-flusso="{{ t('guarda.niente_flusso') }}"
+             {% if fonte.due_tracce %}data-audio="{{ fonte.indirizzo_audio }}"{% endif %}
+             ></video>
+      {% if fonte.due_tracce %}
+        <audio id=audio preload=auto style="position:absolute;width:0;height:0"></audio>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  {% if fonte.incorniciata %}
+    <p class=err>{{ t("stanze.niente_sincronia") }}</p>
+  {% endif %}
+
+{% else %}
+  <div class=err>
+    <b>{{ t("stanze.niente_video") }}</b>
+    {{ perche or t("stanze.niente_video_testo") }}
+  </div>
+{% endif %}
+
+<div class=azioni>
+  {% if e_padrone %}
+    <form method=get action="/{{ c.lingua.codice }}/stanza/{{ stanza.codice }}">
+      <input type=url name=u value="{{ stanza.url_corrente or '' }}"
+             placeholder="{{ t('home.campo') }}" class=campo-stanza>
+      <button class=chip><i>&#9654;</i><span>{{ t("stanze.metti") }}</span></button>
+    </form>
+    <form method=post action="/{{ c.lingua.codice }}/stanza/{{ stanza.codice }}/chiudi"
+          onsubmit="return confirm('{{ t('stanze.chiudi_sicuro') }}')">
+      <button class=chip><i>&times;</i><span>{{ t("stanze.chiudi") }}</span></button>
+    </form>
+  {% endif %}
+  <span class=spinta></span>
+  <span class=etichetta>{{ t("stanze.invita") }}</span>
+</div>
+
+<section class=sec>
+  <h2>{{ t("stanze.chi_c_e") }}</h2>
+  <ul id=presenti class=presenti></ul>
+</section>
+
+<p style="margin-top:22px"><a href="/{{ c.lingua.codice }}/stanze">← {{ t("stanze.titolo") }}</a></p>
+{% endblock %}
+
+{% block coda %}
+{% if fonte and fonte.nostra %}
+  {% if fonte.e_hls %}<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>{% endif %}
+  <script src="/static/lettore.js"></script>
+{% endif %}
+<script src="/static/stanza.js"></script>
+{% endblock %}

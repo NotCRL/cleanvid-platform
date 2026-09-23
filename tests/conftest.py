@@ -169,7 +169,7 @@ def niente_ytdlp(monkeypatch: pytest.MonkeyPatch) -> None:
     Chi vuole provare il caso in cui l'estrazione fallisce se lo rimette a
     modo suo, che e' esattamente quello che fanno i test di quel caso.
     """
-    from cleanvid.api import routes_muro, routes_watch
+    from cleanvid.api import routes_muro, routes_stanze, routes_watch
     from cleanvid.media.fonte import DIRETTA, Fonte
 
     async def finta(url: str, qualita: str = "", lingua: str = "en") -> Fonte:
@@ -179,6 +179,7 @@ def niente_ytdlp(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(routes_watch, "risolvi", finta)
     monkeypatch.setattr(routes_muro, "risolvi", finta)
+    monkeypatch.setattr(routes_stanze, "risolvi", finta)
 
 
 @pytest.fixture(autouse=True)

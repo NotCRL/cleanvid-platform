@@ -69,6 +69,7 @@ def crea_app() -> FastAPI:
         routes_flusso,
         routes_muro,
         routes_seo,
+        routes_stanze,
         routes_watch,
     )
     app.mount("/static", StaticFiles(directory="src/cleanvid/web/static"),
@@ -78,6 +79,7 @@ def crea_app() -> FastAPI:
     app.include_router(routes_seo.router)
     app.include_router(routes_biblioteca.router)
     app.include_router(routes_conto.router)
+    app.include_router(routes_stanze.router)
     app.include_router(routes_muro.router)
     app.include_router(routes_watch.router)
     # in arrivo: stanze e websocket delle stanze

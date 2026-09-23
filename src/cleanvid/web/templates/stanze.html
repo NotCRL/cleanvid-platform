@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block titolo %}{{ t("meta.stanze.titolo") }}{% endblock %}
+{% block descrizione %}{{ t("meta.stanze.descrizione") }}{% endblock %}
+
+{% block contenuto %}
+<h1>{{ t("stanze.titolo") }}</h1>
+<p class=lead>{{ t("stanze.sommario") }}</p>
+
+<section class=sec>
+  <h2>{{ t("stanze.apri.titolo") }}</h2>
+  <form method=post action="/{{ c.lingua.codice }}/stanze/apri" class=apri-stanza>
+    <label class=campo>
+      <span>{{ t("stanze.apri.titolo_campo") }}</span>
+      <input type=text name=titolo maxlength=80
+             placeholder="{{ t('stanze.apri.titolo_esempio') }}">
+    </label>
+    <label class=campo>
+      <span>{{ t("stanze.apri.video") }}</span>
+      <input type=url name=url placeholder="{{ t('home.campo') }}">
+    </label>
+    <label class=campo>
+      <span>{{ t("stanze.apri.chi_entra") }}</span>
+      <select name=visibilita>
+        <option value=non_in_elenco>{{ t("stanze.col_link") }}</option>
+        <option value=pubblica>{{ t("stanze.pubblica") }}</option>
+      </select>
+    </label>
+    <label class=campo>
+      <span>{{ t("stanze.apri.password") }}</span>
+      <input type=password name=password autocomplete=off
+             placeholder="{{ t('stanze.apri.password_vuota') }}">
+    </label>
+    <button class=principale>{{ t("stanze.apri.bottone") }}</button>
+  </form>
+</section>
+
+{% if mie %}
+  <section class=sec>
+    <h2>{{ t("stanze.mie") }}</h2>
+    <ul class=elenco>
+      {% for s in mie %}
+        <li>
+          <a href="/{{ c.lingua.codice }}/stanza/{{ s.codice }}">{{ s.titolo }}</a>
+          <span class=nota>{{ s.codice }} · {{ t("stanze.dentro", quanti=quante_dentro.get(s.codice, 0)) }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endif %}
+
+<section class=sec>
+  <h2>{{ t("stanze.aperte") }}</h2>
+  {% if pubbliche %}
+    <ul class=elenco>
+      {% for s in pubbliche %}
+        <li>
+          <a href="/{{ c.lingua.codice }}/stanza/{{ s.codice }}">{{ s.titolo }}</a>
+          <span class=nota>
+            {% if s.protetta %}🔒 {% endif %}{{ t("stanze.dentro", quanti=quante_dentro.get(s.codice, 0)) }}
+          </span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class=vuoto>{{ t("stanze.nessuna") }}</p>
+  {% endif %}
+</section>
+
+<p style="margin-top:26px"><a href="/{{ c.lingua.codice }}/">← {{ t("piede.torna_home") }}</a></p>
+{% endblock %}

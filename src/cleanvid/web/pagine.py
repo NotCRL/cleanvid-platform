@@ -60,6 +60,9 @@ ICONE: dict[str, str] = {
     # i due pezzi vanno uniti con uno spazio: senza, `0 0 0 0` e `15.6`
     # diventano `0 015.6` e il browser rifiuta tutto il tracciato. L'icona
     # spariva e in console restava «Expected number».
+    "chat": "<svg class=ic viewBox='0 0 24 24'><path d='M20 12.5a7 7 0 0 1-7 7"
+            "H8l-4 3v-3.9A7 7 0 0 1 6 5.6 7 7 0 0 1 13 5.5a7 7 0 0 1 7 7z'/>"
+            "<path d='M9 11h8M9 14.5h5'/></svg>",
     "tema": "<svg class=ic viewBox='0 0 24 24'><path d='M12 4.2a7.8 7.8 0 0 0 0 "
             "15.6 7.8 7.8 0 0 1 0-15.6zM12 4.2v15.6'/></svg>",
     "mondo": "<svg class=ic viewBox='0 0 24 24'><circle cx='12' cy='12' r='8.5'/>"

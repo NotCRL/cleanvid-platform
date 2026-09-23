@@ -1717,3 +1717,103 @@ l'accesso che riporta la scheda. Nel database, `$argon2id$v=19$m=65536`.
 **Un inciampo mio, per il prossimo che verifica a mano:** `curl -X POST -L`
 continua a mandare POST anche dopo il rimbalzo, e finisce in 405. Con `-d` e
 senza `-X`, curl passa a GET come farebbe un browser.
+
+---
+
+## Passo 5, primo tempo: le stanze
+
+23 settembre 2026.
+
+**Cosa cambia.** Si apre una stanza, si manda il codice a qualcuno, e si
+guarda insieme: quello che fa chi comanda — play, pausa, salto, velocità,
+cambio video — succede anche sugli schermi degli altri. La chat non c'è
+ancora: è il secondo tempo.
+
+### Il codice nell'indirizzo, non l'UUID
+
+`/stanza/verde-corsa-42`. Un codice si detta al telefono, si riconosce a
+colpo d'occhio, si riscrive senza copiarlo. Dodici colori per quindici cose
+per novanta numeri fanno sedicimila combinazioni: chi lo genera ricontrolla
+comunque, otto volte, prima di arrendersi con un 503.
+
+### Ognuno risolve il proprio flusso
+
+La stanza si passa **l'indirizzo della pagina**, non quello del flusso. Non è
+un'economia: gli indirizzi dei flussi scadono e sono legati a chi li ha
+chiesti, quindi mandarli in giro non funzionerebbe. In più così ognuno sceglie
+la qualità secondo la propria banda, che in una stanza da dieci non è un
+dettaglio.
+
+La conseguenza da sapere: **con il lettore della piattaforma la sincronia non
+esiste**, perché quel lettore non si comanda da fuori. La pagina lo dice invece
+di fingere che vada.
+
+### Il polso della riproduzione sta in Redis
+
+Una stanza da dieci manda posizione e stato molte volte al minuto. Su Postgres
+resta solo ciò che deve sopravvivere a un riavvio — chi possiede la stanza, chi
+può entrarci — e in Redis quello che nasce e muore con la festa, con sei ore di
+vita.
+
+### Nessuno rincorre nessuno
+
+Chi comanda manda dove si trova; chi guarda **calcola dove dovrebbe essere** e
+si corregge da solo: sotto la soglia non fa niente, in mezzo cambia velocità
+del 6% finché non rientra, sopra salta. Il contrario — tutti che si allineano
+all'ultimo che ha parlato — fa oscillare la stanza intera a ogni pacchetto in
+ritardo.
+
+Gli orologi non sono uguali: lo scarto si misura con ping/pong e si aggiorna
+piano (0,7 vecchio + 0,3 nuovo), perché una misura presa mentre la rete
+singhiozza non deve spostare tutto.
+
+### Chi comanda, chi guarda
+
+La tabella dei permessi sta in `rooms/protocol.py`, e la rotta la **guarda**
+invece di decidere: aggiungere un messaggio vuol dire aggiungere una riga là,
+non ricordarsi un controllo qui. Un ospite che manda `comanda` viene ignorato
+in silenzio — provato dal vivo, non dedotto dal codice.
+
+### La password si chiede una volta
+
+`models/room.py` diceva dal primo giorno che una stanza pubblica può avere la
+password. Il modulo per metterla c'era, e **non la chiedeva nessuno**: la
+pagina si apriva lo stesso. Ora chi non è il padrone e non è ancora membro
+trova una porta: il titolo si vede — serve a capire di essere nel posto giusto
+— e niente di quello che c'è dentro. Chi indovina diventa membro, e da lì in
+poi entra come tutti: senza, ogni ricarica e ogni riconnessione dopo un tunnel
+la richiederebbero di nuovo.
+
+**Anche il filo la rispetta**, con la stessa funzione: una porta chiusa davanti
+e una finestra aperta dietro sono una porta aperta.
+
+Niente conteggio dei tentativi come per l'accesso al sito: qui non c'è un
+elenco di email da proteggere, e il freno è la lentezza di argon2.
+
+### Il limite di oggi, scritto dove si vedrà
+
+Le connessioni stanno nella memoria del processo: **con più di un worker due
+persone nella stessa stanza possono finire su processi diversi** e non
+sentirsi. Sta scritto in `hub.py`, dove servirà. Il giorno che servono due
+worker, il giro passa da Redis pub/sub.
+
+Cinque stanze aperte a testa. Non è avarizia: una stanza tiene in piedi delle
+connessioni, e senza un tetto basta un ciclo distratto per riempire il server
+di stanze vuote.
+
+**Verificato.** 190 test, di cui 11 nuovi in `tests/test_stanze.py`: quelli che
+contano sono i tre sul *chi può cosa* — un ospite che chiama a mano la chiusura
+prende 404, un ospite che mette `?u=` non cambia il video, una stanza protetta
+non si apre. È la parte che, rompendosi, si rompe in silenzio: la stanza
+continua a funzionare benissimo, per le persone sbagliate.
+
+Poi dal vivo, due sessioni vere sullo stesso server: l'ospite riceve `stato` ed
+`elenco` appena entra, il padrone vede `entrato`, il `pong` torna con l'ora del
+server, un `comanda` del padrone arriva all'ospite con posizione e stato
+giusti, un `comanda` dell'ospite non arriva a nessuno, e il filo di una stanza
+protetta viene rifiutato prima ancora di aprirsi (403 in stretta di mano).
+
+**Una trappola, per il prossimo:** il `conftest` zittiva yt-dlp in
+`routes_watch` e `routes_muro`, e non nella rotta nuova. I test passavano
+lanciando yt-dlp per davvero. Chi aggiunge una rotta che risolve un video
+aggiunga la riga lì.
