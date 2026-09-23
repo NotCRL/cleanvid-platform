@@ -2,7 +2,7 @@
 <html lang="{{ c.lingua.codice }}">
 <meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1">
-<title>{{ (estratto.titolo if estratto else piattaforma) or url }} · cleanvid</title>
+<title>{{ (fonte.titolo if fonte else "") or piattaforma or url }} · cleanvid</title>
 <meta name=robots content="noindex,nofollow">
 <link rel=stylesheet href="/static/stile.css">
 <script src="/static/tema.js"></script>
@@ -10,18 +10,18 @@
 {# Un riquadro del muro: solo il lettore, niente intorno. La pagina che ci
    contiene disegna i comandi, perche' quelli nativi dentro un riquadro
    piccolo il browser li mutila da solo. #}
-<body class=cell data-diretta="{{ 1 if (estratto and estratto.diretta) or (lettore and lettore.diretta_probabile) else 0 }}">
+<body class=cell data-diretta="{{ 1 if fonte and fonte.diretta else 0 }}">
 
-{% if lettore %}
-  <iframe id=incorniciato src="{{ lettore.url_lettore }}"
+{% if fonte and fonte.incorniciata %}
+  <iframe id=incorniciato src="{{ fonte.indirizzo }}"
           allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe>
-{% elif estratto %}
+{% elif fonte %}
   <video id=video playsinline autoplay muted
-         data-flusso="/flusso/{{ estratto.token }}"
-         data-hls="{{ 1 if estratto.hls else 0 }}"
-         {% if estratto.token_audio %}data-audio="/flusso/{{ estratto.token_audio }}"{% endif %}
+         data-flusso="{{ fonte.indirizzo }}"
+         data-hls="{{ 1 if fonte.e_hls else 0 }}"
+         {% if fonte.due_tracce %}data-audio="{{ fonte.indirizzo_audio }}"{% endif %}
          ></video>
-  {% if estratto.token_audio %}
+  {% if fonte.due_tracce %}
     <audio id=audio preload=auto style="position:absolute;width:0;height:0"></audio>
   {% endif %}
 {% else %}
@@ -40,8 +40,8 @@
   <div id=chat data-chat="{{ chat }}"><iframe title="chat"></iframe></div>
 {% endif %}
 
-{% if estratto %}
-  {% if estratto.hls %}<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>{% endif %}
+{% if fonte and fonte.nostra %}
+  {% if fonte.e_hls %}<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>{% endif %}
   <script src="/static/lettore.js"></script>
 {% endif %}
 <script src="/static/cella.js"></script>

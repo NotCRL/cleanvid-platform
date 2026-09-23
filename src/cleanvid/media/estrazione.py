@@ -24,31 +24,18 @@ from __future__ import annotations
 
 import asyncio
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 from typing import Any
 
 from ..config import impostazioni
 from . import deposito
+from .fonte import DIRETTA, HLS, Fonte
 from .manifesto import UA, corpo_master, scegli_tracce
 from .qualita import selettore_separati, selettore_singolo, tetto_altezza
 
 
 class NonEstraibile(RuntimeError):
     """Da questo link non esce un video, e si sa dire perche'."""
-
-
-@dataclass(slots=True)
-class Estratto:
-    token: str                       # il flusso video, o il master HLS
-    titolo: str
-    diretta: bool = False
-    hls: bool = False
-    token_audio: str | None = None   # riempito solo con le due tracce separate
-    altezza: int = 0
-
-    @property
-    def due_tracce(self) -> bool:
-        return self.token_audio is not None
 
 
 def _comando(*extra: str) -> list[str]:
@@ -118,7 +105,7 @@ def _coppia(info: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]] | Non
     return video, audio
 
 
-async def risolvi(url: str, qualita: str = "") -> Estratto:
+async def risolvi(url: str, qualita: str = "") -> Fonte:
     """Il flusso da dare al browser. Solleva NonEstraibile se non se ne cava.
 
     La cache si guarda prima del semaforo: chi arriva su un video gia' estratto
@@ -126,7 +113,7 @@ async def risolvi(url: str, qualita: str = "") -> Estratto:
     """
     ricordato = await deposito.estrazione_in_cache(url, qualita)
     if ricordato:
-        return Estratto(**ricordato)
+        return Fonte(**ricordato)
 
     async with deposito.semaforo():
         # secondo controllo dentro il semaforo: mentre si aspettava il turno,
@@ -135,7 +122,7 @@ async def risolvi(url: str, qualita: str = "") -> Estratto:
         # cioe' esattamente quello che la cache doveva evitare.
         ricordato = await deposito.estrazione_in_cache(url, qualita)
         if ricordato:
-            return Estratto(**ricordato)
+            return Fonte(**ricordato)
 
         esito = await _estrai(url, qualita)
 
@@ -143,7 +130,18 @@ async def risolvi(url: str, qualita: str = "") -> Estratto:
     return esito
 
 
-async def _estrai(url: str, qualita: str) -> Estratto:
+def _flusso(token: str) -> str:
+    """L'indirizzo con cui il browser chiede un nostro flusso.
+
+    E' l'unico punto in cui `media/` conosce un indirizzo delle rotte, ed e'
+    voluto: l'alternativa era far costruire quell'indirizzo a ognuna delle
+    quattro pagine che mostrano un video, cioe' avere la stessa riga scritta
+    quattro volte in posti che nessuno guarda insieme.
+    """
+    return f"/flusso/{token}"
+
+
+async def _estrai(url: str, qualita: str) -> Fonte:
     tetto = tetto_altezza(qualita)
 
     info, perche = await interroga(url, selettore_singolo(tetto))
@@ -171,7 +169,8 @@ async def _estrai(url: str, qualita: str) -> Estratto:
             })
             # il corpo si costruisce al volo alla richiesta, non qui: il token
             # serve per scriverci dentro i link dei segmenti
-            return Estratto(token=token, titolo=titolo, diretta=True, hls=True)
+            return Fonte(tipo=HLS, indirizzo=_flusso(token), token=token,
+                         titolo=titolo, diretta=True)
 
     if separati:
         coppia = _coppia(info)
@@ -180,26 +179,28 @@ async def _estrai(url: str, qualita: str) -> Estratto:
                 "questo sito serve video e audio separati in un modo che non "
                 "sappiamo ancora rimettere insieme")
         video, audio = coppia
-        return Estratto(
-            token=await deposito.registra({
-                "tipo": "diretto", "url": video["url"],
-                "intestazioni": _intestazioni(video, info)}),
-            token_audio=await deposito.registra({
-                "tipo": "diretto", "url": audio["url"],
-                "intestazioni": _intestazioni(audio, info)}),
+        t_video = await deposito.registra({
+            "tipo": "diretto", "url": video["url"],
+            "intestazioni": _intestazioni(video, info)})
+        t_audio = await deposito.registra({
+            "tipo": "diretto", "url": audio["url"],
+            "intestazioni": _intestazioni(audio, info)})
+        return Fonte(
+            tipo=DIRETTA, indirizzo=_flusso(t_video), token=t_video,
+            indirizzo_audio=_flusso(t_audio), token_audio=t_audio,
             titolo=titolo, diretta=diretta, altezza=video.get("height") or 0,
         )
 
     flusso = info.get("url")
     if not flusso:
         raise NonEstraibile("nessun flusso riproducibile in un file solo")
-    return Estratto(
-        token=await deposito.registra({
-            "tipo": "diretto", "url": flusso,
-            "intestazioni": _intestazioni(info, info)}),
-        titolo=titolo, diretta=diretta,
-        hls=".m3u8" in flusso.split("?")[0],
-        altezza=info.get("height") or 0,
+    token = await deposito.registra({
+        "tipo": "diretto", "url": flusso,
+        "intestazioni": _intestazioni(info, info)})
+    return Fonte(
+        tipo=HLS if ".m3u8" in flusso.split("?")[0] else DIRETTA,
+        indirizzo=_flusso(token), token=token,
+        titolo=titolo, diretta=diretta, altezza=info.get("height") or 0,
     )
 
 

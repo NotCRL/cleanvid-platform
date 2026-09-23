@@ -163,11 +163,12 @@ def niente_ytdlp(monkeypatch: pytest.MonkeyPatch) -> None:
     modo suo, che e' esattamente quello che fanno i test di quel caso.
     """
     from cleanvid.api import routes_muro, routes_watch
-    from cleanvid.media.estrazione import Estratto
+    from cleanvid.media.fonte import DIRETTA, Fonte
 
-    async def finta(url: str, qualita: str = "") -> Estratto:
-        return Estratto(token="finto", titolo="Video di prova",
-                        altezza=int(qualita) if qualita.isdigit() else 720)
+    async def finta(url: str, qualita: str = "") -> Fonte:
+        return Fonte(tipo=DIRETTA, indirizzo="/flusso/finto", token="finto",
+                     titolo="Video di prova",
+                     altezza=int(qualita) if qualita.isdigit() else 720)
 
     monkeypatch.setattr(routes_watch, "risolvi", finta)
     monkeypatch.setattr(routes_muro, "risolvi", finta)

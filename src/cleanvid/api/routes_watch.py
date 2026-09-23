@@ -5,16 +5,17 @@ motore di ricerca indicizza indirizzi, e una pagina che cambia lingua in base
 a un cookie esiste, per chi cerca, in una lingua sola. Il perche' per esteso
 sta in `seo.py`.
 
-Si prova prima il lettore ufficiale della piattaforma, e solo se non c'e' si
-passa all'estrazione. L'ordine non e' casuale: il lettore ufficiale costa
-zero, non scade e regge qualunque cosa la piattaforma cambi domani;
-l'estrazione costa qualche secondo di CPU, produce indirizzi che scadono, e va
-rifatta ogni volta che il sito cambia idea. Si paga quel prezzo solo quando
-non c'e' alternativa.
+Il predefinito e' il lettore nostro, e il lettore della piattaforma e' il
+ripiego. La ragione si vede meglio adesso che le funzioni ci sono: dentro
+l'iframe di un altro sito non si puo' fare niente di tutto il resto - niente
+sponsor saltato, niente piccolo schermo, niente ripresa, niente viste, niente
+bagliore, niente qualita' scelta da noi.
 
-Il rovescio, ed e' bene dirlo: dentro il lettore ufficiale la pubblicita'
-della piattaforma resta. Toglierla e' esattamente cio' che l'estrazione sa
-fare, e infatti per i siti senza lettore il video esce pulito.
+Il prezzo e' che l'estrazione costa qualche secondo la prima volta e produce
+indirizzi che scadono. Chi preferisce l'altro lo trova a un clic.
+
+Comunque sia andata, quello che esce di qui e' **una sola cosa**: una `Fonte`.
+La pagina non deve chiedersi come e' stata trovata.
 """
 
 from __future__ import annotations
@@ -31,7 +32,8 @@ from ..db import sessione
 from ..lingue import esiste
 from ..media.annunci import segmenti
 from ..media.embed import chat_incorporabile, lettore_ufficiale, piattaforma_di
-from ..media.estrazione import Estratto, NonEstraibile, risolvi
+from ..media.estrazione import NonEstraibile, risolvi
+from ..media.fonte import Fonte
 from ..media.qualita import QUALITA
 from ..models import Genere, Utente
 from ..web.pagine import modelli
@@ -117,7 +119,8 @@ async def guarda(
         return RedirectResponse(f"/{c.lingua.codice}/", status_code=303)
 
     piattaforma = piattaforma_di(url)
-    lettore = lettore_ufficiale(url, host_pagina=request.url.hostname or "localhost")
+    loro_ce_l_hanno = lettore_ufficiale(
+        url, host_pagina=request.url.hostname or "localhost")
 
     # IL PREDEFINITO E' IL LETTORE NOSTRO. Si chiede il loro con `m=loro`.
     #
@@ -133,45 +136,44 @@ async def guarda(
     # apre quello invece di mostrare una pagina vuota. Cosi' la scelta del
     # predefinito non costa mai un video che non parte.
     loro = m == "loro"
-    ha_lettore_loro = lettore is not None
+    ha_lettore_loro = loro_ce_l_hanno is not None
 
-    estratto: Estratto | None = None
+    fonte: Fonte | None = None
     perche = ""
     if not loro:
         try:
-            estratto = await risolvi(url, q)
+            fonte = await risolvi(url, q)
         except NonEstraibile as e:
             # il messaggio di yt-dlp si mostra cosi' com'e': dice quasi sempre
             # la verita' ("video privato", "serve un account"), e riscriverlo
             # in gentile vorrebbe dire nascondere l'unica cosa utile
             perche = str(e)
 
-    if estratto is not None:
-        lettore = None          # si e' estratto: il loro non serve
-    elif not ha_lettore_loro:
-        lettore = None          # non c'e' nemmeno come ripiego
-    else:
+    if fonte is None and ha_lettore_loro:
+        fonte = loro_ce_l_hanno
         perche = ""             # si ripiega sul loro: non c'e' niente da dire
 
-    nostro = estratto is not None
+    # la piattaforma la sappiamo dall'indirizzo anche quando la fonte non ce
+    # l'ha detto, perche' e' una proprieta' del link e non del flusso
+    if fonte is not None and not fonte.piattaforma:
+        fonte.piattaforma = piattaforma
 
     # la visita si annota comunque: anche un tentativo andato male e' un
     # tentativo, e ritrovarlo nella cronologia serve a riprovarci
     voce = await biblioteca.annota_visita(
         db, c.utente.id, url,
-        titolo=estratto.titolo if estratto else "",
+        titolo=fonte.titolo if fonte else "",
         piattaforma=piattaforma)
 
     # I segmenti da saltare si chiedono solo se c'e' un video da guardare, e
     # solo per YouTube: per tutto il resto e' una richiesta buttata.
     # Solo sul lettore nostro: dentro l'iframe della piattaforma non possiamo
     # spostare il tempo del video, quindi chiederli sarebbe inutile.
-    da_saltare = await segmenti(url) if estratto else []
+    da_saltare = await segmenti(url) if (fonte and fonte.nostra) else []
 
-    in_diretta = bool(estratto and estratto.diretta) or bool(
-        lettore and lettore.diretta_probabile)
     chat = chat_incorporabile(
-        url, request.url.hostname or "localhost") if in_diretta else None
+        url, request.url.hostname or "localhost") if (
+            fonte and fonte.diretta) else None
 
     # La colonna di fianco, quando non c'e' la chat: prima quello lasciato a
     # meta', poi il resto della cronologia. E' il posto dove si guarda per
@@ -191,14 +193,14 @@ async def guarda(
         accanto = accanto[:8]
 
     return _pagina(request, "guarda.html", c,
-                   salti=da_saltare, nostro=nostro, chat=chat, accanto=accanto,
+                   salti=da_saltare, chat=chat, accanto=accanto,
                    ha_lettore_loro=ha_lettore_loro,
                    url=url, q=q, qualita_possibili=QUALITA,
                    piattaforma=piattaforma,
-                   titolo=estratto.titolo if estratto else "",
-                   lettore=lettore, estratto=estratto, perche=perche,
+                   titolo=fonte.titolo if fonte else "",
+                   fonte=fonte, perche=perche,
                    riprendi=biblioteca.riprendi_da(
-                       voce, diretta=bool(estratto and estratto.diretta)),
+                       voce, diretta=bool(fonte and fonte.diretta)),
                    e_preferito=bool(await biblioteca.quali_preferiti(
                        db, c.utente.id, [url])))
 

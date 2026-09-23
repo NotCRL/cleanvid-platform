@@ -1450,3 +1450,58 @@ pagante porta dieci utenti invece di respingerli.
 **Da fare adesso: niente.** Solo ricordarsi, scrivendo le stanze, che se paga
 chi apre allora la stanza ha bisogno di un padrone con dei diritti — e il
 padrone c'è già.
+
+---
+
+## 2026-09-23 — Una fonte sola, comunque sia stata trovata
+
+Prima cosa del §10 di [`confronti/RISPOSTA-2.md`](confronti/RISPOSTA-2.md), e
+prima cosa che l'altra IA aveva visto da fuori meglio di come la vedevamo da
+dentro.
+
+**Cosa c'era.** Due tipi diversi per la stessa cosa: `Lettore` — il lettore
+incorporabile di una piattaforma — ed `Estratto` — il flusso tirato fuori da
+noi. Due forme, due nomi, e ogni pagina costretta a chiedersi quale delle due
+avesse in mano.
+
+**Il costo non era la riga in più.** Era che *ogni funzione nuova andava
+pensata due volte*: il bagliore, le viste, il piccolo schermo, la ripresa, la
+qualità — per ognuna si ricominciava da capo a decidere cosa fare nel caso
+dell'iframe. Ed è il tipo di costo che non si vede mentre si paga.
+
+**Cosa c'è adesso.** `media/fonte.py`: una `Fonte`, che dice **cosa ci si può
+fare** invece di come è stata trovata.
+
+```
+fonte.incorniciata   è il lettore di un altro sito, da fuori non si comanda
+fonte.nostra         i byte passano da noi: si può fare tutto il resto
+fonte.e_hls          a segmenti, serve hls.js
+fonte.due_tracce     video muto e audio a parte, da tenere allineati
+```
+
+`indirizzo` è già quello che finisce nel `src`: il loro lettore, oppure il
+nostro `/flusso/<token>`. I modelli non maneggiano più token.
+
+**Una concessione, dichiarata.** `media/estrazione.py` adesso conosce un
+indirizzo delle rotte — `/flusso/<token>`. È l'unico punto in cui `media/` sa
+qualcosa del routing, ed è voluto: l'alternativa era far costruire quella
+stringa a ognuna delle quattro pagine che mostrano un video, cioè avere la
+stessa riga scritta quattro volte in posti che nessuno guarda insieme.
+
+**La cache è stata invalidata cambiando prefisso** (`estr:` → `estr2:`): la
+forma di ciò che si ricordava è cambiata, e far ignorare le righe vecchie è
+più sicuro che leggerle male.
+
+**`tipo` è una stringa e non un insieme chiuso di casi.** `torrent`, `locale`,
+`addon` sono altri modi di arrivare a un flusso: il giorno che arrivano non
+devono cambiare niente qui. È il costo — praticamente zero — deciso in
+`RISPOSTA-2.md` per tenere aperte quelle porte.
+
+**Verificato.** 147 test, di cui 6 nuovi in `tests/test_fonte.py`. Uno
+fallisce se qualcuno reintroduce `class Lettore` o `class Estratto`, o se un
+modello torna a scrivere `estratto.` — perché la doppia strada non si rivede
+finché non si scrive la funzione dopo.
+
+Poi a mano: il lettore nostro dà due tracce e il bagliore, `m=loro` dà
+l'iframe senza bagliore, e una cella del muro che non si estrae ripiega sul
+lettore della piattaforma. Identico a prima, con un tipo solo.

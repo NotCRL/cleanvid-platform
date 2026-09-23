@@ -40,7 +40,10 @@ _cliente: redis.Redis | None = None
 # I prefissi stanno qui e non sparsi nel codice: un giorno si vorranno contare
 # o svuotare, e serve sapere come si chiamano.
 CHIAVE_FLUSSO = "flusso:"       # token -> cosa proxare
-CHIAVE_ESTRAZIONE = "estr:"     # (url, qualita) -> il risultato dell'estrazione
+# `estr2`: la forma di cio' che si ricorda e' cambiata quando `Lettore` ed
+# `Estratto` sono diventati una cosa sola. Cambiare prefisso fa ignorare le
+# righe vecchie invece di leggerle male.
+CHIAVE_ESTRAZIONE = "estr2:"     # (url, qualita) -> il risultato dell'estrazione
 CHIAVE_ANNUNCI = "ads:"         # token -> quanti segmenti pubblicitari tolti
 CHIAVE_ULTIMA = "lista:"        # l'ultima playlist con dentro roba vera
 

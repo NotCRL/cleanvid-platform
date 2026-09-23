@@ -19,7 +19,8 @@ from __future__ import annotations
 
 import re
 import urllib.parse
-from dataclasses import dataclass
+
+from .fonte import INCORNICIATA, Fonte
 
 # (nome, come riconoscerlo, come costruire l'indirizzo del lettore)
 _SCHEMI: list[tuple[str, str, str]] = [
@@ -48,13 +49,6 @@ _SCHEMI: list[tuple[str, str, str]] = [
 ]
 
 
-@dataclass(slots=True)
-class Lettore:
-    piattaforma: str
-    url_lettore: str
-    diretta_probabile: bool = False
-
-
 def piattaforma_di(url: str) -> str:
     """Il nome del sito, senza toccare la rete. Stringa vuota se sconosciuto."""
     for nome, schema, _ in _SCHEMI:
@@ -65,7 +59,7 @@ def piattaforma_di(url: str) -> str:
 
 
 def lettore_ufficiale(url: str, host_pagina: str = "localhost",
-                      per_cella: bool = False) -> Lettore | None:
+                      per_cella: bool = False) -> Fonte | None:
     """L'indirizzo del lettore incorporabile, o None se quel sito non ne ha.
 
     `host_pagina` serve a Twitch, che rifiuta di farsi incorniciare se il
@@ -99,10 +93,13 @@ def lettore_ufficiale(url: str, host_pagina: str = "localhost",
             indirizzo = indirizzo.replace(
                 f"parent={host_pagina}",
                 f"parent={host_pagina}&parent=localhost&parent=127.0.0.1")
-        return Lettore(
+        return Fonte(
+            tipo=INCORNICIATA,
+            indirizzo=indirizzo,
             piattaforma=nome,
-            url_lettore=indirizzo,
-            diretta_probabile=(nome == "Twitch" and "/videos/" not in url),
+            # di una diretta di Twitch lo sappiamo dall'indirizzo; per tutto
+            # il resto, dentro un iframe, non si puo' sapere
+            diretta=(nome == "Twitch" and "/videos/" not in url),
         )
     return None
 

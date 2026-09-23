@@ -28,7 +28,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..db import sessione
 from ..lingue import testi
 from ..media.embed import chat_incorporabile, lettore_ufficiale, piattaforma_di
-from ..media.estrazione import Estratto, NonEstraibile, risolvi
+from ..media.estrazione import NonEstraibile, risolvi
+from ..media.fonte import Fonte
 from ..media.qualita import QUALITA
 from ..models import Genere, Utente
 from ..web.pagine import modelli
@@ -110,36 +111,33 @@ async def cella(
     # solo mandare messaggi e sperare. Al nostro <video> parliamo diretto, e
     # «l'audio su un riquadro solo» - che e' il cuore del muro - funziona
     # davvero invece che quasi sempre.
-    estratto: Estratto | None = None
+    fonte: Fonte | None = None
     perche = ""
     try:
-        estratto = await risolvi(u, q)
+        fonte = await risolvi(u, q)
     except NonEstraibile as e:
         perche = str(e)
 
-    lettore = None
-    if estratto is None:
+    if fonte is None:
         # non si e' potuto estrarre: meglio il lettore loro che un riquadro
         # vuoto. I suoi comandi si spengono con `controls=0`, cosi' almeno il
         # volume resta uno solo.
-        lettore = lettore_ufficiale(
+        fonte = lettore_ufficiale(
             u, host_pagina=request.url.hostname or "localhost", per_cella=True)
-        if lettore is not None:
+        if fonte is not None:
             perche = ""
 
     # La chat solo se e' una diretta: il `live_chat` di YouTube su un video
     # registrato apre un riquadro con dentro un errore, che e' peggio di
     # niente.
-    in_diretta = bool(estratto and estratto.diretta) or bool(
-        lettore and lettore.diretta_probabile)
     chat = chat_incorporabile(
-        u, request.url.hostname or "localhost") if in_diretta else None
+        u, request.url.hostname or "localhost") if (
+            fonte and fonte.diretta) else None
 
     return modelli.TemplateResponse(request, "cella.html", {
         "c": c, "t": c.t, "url": u, "q": q,
         "piattaforma": piattaforma_di(u),
-        "lettore": lettore, "estratto": estratto, "perche": perche,
-        "chat": chat,
+        "fonte": fonte, "perche": perche, "chat": chat,
     })
 
 

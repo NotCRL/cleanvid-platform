@@ -18,7 +18,8 @@ from httpx import ASGITransport, AsyncClient
 from cleanvid.api import routes_watch
 from cleanvid.api.identita import COOKIE
 from cleanvid.main import app
-from cleanvid.media.estrazione import Estratto, NonEstraibile
+from cleanvid.media.estrazione import NonEstraibile
+from cleanvid.media.fonte import DIRETTA, Fonte
 
 
 async def test_chi_arriva_e_subito_un_utente(visitatore: AsyncClient) -> None:
@@ -98,9 +99,10 @@ async def test_un_sito_da_cui_non_esce_niente_lo_dice(
 async def test_il_lettore_si_monta_su_quello_che_esce_dall_estrazione(
         visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
     """Le due tracce separate devono arrivare al browser come due elementi."""
-    async def finge(url: str, qualita: str = "") -> Estratto:
-        return Estratto(token="tv", token_audio="ta", titolo="Prova",
-                        altezza=720)
+    async def finge(url: str, qualita: str = "") -> Fonte:
+        return Fonte(tipo=DIRETTA, indirizzo="/flusso/tv", token="tv",
+                     indirizzo_audio="/flusso/ta", token_audio="ta",
+                     titolo="Prova", altezza=720)
 
     monkeypatch.setattr(routes_watch, "risolvi", finge)
     pagina = (await visitatore.get(
