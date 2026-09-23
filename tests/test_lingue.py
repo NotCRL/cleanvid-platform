@@ -261,3 +261,69 @@ async def test_la_pagina_dichiara_icona_e_manifesto(
     pagina = (await visitatore.get("/it/")).text
     assert 'rel=manifest href="/manifest.webmanifest"' in pagina
     assert "apple-touch-icon" in pagina
+
+
+# --------------------------------------------------------------------------
+# la pagina «cos'è»
+# --------------------------------------------------------------------------
+
+async def test_la_pagina_cos_e_c_e_in_tutte_le_lingue(
+        visitatore: AsyncClient) -> None:
+    """Non è una pagina di cortesia: è dove sta scritto che cleanvid non
+    ospita niente. Se esiste solo in italiano, per tutti gli altri non
+    esiste."""
+    from markupsafe import escape
+
+    for codice in ("it", "en", "ja", "ar"):
+        r = await visitatore.get(f"/{codice}/cos-e")
+        assert r.status_code == 200
+        assert str(escape(catalogo(codice)["cose.non_fa.1"])) in r.text
+
+
+async def test_dice_le_quattro_cose_che_non_fa(visitatore: AsyncClient) -> None:
+    """«Cosa non fa» è la domanda a cui un servizio che apre contenuti di
+    altri deve saper rispondere senza cercare le parole.
+
+    Si confronta con il testo *sfuggito*: in pagina un apostrofo diventa
+    `&#39;`, e cercare la frase cruda fallirebbe su tutte quelle che ne hanno
+    uno - cioè su quasi tutte, in italiano.
+    """
+    from markupsafe import escape
+
+    pagina = (await visitatore.get("/it/cos-e")).text
+    for n in (1, 2, 3, 4):
+        assert str(escape(catalogo("it")[f"cose.non_fa.{n}"])) in pagina
+    assert str(escape(catalogo("it")["cose.responsabilita.testo"])) in pagina
+
+
+async def test_la_pagina_cos_e_si_fa_trovare(visitatore: AsyncClient) -> None:
+    """Chi cerca «cos'è cleanvid» deve trovarla: è nella mappa del sito, e
+    non è marcata `noindex` come le pagine dei video."""
+    assert "noindex" not in (await visitatore.get("/it/cos-e")).text
+    mappa = (await visitatore.get("/sitemap.xml")).text
+    assert "/it/cos-e</loc>" in mappa
+    assert "/ja/cos-e</loc>" in mappa
+
+
+async def test_il_piede_ci_rimanda(visitatore: AsyncClient) -> None:
+    assert 'href="/it/cos-e"' in (await visitatore.get("/it/")).text
+
+
+async def test_senza_contatto_quella_parte_non_compare(
+        visitatore: AsyncClient) -> None:
+    """In locale non c'è nessuno a cui scrivere, e una sezione vuota con un
+    titolo sopra sembra una cosa rotta. Online vanno riempiti."""
+    pagina = (await visitatore.get("/it/cos-e")).text
+    assert catalogo("it")["cose.segnalazioni.titolo"] not in pagina
+    assert catalogo("it")["cose.chi.titolo"] not in pagina
+
+
+def test_il_piede_non_promette_piu_cose_che_online_sono_false() -> None:
+    """Diceva «Gira sul tuo computer»: vero in locale, falso il giorno della
+    pubblicazione. E era una frase sulla privacy, cioè il tipo di
+    affermazione che non conviene avere sbagliata."""
+    for ling in LINGUE:
+        frase = catalogo(ling.codice)["piede.aperto"].lower()
+        for parola in ("tuo computer", "your own computer", "propio ordenador",
+                       "votre propre ordinateur", "eigenen rechner"):
+            assert parola not in frase, ling.codice

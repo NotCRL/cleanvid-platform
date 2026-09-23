@@ -1892,3 +1892,18 @@ body.vista-solo{overflow:hidden}
 @media (prefers-reduced-motion:reduce){
   .attesa::before{animation:none;opacity:.7}
 }
+
+
+/* La pagina «cos'è»: testo da leggere, non da scorrere.
+ *
+ * Righe corte e interlinea larga. E' l'unica pagina del sito fatta di prosa,
+ * e la larghezza che va bene a un elenco di video non va bene a un paragrafo:
+ * oltre una settantina di caratteri l'occhio perde la riga e ricomincia da
+ * quella sbagliata. */
+.testo{max-width:68ch;line-height:1.7;color:var(--text-3);font-size:14.5px;
+  margin:0 0 14px}
+.testo a{word-break:break-all}
+.puntato{max-width:68ch;margin:0;padding:0 0 0 20px;color:var(--text-3);
+  font-size:14.5px;line-height:1.7}
+.puntato li{margin:0 0 9px}
+.puntato li::marker{color:var(--accent)}

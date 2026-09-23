@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block titolo %}{{ t("meta.cose.titolo") }}{% endblock %}
+{% block descrizione %}{{ t("meta.cose.descrizione") }}{% endblock %}
+
+{% block contenuto %}
+<h1>{{ t("cose.titolo") }}</h1>
+<p class=lead>{{ t("cose.sommario") }}</p>
+
+<section class=sec>
+  <h2>{{ t("cose.fa.titolo") }}</h2>
+  <p class=testo>{{ t("cose.fa.testo") }}</p>
+</section>
+
+<section class=sec>
+  <h2>{{ t("cose.non_fa.titolo") }}</h2>
+  {# Questa e' la sezione che conta. Sta in una pagina sola, in tutte le
+     lingue, perche' «cosa non fa» e' la domanda a cui un servizio che apre
+     contenuti di altri deve saper rispondere senza cercare le parole. #}
+  <ul class=puntato>
+    {% for n in [1, 2, 3, 4] %}
+      <li>{{ t("cose.non_fa." ~ n) }}</li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class=sec>
+  <h2>{{ t("cose.responsabilita.titolo") }}</h2>
+  <p class=testo>{{ t("cose.responsabilita.testo") }}</p>
+</section>
+
+{% if contatto %}
+  <section class=sec>
+    <h2>{{ t("cose.segnalazioni.titolo") }}</h2>
+    <p class=testo>{{ t("cose.segnalazioni.testo") }}</p>
+    <p class=testo><a href="mailto:{{ contatto }}">{{ contatto }}</a></p>
+  </section>
+{% endif %}
+
+{% if gestore %}
+  <section class=sec>
+    <h2>{{ t("cose.chi.titolo") }}</h2>
+    <p class=testo>{{ t("cose.chi.testo", gestore=gestore) }}</p>
+  </section>
+{% endif %}
+
+<p style="margin-top:26px"><a href="/{{ c.lingua.codice }}/">← {{ t("piede.torna_home") }}</a></p>
+{% endblock %}

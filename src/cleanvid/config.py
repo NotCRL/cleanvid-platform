@@ -31,6 +31,14 @@ class Impostazioni(BaseSettings):
     estrazioni_insieme: int = 4         # yt-dlp contemporanei: oltre, la CPU muore
     timeout_estrazione_s: int = 45
 
+    # --- chi gestisce il servizio ---
+    # Vanno riempiti prima di pubblicare. Stanno qui e non nel codice perche'
+    # cambiano da un'installazione all'altra: chi si tira su il proprio
+    # cleanvid deve poterci mettere il suo nome e il suo indirizzo senza
+    # toccare una riga.
+    contatto: str = ""          # a chi si scrive per una segnalazione
+    gestore: str = ""           # chi risponde di questa installazione
+
     # Dove finiscono le copertine scaricate. Su disco e non nel database:
     # sono file, e un database non e' un filesystem con piu' passaggi.
     cartella_copertine: str = "var/copertine"

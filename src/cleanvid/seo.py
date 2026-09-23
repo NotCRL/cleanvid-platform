@@ -108,6 +108,7 @@ def robots() -> str:
 # soli su ogni pagina del sito.
 INDICIZZABILI: tuple[tuple[str, str], ...] = (
     ("/", "1.0"),                 # la home
+    ("/cos-e", "0.6"),            # chi cerca «cos'e' cleanvid» deve trovarla
     ("/impostazioni", "0.3"),
 )
 

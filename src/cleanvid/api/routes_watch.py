@@ -28,6 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import Response
 
 from .. import seo
+from ..config import impostazioni
 from ..db import sessione
 from ..lingue import esiste
 from ..media.annunci import segmenti
@@ -203,6 +204,23 @@ async def guarda(
                        voce, diretta=bool(fonte and fonte.diretta)),
                    e_preferito=bool(await biblioteca.quali_preferiti(
                        db, c.utente.id, [url])))
+
+
+@router.get("/cos-e", response_class=HTMLResponse)
+async def cos_e(
+    request: Request,
+    c: Contesto = Depends(contesto),
+) -> Response:
+    """Cosa fa questo servizio, e soprattutto cosa non fa.
+
+    Non e' una pagina di cortesia: e' il posto dove sta scritto che cleanvid
+    non ospita niente, che la responsabilita' di quello che si apre e' di chi
+    lo apre, e a chi si scrive per una segnalazione. Serve prima di
+    pubblicare, non dopo.
+    """
+    cfg = impostazioni()
+    return _pagina(request, "cos-e.html", c,
+                   contatto=cfg.contatto, gestore=cfg.gestore)
 
 
 @router.get("/impostazioni", response_class=HTMLResponse)

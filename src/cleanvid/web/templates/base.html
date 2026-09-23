@@ -72,7 +72,11 @@
 
   <footer class=foot>
     <p>{% block piede %}{{ t("piede.aperto") }}{% endblock %}</p>
-    <p><a href="/{{ c.lingua.codice }}/impostazioni">{{ t("piede.lingua") }}: {{ c.lingua.nome }}</a></p>
+    <p>
+      <a href="/{{ c.lingua.codice }}/cos-e">{{ t("piede.cose") }}</a>
+      &nbsp;·&nbsp;
+      <a href="/{{ c.lingua.codice }}/impostazioni">{{ t("piede.lingua") }}: {{ c.lingua.nome }}</a>
+    </p>
   </footer>
 </main>
 {% block coda %}{% endblock %}

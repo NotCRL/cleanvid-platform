@@ -1573,3 +1573,68 @@ aperto» — e senza saperlo si cerca per un'ora nel posto sbagliato.
 **Verificato.** 156 test, di cui 9 nuovi sulla regola di scelta. Poi a mano su
 un video vero: 5 tracce in pagina, e il VTT servito da noi come
 `text/vtt; charset=utf-8`.
+
+---
+
+## 2026-09-23 — La pagina «cos'è», e il piede che diceva una cosa falsa
+
+Terzo punto del §10 di [`confronti/RISPOSTA-2.md`](confronti/RISPOSTA-2.md), e
+l'unico dei tre che **va fatto prima di pubblicare**, non quando capita.
+
+### Il piede
+
+Diceva: *«Gira sul tuo computer: i link che apri e quelli che salvi restano
+qui, non passano da nessun servizio esterno.»*
+
+Vero in locale. **Falso il giorno della pubblicazione** — ed è una frase sulla
+privacy, cioè il tipo di affermazione che non conviene avere sbagliata su un
+sito che usano altri. Era segnalato nel registro da due giorni; adesso è
+corretto in tutte e quattordici le lingue:
+
+> cleanvid non ospita né carica video: apre quelli che il sito di partenza
+> serve già.
+
+Questa è vera in locale e online. Un test fallisce se qualcuno ci rimette
+«il tuo computer», in una qualsiasi delle lingue.
+
+### La pagina
+
+`/{lingua}/cos-e`, in tutte e quattordici. Non è una pagina di cortesia: è
+dove sta scritto che cleanvid non ospita niente, di chi è la responsabilità
+di quello che si apre, e a chi si scrive per una segnalazione.
+
+La sezione che conta è **«cosa non fa»**, quattro punti:
+
+1. non ospita e non carica nessun video — se il sito di partenza smette, qui
+   non c'è niente da mostrare;
+2. non ha un catalogo e non cerca contenuti — si parte sempre da un indirizzo
+   che porta chi guarda;
+3. non aggira protezioni — i contenuti con DRM restano nelle loro
+   applicazioni;
+4. non toglie la pubblicità dentro il lettore di un'altra piattaforma — sul
+   web un sito non può intervenire dentro la pagina di un altro.
+
+Il quarto punto è anche la risposta tecnica alla domanda «perché non blocchi
+la pubblicità di YouTube come uBlock»: non è una scelta, è il modello di
+sicurezza del web.
+
+### Il contatto e il gestore sono configurazione
+
+`CLEANVID_CONTATTO` e `CLEANVID_GESTORE` stanno nell'ambiente, non nel codice:
+chi si tira su il proprio cleanvid deve poterci mettere il suo nome e il suo
+indirizzo senza toccare una riga.
+
+**Vuoti, quelle due sezioni non compaiono affatto.** In locale non c'è nessuno
+a cui scrivere, e un titolo sopra il nulla sembra una cosa rotta. Online vanno
+riempiti — ed è la cosa da ricordarsi il giorno della pubblicazione.
+
+### Si fa trovare
+
+È nella mappa del sito in tutte le lingue e non è `noindex`: chi cerca «cos'è
+cleanvid» deve trovarla. È anche l'unica pagina del sito fatta di prosa, e ha
+il suo stile — righe sotto i 68 caratteri, perché oltre l'occhio perde la riga
+e ricomincia da quella sbagliata.
+
+**Verificato.** 162 test, di cui 6 nuovi. Uno di questi è costato un giro: la
+pagina va confrontata con il testo **sfuggito**, perché in HTML un apostrofo
+diventa `&#39;` — e in italiano l'apostrofo c'è quasi in ogni frase.
