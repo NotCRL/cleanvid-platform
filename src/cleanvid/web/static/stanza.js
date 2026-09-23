@@ -144,6 +144,9 @@
           allinea();
           break;
         case "elenco": disegnaPresenti(messaggio.dati.persone || []); break;
+        case "messaggio": aggiungiDetto(messaggio.dati); break;
+        case "scrive": qualcunoScrive(messaggio.dati.nome); break;
+        case "errore": diNo(messaggio.dati.perche); break;
         default: break;
       }
     };
@@ -180,6 +183,85 @@
     });
     const conta = document.getElementById("quanti");
     if (conta) conta.textContent = String(persone.length);
+  }
+
+  /* --- la chat ------------------------------------------------------------
+     Sta sullo stesso filo della sincronia: una stanza che si sente ma non si
+     legge, o viceversa, sarebbe due stanze. E se il filo cade, cadono
+     insieme - il che e' la verita' e si vede, invece di una chat che finge
+     di funzionare mentre il video non e' piu' allineato. */
+  const elencoDetti = document.getElementById("dettichat");
+  const modulo = document.getElementById("dico");
+  const riga = modulo && modulo.querySelector("input");
+  const avviso = document.getElementById("stascrivendo");
+  let scadenzaScrive = 0;
+  let ultimoScrive = 0;
+
+  function inFondo() {
+    // si segue la conversazione solo se la si stava gia' seguendo: portare
+    // in fondo uno che sta rileggendo indietro glielo strappa di mano
+    return elencoDetti.scrollHeight - elencoDetti.scrollTop
+      - elencoDetti.clientHeight < 60;
+  }
+
+  function aggiungiDetto(dati) {
+    if (!elencoDetti || !dati || !dati.testo) return;
+    const seguiva = inFondo();
+    const vuota = elencoDetti.querySelector(".vuota");
+    if (vuota) vuota.remove();
+    const li = document.createElement("li");
+    li.className = dati.mio ? "detto mio" : "detto";
+    const chi = document.createElement("b");
+    chi.textContent = dati.nome || "";
+    const cosa = document.createElement("span");
+    // textContent e non innerHTML: quello che scrive uno finisce sullo
+    // schermo di tutti gli altri, ed e' l'unico posto del sito dove succede
+    cosa.textContent = dati.testo;
+    li.append(chi, cosa);
+    elencoDetti.appendChild(li);
+    if (seguiva) elencoDetti.scrollTop = elencoDetti.scrollHeight;
+    if (avviso) avviso.hidden = true;
+  }
+
+  function qualcunoScrive(nome) {
+    if (!avviso || !riga) return;
+    avviso.textContent = (riga.dataset.staScrivendo || "{chi}")
+      .replace("{chi}", nome || "");
+    avviso.hidden = false;
+    scadenzaScrive = Date.now() + 3000;
+  }
+
+  function diNo(perche) {
+    if (!avviso || !riga) return;
+    if (perche !== "troppo_in_fretta") return;
+    avviso.textContent = riga.dataset.inFretta || "";
+    avviso.hidden = false;
+    scadenzaScrive = Date.now() + 3000;
+  }
+
+  if (modulo && riga) {
+    modulo.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const testo = riga.value.trim();
+      if (!testo) return;
+      manda("messaggio", { testo });
+      riga.value = "";
+    });
+    // «sta scrivendo» al massimo una volta ogni due secondi: e' un indizio,
+    // non un telegrafo, e mandarlo a ogni tasto sarebbe l'unico messaggio
+    // del protocollo a fare piu' traffico del video
+    riga.addEventListener("input", () => {
+      const adesso = Date.now();
+      if (adesso - ultimoScrive < 2000 || !riga.value) return;
+      ultimoScrive = adesso;
+      manda("scrive", {});
+    });
+    setInterval(() => {
+      if (avviso && !avviso.hidden && Date.now() > scadenzaScrive) {
+        avviso.hidden = true;
+      }
+    }, 500);
+    if (elencoDetti) elencoDetti.scrollTop = elencoDetti.scrollHeight;
   }
 
   /* --- avvio -------------------------------------------------------------- */

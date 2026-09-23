@@ -113,3 +113,14 @@ SCARTO_SALTO = 1.2      # s: oltre questo si salta, sotto si insegue piano
 SCARTO_OK = 0.15        # s: sotto questo siamo allineati, non si tocca niente
 CORREZIONE_MAX = 0.08   # +/- 8% di velocita': oltre, l'orecchio se ne accorge
 BATTITO_OGNI = 4.0      # s: ogni quanto chi comanda dice dov'e'
+
+# --- la chat ----------------------------------------------------------------
+# Il limite dei caratteri e' lo stesso della colonna nel database: due limiti
+# diversi vorrebbero dire un messaggio accettato qui e troncato la'.
+CHAT_MASSIMO = 800
+# Il freno alla raffica. Non e' contro lo spam di mestiere - per quello
+# servirebbe altro - e' contro il dito appoggiato sull'invio e contro un
+# cliente scritto male che rimanda in ciclo.
+CHAT_RAFFICA = 5        # messaggi
+CHAT_FINESTRA = 5.0     # secondi
+CHAT_STORIA = 50        # quanti se ne rileggono entrando

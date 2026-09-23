@@ -27,6 +27,7 @@
   </p>
 </header>
 
+<div class="scena-stanza{% if fonte %} con-palco{% endif %}">
 {% if fonte %}
   {# Il lettore e' lo stesso della pagina singola: la stanza non ha un suo
      lettore, ha lo stesso con qualcuno che gli dice dove stare. #}
@@ -58,6 +59,31 @@
     {{ perche or t("stanze.niente_video_testo") }}
   </div>
 {% endif %}
+
+  {# La chat della stanza. Non e' quella di Twitch dentro un iframe: e' la
+     nostra, sullo stesso filo della sincronia, e i messaggi restano - chi
+     entra a meta' serata legge da dove si e' arrivati. #}
+  <section class=chat-stanza>
+    <h2>{{ t("stanze.chat.titolo") }}</h2>
+    <ol id=dettichat class=dettichat>
+      {% for m in chat %}
+        <li class="detto{% if m.autore_id == utente.id %} mio{% endif %}">
+          <b>{{ m.autore_nome }}</b> <span>{{ m.testo }}</span>
+        </li>
+      {% else %}
+        <li class=vuota>{{ t("stanze.chat.vuota") }}</li>
+      {% endfor %}
+    </ol>
+    <p id=stascrivendo class=stascrivendo hidden></p>
+    <form id=dico class=dico autocomplete=off>
+      <input type=text name=testo maxlength="{{ chat_massimo }}"
+             placeholder="{{ t('stanze.chat.scrivi') }}"
+             data-in-fretta="{{ t('stanze.chat.troppo_in_fretta') }}"
+             data-sta-scrivendo="{{ t('stanze.chat.sta_scrivendo') }}">
+      <button class=chip><i>&#8593;</i><span>{{ t("stanze.chat.manda") }}</span></button>
+    </form>
+  </section>
+</div>
 
 <div class=azioni>
   {% if e_padrone %}

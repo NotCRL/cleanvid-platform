@@ -24,12 +24,12 @@ import asyncio
 import json
 import time
 import uuid
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 
 from fastapi import WebSocket
 
 from ..media import deposito
-from .protocol import Messaggio, StatoRiproduzione, Tipo
+from .protocol import CHAT_FINESTRA, CHAT_RAFFICA, Messaggio, StatoRiproduzione, Tipo
 
 CHIAVE_STATO = "stanza:"
 # Quanto sopravvive lo stato di una stanza senza che nessuno la tocchi. Corto
@@ -45,6 +45,18 @@ class Presente:
     utente_id: uuid.UUID
     nome: str
     comanda: bool = False
+    # gli istanti degli ultimi messaggi di chat, per il freno alla raffica.
+    # Sta sulla connessione e non sull'utente di proposito: e' la finestra
+    # aperta che sta scrivendo troppo, e chiudendola il conto riparte - che e'
+    # esattamente quello che si vuole, perche' non e' una punizione.
+    scritti: list[float] = field(default_factory=list)
+
+    def puo_scrivere(self, adesso: float) -> bool:
+        self.scritti = [q for q in self.scritti if adesso - q < CHAT_FINESTRA]
+        if len(self.scritti) >= CHAT_RAFFICA:
+            return False
+        self.scritti.append(adesso)
+        return True
 
 
 class Hub:

@@ -9,14 +9,19 @@ sbagliate.
 
 from __future__ import annotations
 
+import uuid
 from collections.abc import AsyncIterator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from cleanvid.api.routes_stanze import MASSIMO_PER_UTENTE
 from cleanvid.main import app
+from cleanvid.models import MessaggioStanza, Stanza
 from cleanvid.rooms import codici
+from cleanvid.rooms.hub import Presente
 
 
 @pytest.fixture
@@ -170,3 +175,61 @@ async def test_chi_ha_aperto_la_stanza_non_si_chiede_la_password(
 ) -> None:
     codice = await _apri(visitatore, password="la parola giusta")
     assert (await visitatore.get(f"/it/stanza/{codice}")).status_code == 200
+
+
+# --------------------------------------------------------------------------
+# la chat
+# --------------------------------------------------------------------------
+
+def test_il_freno_alla_raffica_si_apre_da_solo() -> None:
+    """Non è una punizione: è un freno. Passata la finestra si riscrive."""
+    from cleanvid.rooms.protocol import CHAT_FINESTRA, CHAT_RAFFICA
+
+    chi = Presente(ws=None, utente_id=uuid.uuid4(), nome="tale")  # type: ignore[arg-type]
+    assert all(chi.puo_scrivere(100.0) for _ in range(CHAT_RAFFICA))
+    assert not chi.puo_scrivere(100.0)
+    assert chi.puo_scrivere(100.0 + CHAT_FINESTRA + 0.1)
+
+
+async def test_chi_entra_a_meta_serata_legge_da_dove_si_e_arrivati(
+    visitatore: AsyncClient, altro: AsyncClient, db: AsyncSession
+) -> None:
+    codice = await _apri(visitatore)
+    stanza = (await db.execute(
+        select(Stanza).where(Stanza.codice == codice))).scalar_one()
+    db.add(MessaggioStanza(stanza_id=stanza.id, autore_nome="tale",
+                           testo="siamo al minuto dieci"))
+    await db.commit()
+
+    assert "siamo al minuto dieci" in (await altro.get(f"/it/stanza/{codice}")).text
+
+
+async def test_quello_che_scrive_uno_non_diventa_codice_per_gli_altri(
+    visitatore: AsyncClient, altro: AsyncClient, db: AsyncSession
+) -> None:
+    """L'unico posto del sito dove il testo di una persona finisce sullo
+    schermo di un'altra. Se salta questo, salta tutto il resto con lui."""
+    codice = await _apri(visitatore)
+    stanza = (await db.execute(
+        select(Stanza).where(Stanza.codice == codice))).scalar_one()
+    db.add(MessaggioStanza(stanza_id=stanza.id, autore_nome="<b>furbo</b>",
+                           testo="<script>alert(1)</script>"))
+    await db.commit()
+
+    pagina = (await altro.get(f"/it/stanza/{codice}")).text
+    assert "<script>alert(1)</script>" not in pagina
+    assert "&lt;script&gt;" in pagina
+    assert "<b>furbo</b>" not in pagina
+
+
+async def test_la_chat_di_una_stanza_non_si_legge_senza_password(
+    visitatore: AsyncClient, altro: AsyncClient, db: AsyncSession
+) -> None:
+    codice = await _apri(visitatore, password="la parola giusta")
+    stanza = (await db.execute(
+        select(Stanza).where(Stanza.codice == codice))).scalar_one()
+    db.add(MessaggioStanza(stanza_id=stanza.id, autore_nome="tale",
+                           testo="una cosa privata"))
+    await db.commit()
+
+    assert "una cosa privata" not in (await altro.get(f"/it/stanza/{codice}")).text

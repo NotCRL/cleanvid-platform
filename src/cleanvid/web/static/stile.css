@@ -1943,3 +1943,32 @@ body.vista-solo{overflow:hidden}
 /* la porta di una stanza protetta: una domanda sola, al centro, senza il
    resto della pagina intorno a distrarre */
 .sec-stretta { max-width: 420px; margin: 40px auto; }
+
+/* ---------- la stanza: lettore e chat ----------
+   Due colonne quando c'e' spazio, una sotto l'altra quando non ce n'e'. La
+   soglia e' 1000px e non 760 perche' sotto i 1000 la chat toglie al lettore
+   piu' di quanto valga: si legge meglio sotto, e il video resta grande. */
+.scena-stanza{display:grid;gap:14px;margin:16px 0}
+.scena-stanza.con-palco{grid-template-columns:minmax(0,1fr) 320px}
+@media (max-width:1000px){.scena-stanza.con-palco{grid-template-columns:minmax(0,1fr)}}
+.scena-stanza > .palco{aspect-ratio:16/9;margin:0}
+
+.chat-stanza{display:flex;flex-direction:column;min-width:0;min-height:260px;
+  max-height:min(70vh,560px);background:var(--surface-2);
+  border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.chat-stanza h2{margin:0 0 8px;font-size:13px;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--text-2)}
+.dettichat{flex:1;min-height:0;overflow-y:auto;list-style:none;margin:0;
+  padding:0;display:flex;flex-direction:column;gap:6px}
+.detto{font-size:14px;line-height:1.35;word-break:break-word}
+.detto b{color:var(--text-2);font-weight:600;margin-right:5px}
+.detto.mio b{color:var(--accent)}
+.dettichat .vuota{color:var(--text-3);font-size:13px}
+/* Riservato sempre, non solo mentre qualcuno scrive: se comparisse e
+   sparisse, la riga sotto salterebbe su e giu' a ogni tasto premuto. */
+.stascrivendo{min-height:16px;margin:6px 0 0;font-size:12px;color:var(--text-3)}
+.stascrivendo[hidden]{display:block;visibility:hidden}
+.dico{display:flex;gap:6px;margin-top:8px}
+.dico input{flex:1;min-width:0;background:var(--surface-3);color:var(--text);
+  border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit}
+.dico input:focus{outline:2px solid var(--accent);outline-offset:-1px}

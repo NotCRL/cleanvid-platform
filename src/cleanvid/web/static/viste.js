@@ -66,6 +66,20 @@
     if (tag === "input" || tag === "textarea" || tag === "select") return;
     const v = video();
 
+    /* Se il fuoco e' dentro al lettore, i tasti sono suoi.
+     *
+     * I comandi del browser stanno in un'ombra che da qui non si vede: quando
+     * si apre la barra del volume e la si muove con le frecce, l'evento
+     * arriva qui con `target` uguale al <video>, e il controllo sul tag non
+     * lo ferma. Risultato: le frecce saltavano di cinque secondi invece di
+     * alzare il volume, e il volume non si poteva piu' toccare da tastiera.
+     *
+     * Non si perde niente a cedere: con i comandi accesi il browser fa gia'
+     * le stesse cose - frecce per scorrere, spazio per la pausa - sul
+     * sottocomando che ha il fuoco, che e' esattamente quello che uno si
+     * aspetta. Le nostre scorciatoie restano quelle della pagina. */
+    if (v && document.activeElement === v) return;
+
     switch (e.key.toLowerCase()) {
       case "t":
         if (teatro.classList.contains("solo")) break;   // li' non vuol dire niente

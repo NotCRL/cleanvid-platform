@@ -1817,3 +1817,94 @@ protetta viene rifiutato prima ancora di aprirsi (403 in stretta di mano).
 `routes_watch` e `routes_muro`, e non nella rotta nuova. I test passavano
 lanciando yt-dlp per davvero. Chi aggiunge una rotta che risolve un video
 aggiunga la riga lì.
+
+---
+
+## Passo 5, secondo tempo: la chat della stanza
+
+23 settembre 2026.
+
+**Cosa cambia.** Nella stanza si parla. Non è la chat di Twitch dentro un
+iframe: è la nostra, e i messaggi restano — chi entra a metà serata legge da
+dove si è arrivati.
+
+### Sullo stesso filo della sincronia
+
+Un secondo canale sarebbe stato più facile da scrivere e peggiore da usare:
+una stanza che si sente ma non si legge — o il contrario — sono due stanze. Su
+un filo solo, se cade cade tutto insieme, e **si vede**: la spia si spegne,
+invece di una chat che continua a funzionare mentre il video non è più
+allineato.
+
+### Scrivono tutti, comanda uno
+
+I due messaggi della chat si gestiscono **prima** del cancello che ferma gli
+ospiti: comandare la riproduzione è di uno, parlare è di tutti. È la prima
+volta che il protocollo ha un messaggio che non è un privilegio, e la
+distinzione si vede nell'ordine del codice.
+
+### Si salva prima di mandarlo in giro
+
+Al contrario, chi lo riceve lo vedrebbe comparire e poi sparire alla prima
+ricarica, senza mai sapere quali dei messaggi letti esistono davvero. E il
+nome dell'autore si copia nella riga invece di leggerlo dopo: se domani cambia
+nome, la chat di ieri resta leggibile com'era.
+
+### L'id dell'autore non gira
+
+La copia che torna a chi ha scritto ha `mio: true` — serve alla pagina per
+disegnarlo dalla sua parte — e viaggia **solo a lui**. Agli altri va il nome e
+basta. In una stanza si vede un nome, non un identificativo con cui
+riconoscere la stessa persona altrove: costava una riga in più, e il giorno
+delle stanze anonime sarebbe costato molto di più toglierlo.
+
+### Il freno alla raffica
+
+Cinque messaggi in cinque secondi, contati **sulla connessione** e non
+sull'utente. Non è contro lo spam di mestiere — per quello servirebbe altro —
+è contro il dito appoggiato sull'invio e contro un cliente scritto male che
+rimanda in ciclo. Chiudendo la finestra il conto riparte, ed è giusto così:
+non è una punizione.
+
+### `textContent`, non `innerHTML`
+
+La chat della stanza è **l'unico posto del sito** dove il testo scritto da una
+persona finisce sullo schermo di un'altra. Un test lo tiene fermo dai due
+lati: la storia stampata dal server esce con `&lt;script&gt;`, e il ramo
+dal vivo costruisce i nodi invece di incollare stringhe.
+
+### Il «sta scrivendo» è l'unico messaggio che si può perdere
+
+Non si salva, non torna a chi lo manda, e parte al massimo una volta ogni due
+secondi: è un indizio, non un telegrafo. A ogni tasto sarebbe stato l'unico
+messaggio del protocollo a fare più traffico del video.
+
+La riga sotto la chat è riservata sempre, anche quando è vuota: se comparisse
+e sparisse, il campo di scrittura salterebbe su e giù a ogni tasto premuto.
+
+**Verificato.** 194 test, di cui 4 nuovi. Poi dal vivo, due filoni veri: un
+ospite che non comanda scrive e il padrone legge, chi ha scritto riceve la sua
+copia con `mio`, il «sta scrivendo» arriva agli altri e non a chi lo manda,
+nove messaggi di fila passano quattro e prendono cinque rifiuti
+`troppo_in_fretta`, un messaggio di soli spazi non parte, e dopo la ricarica la
+chat è ancora lì.
+
+---
+
+## Le frecce tolte al volume
+
+23 settembre 2026. Segnalato da Carlo: *«nei video non mi fa modificare il
+volume»*.
+
+**Cosa succedeva.** I comandi del lettore del browser stanno in un'ombra che
+dalla pagina non si vede. Quando si apre la barra del volume e la si muove con
+le frecce, l'evento arriva alla pagina con `target` uguale al `<video>`: il
+controllo che escludeva `input`, `textarea` e `select` non lo fermava, e la
+scorciatoia di `viste.js` saltava di cinque secondi **invece** di alzare il
+volume. Da tastiera il volume era intoccabile.
+
+**Come è fatto.** Se il fuoco è dentro al lettore, i tasti sono suoi: la
+scorciatoia si ritira. Non si perde niente — con i comandi accesi il browser fa
+già le stesse cose, frecce per scorrere e spazio per la pausa, sul sottocomando
+che ha il fuoco, che è esattamente quello che uno si aspetta. Le nostre
+scorciatoie restano quelle della pagina.

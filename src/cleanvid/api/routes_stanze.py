@@ -34,10 +34,25 @@ from starlette.status import HTTP_303_SEE_OTHER
 from ..db import fabbrica, sessione
 from ..media.estrazione import NonEstraibile, risolvi
 from ..media.fonte import Fonte
-from ..models import MembroStanza, RuoloInStanza, Stanza, Utente, Visibilita
+from ..models import (
+    MembroStanza,
+    MessaggioStanza,
+    RuoloInStanza,
+    Stanza,
+    Utente,
+    Visibilita,
+)
 from ..rooms import codici, protocol
 from ..rooms.hub import Presente, hub
-from ..rooms.protocol import PERMESSI, Messaggio, StatoRiproduzione, Tipo, Verso
+from ..rooms.protocol import (
+    CHAT_MASSIMO,
+    CHAT_STORIA,
+    PERMESSI,
+    Messaggio,
+    StatoRiproduzione,
+    Tipo,
+    Verso,
+)
 from ..web.pagine import modelli
 from . import credenziali
 from .contesto import Contesto, contesto
@@ -203,9 +218,18 @@ async def stanza(
             if fonte is not None:
                 perche = ""
 
+    # gli ultimi messaggi: chi entra a meta' serata deve poter leggere da
+    # dove si e' arrivati, non trovare una stanza muta
+    recenti = list(reversed((await db.execute(
+        select(MessaggioStanza)
+        .where(MessaggioStanza.stanza_id == trovata.id)
+        .order_by(MessaggioStanza.id.desc())
+        .limit(CHAT_STORIA))).scalars().all()))
+
     return modelli.TemplateResponse(request, "stanza.html", {
         "c": c, "t": c.t, "utente": c.utente,
-        "stanza": trovata, "e_padrone": e_padrone,
+        "stanza": trovata, "e_padrone": e_padrone, "chat": recenti,
+        "chat_massimo": CHAT_MASSIMO,
         "fonte": fonte, "perche": perche,
         "quanti": hub.quanti(codice),
         "soglie": {
@@ -326,6 +350,43 @@ async def filo(websocket: WebSocket, lingua_url: str, codice: str) -> None:
         await hub.a_tutti(codice, await hub.elenco(codice))
 
 
+async def _scrivi(codice: str, chi: Presente, dati: dict[str, object],
+                  stanza_id: uuid.UUID, adesso: float) -> None:
+    """Un messaggio di chat: lo scrivono tutti, anche chi non comanda.
+
+    Si salva **prima** di mandarlo in giro. Al contrario, chi lo riceve lo
+    vedrebbe comparire e poi sparire alla prima ricarica, e non saprebbe mai
+    quali dei messaggi che ha letto esistono davvero.
+
+    Il nome dell'autore si copia adesso invece di leggerlo dopo: se domani
+    cambia nome, la chat di ieri deve restare leggibile com'era.
+    """
+    testo = str(dati.get("testo") or "").strip()[:CHAT_MASSIMO]
+    if not testo:
+        return
+    if not chi.puo_scrivere(adesso):
+        await chi.ws.send_json(Messaggio(
+            tipo=Tipo.ERRORE, dati={"perche": "troppo_in_fretta"},
+            t_server=adesso).json())
+        return
+
+    async with fabbrica()() as db:
+        riga = MessaggioStanza(stanza_id=stanza_id, autore_id=chi.utente_id,
+                               autore_nome=chi.nome, testo=testo)
+        db.add(riga)
+        await db.commit()
+
+    # Chi l'ha scritto riceve una copia con «mio»: serve alla pagina per
+    # disegnarlo dalla sua parte. Non si manda l'id dell'autore a tutti
+    # proprio per non farlo: in una stanza si vede un nome, non un
+    # identificativo con cui riconoscere la stessa persona altrove.
+    await hub.a_tutti(codice, Messaggio(tipo=Tipo.MESSAGGIO, dati={
+        "nome": chi.nome, "testo": testo}), tranne=chi)
+    await chi.ws.send_json(Messaggio(
+        tipo=Tipo.MESSAGGIO, dati={"nome": chi.nome, "testo": testo, "mio": True},
+        t_server=adesso).json())
+
+
 def asdict_stato(s: StatoRiproduzione) -> dict[str, object]:
     return {"url": s.url, "titolo": s.titolo, "posizione": s.posizione,
             "in_corsa": s.in_corsa, "velocita": s.velocita,
@@ -357,6 +418,18 @@ async def _gestisci(codice: str, chi: Presente, arrivato: dict[str, object],
         await chi.ws.send_json(Messaggio(
             tipo=Tipo.PONG, dati={"tuo": dati.get("tuo")},
             t_server=adesso).json())
+        return
+
+    if tipo is Tipo.MESSAGGIO:
+        await _scrivi(codice, chi, dati, stanza_id, adesso)
+        return
+
+    if tipo is Tipo.SCRIVE:
+        # effimero: non si salva e non torna a chi l'ha mandato. Se si
+        # perde per strada non e' successo niente - e' il solo messaggio
+        # del protocollo di cui questo sia vero
+        await hub.a_tutti(codice, Messaggio(
+            tipo=Tipo.SCRIVE, dati={"nome": chi.nome}), tranne=chi)
         return
 
     if not chi.comanda:
