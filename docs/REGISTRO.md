@@ -1409,3 +1409,44 @@ secondi di CPU in cache condivisa, le copertine kilobyte, il database niente.
 Con un fornitore europeo 20 TB inclusi sono ~8.900 ore-spettatore; con un
 hyperscaler la stessa stanza costa quattro euro. **Dove si ospita decide il
 modello di business più della lista delle funzioni.**
+
+---
+
+## 2026-09-23 — Terza risposta: gratuito, donazioni, sostegno
+
+Terzo documento dell'altra IA, sull'idea originale e sulle donazioni, più la
+precisazione di Carlo: **le donazioni servirebbero a sbloccare funzioni**.
+Lettura e conclusioni in [`confronti/RISPOSTA-3.md`](confronti/RISPOSTA-3.md).
+
+**Il punto.** Il documento distingue bene donazione da premium; la
+precisazione la cancella. Se una donazione sblocca funzioni non è una
+donazione, è un pagamento — e la differenza non è di parole:
+
+- il fisco guarda la sostanza: è un ricavo, con IVA nel paese del cliente
+  (OSS) e partita IVA se continuativo. Da chiedere a un commercialista
+  **prima** di aprire il bottone;
+- PayPal riserva il prodotto «Donazioni» a enti registrati in molti paesi:
+  usarlo per una vendita viola i termini, e il conto si congela;
+- **la crypto non può fare ricorrente** — sulla blockchain non esiste il RID —
+  e per sbloccare bisogna sapere chi ha pagato, che con la crypto è più
+  lavoro e peggio.
+
+**Quindi i vincoli decidono da soli: una tantum che sblocca un periodo.**
+Niente rinnovi falliti, niente disdette, niente storni su rinnovo automatico,
+e funziona anche in crypto.
+
+**Tre cose separate:** gratis per sempre (URL → fonti → scelta → player, che è
+anche il motore di crescita), a pagamento le cose che costano banda, donazioni
+vere accanto. Possono convivere, non possono essere lo stesso bottone.
+
+**Il limite del piano gratuito dev'essere un costo vero, non una cattiveria:**
+1080p costa 2,5 volte 480p. Nessuna funzione tolta, solo il conto riflesso nel
+prezzo.
+
+**La proposta più forte: paga chi apre la stanza, chi entra no.** Il costo è
+concentrato lì, il valore è di chi organizza, chi entra prova gratis, e un
+pagante porta dieci utenti invece di respingerli.
+
+**Da fare adesso: niente.** Solo ricordarsi, scrivendo le stanze, che se paga
+chi apre allora la stanza ha bisogno di un padrone con dei diritti — e il
+padrone c'è già.
