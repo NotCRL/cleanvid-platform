@@ -1305,3 +1305,49 @@ Safari conosce ancora solo il primo.
 aggirabile da qui: gli spot arrivano dentro gli stessi byte del video, e
 l'unico modo di non aspettarli sarebbe chiedere a Twitch un flusso diverso —
 cosa che richiede rifare la loro procedura di autorizzazione, non un ritocco.
+
+---
+
+## 2026-09-23 — Risposta al dossier comparativo
+
+Arrivato un dossier scritto da un altro modello che confronta cleanvid con
+Stremio e Hydra e propone una direzione architetturale. Sta in
+[`confronti/CONFRONTI.md`](confronti/CONFRONTI.md); la lettura critica in
+[`confronti/RISPOSTA.md`](confronti/RISPOSTA.md).
+
+**Il punto principale.** Il dossier analizza il file unico e propone una
+roadmap in sei fasi per modularizzarlo. Quelle sei fasi sono già state fatte
+il 21 e 22 settembre, in questo progetto — compresi i sette test su HLS che
+propone al §11, che esistono già uno per uno in `tests/test_manifesto.py`.
+Seguirlo com'è scritto vuol dire rifare due giorni di lavoro.
+
+**Quello che vale la pena prendere, in ordine:**
+
+1. *Unificare `Lettore` ed `Estratto`.* Due tipi per la stessa cosa, che la
+   pagina deve distinguere 22 volte in `guarda.html`, 8 in `cella.html`, 6
+   nelle rotte. Ogni funzione nuova va pensata due volte. Questo il dossier
+   lo vede da fuori meglio di come lo vedevamo da dentro.
+2. *I sottotitoli.* Compaiono nel suo oggetto `Stream` quasi di sfuggita, e
+   da noi non esistono proprio. yt-dlp li dà gratis.
+3. *Il confine legale (§14).* La parte migliore del documento, e la più
+   urgente. Rafforza quello che è già scritto qui sopra sulla riga in fondo
+   alla pagina, che diventa falsa il giorno che si pubblica.
+
+**Quello che non prenderemmo:** il registro di provider con
+`can_handle`/`resolve`. Abbiamo due resolver, e yt-dlp è già il sistema a
+plugin per 1.800 siti. È anche l'unica contraddizione interna del dossier,
+che al §15 dice di non fare tutto un plugin e al §9 lo propone.
+
+**Quello che manderebbe indietro:** l'albero del §8 mette `filtering/` e
+`browser/` fra i moduli centrali. Appartengono alla modalità ascolto, che su
+un servizio pubblico non può esistere.
+
+**Il punto cieco:** non nomina mai registrazione, stanze e watchparty, cioè
+l'intero motivo per cui questo progetto esiste. Ha analizzato uno strumento
+locale monoutente e propone l'architettura di uno strumento locale
+monoutente.
+
+**Dove converge, e conta.** Ha scelto in autonomia la stessa prima mossa —
+estrarre per primo il modulo HLS perché è codice puro — ed è arrivato alle
+stesse conclusioni su torrent e modalità ascolto. Il valore di questo dossier
+non è il piano: è la conferma.

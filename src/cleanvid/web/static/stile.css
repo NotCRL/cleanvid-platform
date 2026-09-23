@@ -485,7 +485,7 @@ body.cell{background:#000}
 #lag.ok{color:var(--ok)} #lag.behind{color:var(--warn)}
 
 /* ---------- pagina di presentazione ---------- */
-.page{width:100%;max-width:1060px;margin:0 auto;padding:0 22px 60px}
+.page{width:100%;max-width:100%;margin:0 auto;padding:0 22px 60px}
 .hero{padding:76px 0 52px;text-align:center;position:relative}
 .hero::before{content:'';position:absolute;top:-80px;left:50%;
   transform:translateX(-50%);width:760px;max-width:120vw;height:360px;
@@ -990,7 +990,7 @@ details.disco .sec:first-of-type{padding-top:16px}
   padding-bottom:8px;margin-bottom:-8px;scrollbar-width:thin;
   -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 46px),transparent);
   mask-image:linear-gradient(90deg,#000 calc(100% - 46px),transparent)}
-.rack.scorre > .vcard{flex:0 0 200px;scroll-snap-align:start}
+.rack.scorre > .vcard{flex:0 0 450px;scroll-snap-align:start}
 .rack.scorre::-webkit-scrollbar{height:8px}
 
 .vcard{position:relative;min-width:0}
