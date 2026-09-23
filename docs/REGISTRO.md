@@ -1351,3 +1351,61 @@ monoutente.
 estrarre per primo il modulo HLS perché è codice puro — ed è arrivato alle
 stesse conclusioni su torrent e modalità ascolto. Il valore di questo dossier
 non è il piano: è la conferma.
+
+---
+
+## 2026-09-23 — Seconda risposta: torrent, addon, stanze, anonimato, costi
+
+Arrivato il secondo documento dell'altra IA, molto migliore del primo: ha
+corretto da solo il punto più debole (i moduli per piattaforma) e si è
+confrontato con la risposta invece di ripetersi. La lettura critica, più tutta
+la conversazione che ne è seguita, sta in
+[`confronti/RISPOSTA-2.md`](confronti/RISPOSTA-2.md).
+
+**La scoperta più utile, ed è venuta fuori parlando, non leggendo:**
+**anonimato fra partecipanti e P2P sono incompatibili.** Perché due browser si
+scambino byte direttamente devono conoscersi l'indirizzo IP — WebRTC lo
+scambia all'inizio e non è aggirabile. Farlo passare da un relè significa
+pagare ogni byte due volte, in entrata e in uscita: più caro di adesso.
+
+È un bivio pulito, e va deciso **progettando** le stanze:
+
+| | chi vede cosa | chi paga la banda |
+|---|---|---|
+| stanza anonima | nessuno vede niente | noi, tutta |
+| stanza con P2P | i partecipanti si vedono l'IP | noi ~20% |
+
+**Due cose da sapere prima di scrivere le stanze**, altrimenti sono due
+settimane invece di due righe: il token dei segmenti deve essere **per
+stanza** e non per utente, e la condivisione P2P dev'essere spegnibile con
+detto chiaro cosa comporta.
+
+**Sulle idee proposte:**
+
+- *stanze via torrent* — una watchparty sono due problemi diversi: la
+  sincronia (byte, latenza, serve un padrone) e la consegna (gigabyte).
+  Torrent è sbagliato per la prima e giusto per la seconda. Sincronia con
+  WebSocket, consegna con P2P.
+- *addon nelle watchparty* — funzionano peggio, non meglio: HLS è sincrono per
+  costruzione, il torrent è asincrono per costruzione.
+- *chi apre la stanza ospita* — a stella regge tre persone su una linea di
+  casa (20 Mbps in salita ÷ 5 per un 1080p). A rete regge, ed è
+  `p2p-media-loader`. E la responsabilità non si sposta comunque: restiamo
+  l'elenco delle stanze e il punto d'incontro.
+- *addon e catalogo* — fattibile e facile, due giorni. Ma cambia la proprietà
+  che il progetto ha oggi: l'utente porta il link. E la distanza che protegge
+  Stremio non si trasferisce, perché Stremio spedisce un'applicazione mentre
+  questo è un servizio ospitato.
+
+**La stessa linea di faglia per la quarta volta.** Modalità ascolto, file
+locali, torrent nativo, addon: le stesse quattro cose finiscono sempre dalla
+stessa parte, perché sono tutte cose in cui chi usa deve essere anche chi
+espone sé stesso. Su un servizio ospitato da altri quella condizione non si
+può soddisfare — quindi vanno nel desktop, che è `~/cleanvid`.
+
+**Il costo, misurato.** È quasi tutto banda: 1080p ≈ 2,25 GB all'ora a
+persona, una stanza da dieci per due ore sono 45 GB. L'estrazione sono cinque
+secondi di CPU in cache condivisa, le copertine kilobyte, il database niente.
+Con un fornitore europeo 20 TB inclusi sono ~8.900 ore-spettatore; con un
+hyperscaler la stessa stanza costa quattro euro. **Dove si ospita decide il
+modello di business più della lista delle funzioni.**
