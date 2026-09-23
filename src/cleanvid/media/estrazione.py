@@ -32,6 +32,8 @@ from . import deposito
 from .fonte import DIRETTA, HLS, Fonte
 from .manifesto import UA, corpo_master, scegli_tracce
 from .qualita import selettore_separati, selettore_singolo, tetto_altezza
+from .sottotitoli import Traccia
+from .sottotitoli import scegli as scegli_sottotitoli
 
 
 class NonEstraibile(RuntimeError):
@@ -105,7 +107,7 @@ def _coppia(info: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]] | Non
     return video, audio
 
 
-async def risolvi(url: str, qualita: str = "") -> Fonte:
+async def risolvi(url: str, qualita: str = "", lingua: str = "en") -> Fonte:
     """Il flusso da dare al browser. Solleva NonEstraibile se non se ne cava.
 
     La cache si guarda prima del semaforo: chi arriva su un video gia' estratto
@@ -113,7 +115,7 @@ async def risolvi(url: str, qualita: str = "") -> Fonte:
     """
     ricordato = await deposito.estrazione_in_cache(url, qualita)
     if ricordato:
-        return Fonte(**ricordato)
+        return _dal_ricordo(ricordato)
 
     async with deposito.semaforo():
         # secondo controllo dentro il semaforo: mentre si aspettava il turno,
@@ -122,12 +124,29 @@ async def risolvi(url: str, qualita: str = "") -> Fonte:
         # cioe' esattamente quello che la cache doveva evitare.
         ricordato = await deposito.estrazione_in_cache(url, qualita)
         if ricordato:
-            return Fonte(**ricordato)
+            return _dal_ricordo(ricordato)
 
-        esito = await _estrai(url, qualita)
+        esito = await _estrai(url, qualita, lingua)
 
     await deposito.ricorda_estrazione(url, qualita, asdict(esito))
     return esito
+
+
+async def _sottotitoli(info: dict[str, Any], lingua: str) -> list[Traccia]:
+    """Le tracce scelte, gia' registrate e pronte da mettere in pagina.
+
+    Si registrano come tutto il resto che serviamo noi: un `<track>` deve
+    venire dalla stessa origine della pagina, o il browser si rifiuta di
+    leggerlo - e comunque quegli indirizzi vogliono le nostre intestazioni.
+    """
+    fuori: list[Traccia] = []
+    for indirizzo, traccia in scegli_sottotitoli(info, lingua):
+        token = await deposito.registra({
+            "tipo": "sottotitoli", "url": indirizzo,
+            "intestazioni": {"User-Agent": UA}})
+        traccia.indirizzo = f"/sottotitoli/{token}"
+        fuori.append(traccia)
+    return fuori
 
 
 def _flusso(token: str) -> str:
@@ -141,7 +160,20 @@ def _flusso(token: str) -> str:
     return f"/flusso/{token}"
 
 
-async def _estrai(url: str, qualita: str) -> Fonte:
+def _dal_ricordo(dati: dict[str, Any]) -> Fonte:
+    """Rimette in piedi una Fonte da quello che stava in Redis.
+
+    Le tracce dei sottotitoli, passando per JSON, tornano come dizionari: qui
+    ridiventano quello che erano. Senza, i modelli si troverebbero dei
+    dizionari dove si aspettano un oggetto, e fallirebbero solo sui video che
+    i sottotitoli ce l'hanno - cioe' a volte.
+    """
+    dati = dict(dati)
+    dati["sottotitoli"] = [Traccia(**t) for t in dati.get("sottotitoli") or []]
+    return Fonte(**dati)
+
+
+async def _estrai(url: str, qualita: str, lingua: str = "en") -> Fonte:
     tetto = tetto_altezza(qualita)
 
     info, perche = await interroga(url, selettore_singolo(tetto))
@@ -170,7 +202,8 @@ async def _estrai(url: str, qualita: str) -> Fonte:
             # il corpo si costruisce al volo alla richiesta, non qui: il token
             # serve per scriverci dentro i link dei segmenti
             return Fonte(tipo=HLS, indirizzo=_flusso(token), token=token,
-                         titolo=titolo, diretta=True)
+                         titolo=titolo, diretta=True,
+                         sottotitoli=await _sottotitoli(info, lingua))
 
     if separati:
         coppia = _coppia(info)
@@ -189,6 +222,7 @@ async def _estrai(url: str, qualita: str) -> Fonte:
             tipo=DIRETTA, indirizzo=_flusso(t_video), token=t_video,
             indirizzo_audio=_flusso(t_audio), token_audio=t_audio,
             titolo=titolo, diretta=diretta, altezza=video.get("height") or 0,
+            sottotitoli=await _sottotitoli(info, lingua),
         )
 
     flusso = info.get("url")
@@ -201,6 +235,7 @@ async def _estrai(url: str, qualita: str) -> Fonte:
         tipo=HLS if ".m3u8" in flusso.split("?")[0] else DIRETTA,
         indirizzo=_flusso(token), token=token,
         titolo=titolo, diretta=diretta, altezza=info.get("height") or 0,
+        sottotitoli=await _sottotitoli(info, lingua),
     )
 
 

@@ -40,10 +40,13 @@ _cliente: redis.Redis | None = None
 # I prefissi stanno qui e non sparsi nel codice: un giorno si vorranno contare
 # o svuotare, e serve sapere come si chiamano.
 CHIAVE_FLUSSO = "flusso:"       # token -> cosa proxare
-# `estr2`: la forma di cio' che si ricorda e' cambiata quando `Lettore` ed
-# `Estratto` sono diventati una cosa sola. Cambiare prefisso fa ignorare le
-# righe vecchie invece di leggerle male.
-CHIAVE_ESTRAZIONE = "estr2:"     # (url, qualita) -> il risultato dell'estrazione
+# Il numero in fondo sale ogni volta che cambia la FORMA di cio' che si
+# ricorda: cosi' le righe vecchie vengono ignorate invece di essere lette
+# male. E' successo due volte in un giorno - quando `Lettore` ed `Estratto`
+# sono diventati una cosa sola, e quando si sono aggiunti i sottotitoli - e
+# la seconda volta il sintomo e' stato «i sottotitoli non compaiono», per
+# mezz'ora, solo sui video gia' aperti prima.
+CHIAVE_ESTRAZIONE = "estr3:"     # (url, qualita) -> il risultato dell'estrazione
 CHIAVE_ANNUNCI = "ads:"         # token -> quanti segmenti pubblicitari tolti
 CHIAVE_ULTIMA = "lista:"        # l'ultima playlist con dentro roba vera
 

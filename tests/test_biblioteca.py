@@ -327,7 +327,7 @@ async def test_una_cella_e_solo_il_lettore(
         visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
     """Niente testata, niente piede: dentro un riquadro darebbero fastidio
     e ruberebbero spazio al video."""
-    async def finge(url: str, qualita: str = "") -> Fonte:
+    async def finge(url: str, qualita: str = "", lingua: str = "en") -> Fonte:
         return Fonte(tipo=DIRETTA, indirizzo="/flusso/tv", token="tv",
                      titolo="Prova")
 
@@ -348,7 +348,7 @@ async def test_nel_muro_vince_il_lettore_nostro(
     nostro <video> parliamo diretto, quindi «l'audio su un riquadro solo»
     funziona davvero invece che quasi sempre.
     """
-    async def finge(url: str, qualita: str = "") -> Fonte:
+    async def finge(url: str, qualita: str = "", lingua: str = "en") -> Fonte:
         return Fonte(tipo=DIRETTA, indirizzo="/flusso/tv", token="tv",
                      indirizzo_audio="/flusso/ta", token_audio="ta",
                      titolo="Prova")
@@ -366,7 +366,7 @@ async def test_nel_muro_vince_il_lettore_nostro(
 async def test_se_l_estrazione_fallisce_la_cella_ripiega(
         visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
     """Meglio il lettore loro che un riquadro vuoto — ma senza i suoi comandi."""
-    async def non_va(url: str, qualita: str = "") -> object:
+    async def non_va(url: str, qualita: str = "", lingua: str = "en") -> object:
         raise NonEstraibile("niente da fare")
 
     monkeypatch.setattr(routes_muro, "risolvi", non_va)
@@ -471,7 +471,7 @@ async def test_una_cella_parte_muta(
 
     Chi decide quale suona e' il muro, dopo, a video gia' avviato.
     """
-    async def finge(url: str, qualita: str = "") -> Fonte:
+    async def finge(url: str, qualita: str = "", lingua: str = "en") -> Fonte:
         return Fonte(tipo=DIRETTA, indirizzo="/flusso/tv", token="tv",
                      titolo="Prova")
 
@@ -501,7 +501,7 @@ async def test_il_predefinito_e_il_lettore_nostro(
     piccolo schermo, la ripresa, le tre viste. Dentro l'iframe di un altro
     sito nessuna di quelle cose si puo' fare.
     """
-    async def finge(url: str, qualita: str = "") -> Fonte:
+    async def finge(url: str, qualita: str = "", lingua: str = "en") -> Fonte:
         return Fonte(tipo=DIRETTA, indirizzo="/flusso/tv", token="tv",
                      titolo="Prova")
 
@@ -521,7 +521,7 @@ async def test_se_l_estrazione_fallisce_si_apre_il_loro(
     Meglio il lettore della piattaforma, con la sua pubblicita', che una
     pagina che dice «non e' uscito niente» quando un modo per vederlo c'era.
     """
-    async def non_va(url: str, qualita: str = "") -> object:
+    async def non_va(url: str, qualita: str = "", lingua: str = "en") -> object:
         raise NonEstraibile("yt-dlp non ce la fa")
 
     monkeypatch.setattr(routes_watch, "risolvi", non_va)
@@ -535,7 +535,7 @@ async def test_se_l_estrazione_fallisce_si_apre_il_loro(
 async def test_su_un_sito_senza_lettore_il_guasto_si_spiega(
         visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
     """Li' il ripiego non c'e', quindi il motivo e' l'unica cosa utile."""
-    async def non_va(url: str, qualita: str = "") -> object:
+    async def non_va(url: str, qualita: str = "", lingua: str = "en") -> object:
         raise NonEstraibile("video privato")
 
     monkeypatch.setattr(routes_watch, "risolvi", non_va)
@@ -558,7 +558,7 @@ async def test_le_tre_viste_ci_sono(
         visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
     """Normale, cinema, schermo intero: le stesse tre di qualunque sito di
     video, con le stesse scorciatoie."""
-    async def finge(url: str, qualita: str = "") -> Fonte:
+    async def finge(url: str, qualita: str = "", lingua: str = "en") -> Fonte:
         return Fonte(tipo=DIRETTA, indirizzo="/flusso/tv", token="tv",
                      titolo="Prova")
 
@@ -579,7 +579,7 @@ async def test_le_tre_viste_ci_sono(
 
 async def test_i_segmenti_da_saltare_arrivano_al_lettore(
         visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    async def finge(url: str, qualita: str = "") -> Fonte:
+    async def finge(url: str, qualita: str = "", lingua: str = "en") -> Fonte:
         return Fonte(tipo=DIRETTA, indirizzo="/flusso/tv", token="tv",
                      titolo="Prova")
 
@@ -611,7 +611,7 @@ async def test_la_chat_c_e_solo_se_e_una_diretta(
         visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
     """Il `live_chat` di YouTube su un video registrato apre un riquadro con
     dentro un errore, che e' peggio di niente."""
-    async def registrazione(url: str, qualita: str = "") -> Fonte:
+    async def registrazione(url: str, qualita: str = "", lingua: str = "en") -> Fonte:
         return Fonte(tipo=DIRETTA, indirizzo="/flusso/tv", token="tv",
                      titolo="Prova", diretta=False)
 
@@ -620,7 +620,7 @@ async def test_la_chat_c_e_solo_se_e_una_diretta(
         "/it/cella", params={"u": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"})).text
     assert "id=chat" not in pagina
 
-    async def diretta(url: str, qualita: str = "") -> Fonte:
+    async def diretta(url: str, qualita: str = "", lingua: str = "en") -> Fonte:
         return Fonte(tipo=HLS, indirizzo="/flusso/tv", token="tv",
                      titolo="Prova", diretta=True)
 
@@ -635,7 +635,7 @@ async def test_la_chat_non_si_carica_finche_non_la_chiedi(
         visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
     """Quattro chat sempre accese in un muro da quattro sono quattro
     connessioni aperte che nessuno sta leggendo."""
-    async def diretta(url: str, qualita: str = "") -> Fonte:
+    async def diretta(url: str, qualita: str = "", lingua: str = "en") -> Fonte:
         return Fonte(tipo=DIRETTA, indirizzo="/flusso/tv", token="tv",
                      titolo="Prova", diretta=True)
 
@@ -670,7 +670,7 @@ def test_la_chat_dichiara_il_dominio_da_cui_si_apre() -> None:
 async def test_nella_pagina_del_video_la_chat_sta_di_fianco(
         visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
     """Sopra coprirebbe il video, ed e' esattamente quello che questo sito toglie."""
-    async def diretta(url: str, qualita: str = "") -> Fonte:
+    async def diretta(url: str, qualita: str = "", lingua: str = "en") -> Fonte:
         return Fonte(tipo=DIRETTA, indirizzo="/flusso/tv", token="tv",
                      titolo="Prova", diretta=True)
 
@@ -761,7 +761,7 @@ async def test_su_una_diretta_c_e_il_pannello_delle_preferenze(
         visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
     """Le preferenze di questa pagina stanno in questa pagina: una cosa che
     si vuole provare a occhio non si va a cambiare altrove e poi si torna."""
-    async def diretta(url: str, qualita: str = "") -> Fonte:
+    async def diretta(url: str, qualita: str = "", lingua: str = "en") -> Fonte:
         return Fonte(tipo=DIRETTA, indirizzo="/flusso/tv", token="tv",
                      titolo="Prova", diretta=True)
 
@@ -831,7 +831,7 @@ def test_in_solo_la_chat_si_accende_solo_con_la_diretta() -> None:
 
 async def test_una_registrazione_non_ha_la_colonna_della_chat(
         visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    async def registrazione(url: str, qualita: str = "") -> Fonte:
+    async def registrazione(url: str, qualita: str = "", lingua: str = "en") -> Fonte:
         return Fonte(tipo=DIRETTA, indirizzo="/flusso/tv", token="tv",
                      titolo="Prova", diretta=False)
 
@@ -1025,7 +1025,7 @@ async def test_su_una_diretta_di_twitch_l_attesa_si_spiega(
     E' il comportamento giusto - meglio aspettare che guardare la reclame -
     ma uno schermo nero senza spiegazioni sembra un guasto nostro.
     """
-    async def diretta(url: str, qualita: str = "") -> Fonte:
+    async def diretta(url: str, qualita: str = "", lingua: str = "en") -> Fonte:
         return Fonte(tipo=HLS, indirizzo="/flusso/tv", token="tv",
                      titolo="Prova", diretta=True)
 

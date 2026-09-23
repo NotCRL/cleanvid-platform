@@ -142,7 +142,7 @@ async def guarda(
     perche = ""
     if not loro:
         try:
-            fonte = await risolvi(url, q)
+            fonte = await risolvi(url, q, lingua=c.lingua.codice)
         except NonEstraibile as e:
             # il messaggio di yt-dlp si mostra cosi' com'e': dice quasi sempre
             # la verita' ("video privato", "serve un account"), e riscriverlo

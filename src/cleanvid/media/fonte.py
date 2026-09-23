@@ -21,7 +21,9 @@ e il giorno che arrivano non cambiano niente qui.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+from .sottotitoli import Traccia
 
 # --- come ci arriva il video -----------------------------------------------
 # `incorniciata`: e' il lettore di un altro sito dentro un iframe. Non
@@ -47,6 +49,7 @@ class Fonte:
     indirizzo_audio: str = ""   # la seconda traccia, quando ce ne sono due
     token: str = ""             # il nostro flusso, per chi deve parlarne al deposito
     token_audio: str = ""
+    sottotitoli: list[Traccia] = field(default_factory=list)
 
     @property
     def incorniciata(self) -> bool:

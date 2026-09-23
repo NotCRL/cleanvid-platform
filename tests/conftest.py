@@ -117,6 +117,12 @@ async def sito_finto(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[None]:
             "#EXTINF:4.0,\nspot0.ts\n#EXTINF:4.0,\nspot1.ts\n",
             media_type="application/vnd.apple.mpegurl")
 
+    async def sottotitoli(request: Request) -> Response:
+        # servito con il tipo sbagliato, come fanno certi siti
+        return PlainTextResponse(
+            "WEBVTT\n\n00:00:01.000 --> 00:00:03.000\nciao\n",
+            media_type="text/plain")
+
     async def bugiardo(request: Request) -> Response:
         # etichettato come playlist ma non lo e': e' il caso di googlevideo
         return Response(b"non sono una playlist",
@@ -131,6 +137,7 @@ async def sito_finto(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[None]:
         Route("/video.mp4", video),
         Route("/lista.m3u8", lista),
         Route("/solospot.m3u8", solospot),
+        Route("/sottotitoli.txt", sottotitoli),
         Route("/bugiardo.ts", bugiardo),
         Route("/protetto.mp4", protetto),
     ])
@@ -165,7 +172,7 @@ def niente_ytdlp(monkeypatch: pytest.MonkeyPatch) -> None:
     from cleanvid.api import routes_muro, routes_watch
     from cleanvid.media.fonte import DIRETTA, Fonte
 
-    async def finta(url: str, qualita: str = "") -> Fonte:
+    async def finta(url: str, qualita: str = "", lingua: str = "en") -> Fonte:
         return Fonte(tipo=DIRETTA, indirizzo="/flusso/finto", token="finto",
                      titolo="Video di prova",
                      altezza=int(qualita) if qualita.isdigit() else 720)

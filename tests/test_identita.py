@@ -86,7 +86,7 @@ async def test_un_sito_da_cui_non_esce_niente_lo_dice(
     dall'umore del sito. Quello che si vuole provare e' che il motivo arriva
     fino alla pagina, e per quello basta un errore finto.
     """
-    async def non_va(url: str, qualita: str = "") -> object:
+    async def non_va(url: str, qualita: str = "", lingua: str = "en") -> object:
         raise NonEstraibile("video privato")
 
     monkeypatch.setattr(routes_watch, "risolvi", non_va)
@@ -99,7 +99,7 @@ async def test_un_sito_da_cui_non_esce_niente_lo_dice(
 async def test_il_lettore_si_monta_su_quello_che_esce_dall_estrazione(
         visitatore: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
     """Le due tracce separate devono arrivare al browser come due elementi."""
-    async def finge(url: str, qualita: str = "") -> Fonte:
+    async def finge(url: str, qualita: str = "", lingua: str = "en") -> Fonte:
         return Fonte(tipo=DIRETTA, indirizzo="/flusso/tv", token="tv",
                      indirizzo_audio="/flusso/ta", token_audio="ta",
                      titolo="Prova", altezza=720)

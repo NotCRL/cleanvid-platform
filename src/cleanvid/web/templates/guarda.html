@@ -43,7 +43,17 @@
              data-piattaforma="{{ piattaforma }}"
              data-attesa-annuncio="{{ t('guarda.attesa_annuncio') }}"
              {% if fonte.due_tracce %}data-audio="{{ fonte.indirizzo_audio }}"{% endif %}
-             ></video>
+             >
+        {# I sottotitoli. Nessuno con `default`: accenderli da soli e'
+           invadente, e chi li vuole li trova nei comandi del lettore. Quelli
+           automatici lo dicono nel nome, perche' la differenza di qualita' si
+           sente e chi legge deve sapere cosa sta leggendo. #}
+        {% for traccia in fonte.sottotitoli %}
+          <track kind=subtitles src="{{ traccia.indirizzo }}"
+                 srclang="{{ traccia.lingua }}"
+                 label="{{ traccia.nome }}{% if traccia.automatica %} ({{ t('guarda.automatici') }}){% endif %}">
+        {% endfor %}
+      </video>
       {% if fonte.due_tracce %}
         {# la traccia audio sta in un elemento suo, e il javascript la tiene
            incollata al video. Serve nel DOM, non nascosta con `display:none`,

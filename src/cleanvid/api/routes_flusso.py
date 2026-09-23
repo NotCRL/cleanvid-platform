@@ -108,3 +108,33 @@ async def segmento(
 
     return await _passa(u, dati["intestazioni"], t,
                         request.headers.get("Range"))
+
+
+@router.get("/sottotitoli/{token}")
+async def sottotitoli(token: str) -> Response:
+    """Una traccia di sottotitoli, servita da noi.
+
+    Passa da qui e non diretta per due ragioni: il tag `<track>` pretende che
+    il file venga dalla stessa origine della pagina - se no il browser lo
+    scarica e poi si rifiuta di usarlo, senza dire perche' - e quegli
+    indirizzi vogliono comunque le nostre intestazioni.
+
+    Il tipo si dichiara noi e non si copia da monte: certi siti li servono
+    come `text/plain` o come `application/octet-stream`, e con quelli il
+    browser non li mostra.
+    """
+    dati = await deposito.leggi(token)
+    if dati is None:
+        raise HTTPException(status_code=404, detail="questa traccia e' scaduta")
+
+    try:
+        sorgente = await proxy.apri(dati["url"], dati["intestazioni"])
+    except proxy.Irraggiungibile as e:
+        raise HTTPException(status_code=e.codice, detail=str(e)) from e
+
+    testo = await proxy.tutto(sorgente)
+    return Response(testo, media_type="text/vtt; charset=utf-8", headers={
+        # sono file piccoli e immutabili: riscaricarli a ogni ricarica della
+        # pagina e' banda regalata
+        "Cache-Control": "public, max-age=3600",
+    })

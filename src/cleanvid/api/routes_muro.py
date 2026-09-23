@@ -114,7 +114,7 @@ async def cella(
     fonte: Fonte | None = None
     perche = ""
     try:
-        fonte = await risolvi(u, q)
+        fonte = await risolvi(u, q, lingua=c.lingua.codice)
     except NonEstraibile as e:
         perche = str(e)
 

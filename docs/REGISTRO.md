@@ -1505,3 +1505,71 @@ finché non si scrive la funzione dopo.
 Poi a mano: il lettore nostro dà due tracce e il bagliore, `m=loro` dà
 l'iframe senza bagliore, e una cella del muro che non si estrae ripiega sul
 lettore della piattaforma. Identico a prima, con un tipo solo.
+
+---
+
+## 2026-09-23 — I sottotitoli
+
+Secondo punto del §10 di [`confronti/RISPOSTA-2.md`](confronti/RISPOSTA-2.md),
+e la cosa con il miglior rapporto fra valore e costo che l'altra IA aveva
+fatto emergere — di sponda, elencandola nel suo oggetto `Stream` senza
+proporla.
+
+**Cosa c'è.** Sui video estratti col lettore nostro compaiono i sottotitoli
+del sito, nei comandi del lettore. yt-dlp li restituisce già insieme al resto:
+non costano una richiesta in più.
+
+### La scelta, che è il vero lavoro
+
+Su YouTube le tracce automatiche possono essere **più di cento**, perché
+includono la traduzione in ogni lingua esistente. Metterle tutte in pagina
+sarebbe inutile e dannoso: un menu con cento voci non si usa, si chiude.
+
+La regola sta in `media/sottotitoli.py`, in un posto solo:
+
+- **solo `vtt`** — è l'unico formato che il tag `<track>` sa leggere. Gli
+  altri (json3, srv1, ttml) andrebbero convertiti, e convertire sottotitoli è
+  un mestiere intero che non serve fare finché il vtt c'è sempre;
+- **prima la lingua della pagina, poi l'inglese, poi il resto** — chi guarda
+  cerca la propria lingua per prima, e se non c'è prova l'inglese. L'ordine
+  della lista è l'ordine del menu;
+- **le automatiche solo dove non c'è già niente di scritto a mano**, e solo
+  nelle due lingue che servono. Sono una comodità quando manca altro, non un
+  catalogo;
+- **mai più di otto**, in tutto.
+
+**Il codice di lingua va ripulito.** Le chiavi di YouTube sono tipo
+`en-nP7-2PuUl7o`: `en` è la lingua, il resto è l'identificativo della traccia.
+Ma `en-US` e `pt-BR` sono lingue vere e vanno tenute intere. La differenza è
+che la seconda parte è corta e fatta di lettere.
+
+### Perché passano da noi
+
+Un `<track>` deve venire dalla **stessa origine della pagina**, o il browser
+lo scarica e poi si rifiuta di usarlo — senza dire perché. E quegli indirizzi
+vogliono comunque le nostre intestazioni.
+
+**Il tipo lo dichiariamo noi** e non si copia da monte: certi siti servono i
+sottotitoli come `text/plain` o `application/octet-stream`, e con quelli il
+browser non li mostra.
+
+**Nessuna traccia ha `default`.** Accenderli da soli è invadente; chi li vuole
+li trova nei comandi del lettore. E quelli automatici lo dicono nel nome,
+perché la differenza di qualità si sente e chi legge deve sapere cosa sta
+leggendo.
+
+### Un inciampo che vale la pena raccontare
+
+I sottotitoli non comparivano, e il modello era giusto: era **la cache**. Il
+video era già stato estratto prima che i sottotitoli esistessero, e la riga
+vecchia — senza quel campo — veniva riletta per mezz'ora.
+
+Il prefisso della chiave adesso ha un numero che sale ogni volta che cambia la
+*forma* di ciò che si ricorda. È già successo due volte in un giorno: quando
+`Lettore` ed `Estratto` sono diventati una cosa sola, e adesso. Il sintomo è
+sempre lo stesso — «la funzione nuova non c'è, ma solo su quello che avevo già
+aperto» — e senza saperlo si cerca per un'ora nel posto sbagliato.
+
+**Verificato.** 156 test, di cui 9 nuovi sulla regola di scelta. Poi a mano su
+un video vero: 5 tracce in pagina, e il VTT servito da noi come
+`text/vtt; charset=utf-8`.
